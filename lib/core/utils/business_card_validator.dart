@@ -1,0 +1,76 @@
+import 'app_validators.dart';
+
+class BusinessCardValidator {
+  /// Validates if the recognized OCR text matches a business card pattern.
+  /// Rejects selfies, empty images, or unrelated images.
+  static bool validateText(String text) {
+    final cleaned = text.trim();
+    if (cleaned.isEmpty) return false;
+
+    // A business card must have a minimum length to be legitimate
+    if (cleaned.length < 15) return false;
+
+    final lowerText = cleaned.toLowerCase();
+
+    // Check for standard contact patterns
+    final hasEmail = AppValidators.hasEmail(cleaned);
+    final hasPhone = AppValidators.hasPhone(cleaned);
+    final hasWebsite = AppValidators.hasUrl(cleaned);
+
+    // Business card text usually spans multiple lines
+    final lines = cleaned
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.length < 3) {
+      return false;
+    }
+
+    // A valid business card must contain at least one key contact anchor (phone, email, or website)
+    if (hasPhone || hasEmail || hasWebsite) {
+      return true;
+    }
+
+    // Additional check: Does it have multiple designation/role/address keywords?
+    final List<String> keywords = [
+      'manager', 'director', 'developer', 'engineer', 'founder', 'ceo', 'cto',
+      'president', 'designer', 'owner', 'street', 'road', 'avenue', 'suite', 'floor'
+    ];
+    int keywordCount = 0;
+    for (final kw in keywords) {
+      if (lowerText.contains(kw)) {
+        keywordCount++;
+      }
+    }
+
+    return keywordCount >= 2;
+  }
+
+  /// Validates if the scanned QR code value matches business card or standard data payload requirements.
+  static bool validateQr(String qrValue) {
+    final trimmed = qrValue.trim();
+    if (trimmed.isEmpty) return false;
+
+    final upper = trimmed.toUpperCase();
+    
+    // Accept standard contact QR types
+    if (upper.contains('BEGIN:VCARD') || upper.startsWith('MECARD:')) {
+      return true;
+    }
+
+    // Accept links (websites/social links) or email/phone protocols
+    if (upper.startsWith('HTTP://') ||
+        upper.startsWith('HTTPS://') ||
+        upper.startsWith('MAILTO:') ||
+        upper.startsWith('TEL:')) {
+      return true;
+    }
+
+    // If it is just plain text, check if it contains phone/email
+    final hasEmail = AppValidators.hasEmail(trimmed);
+    final hasPhone = AppValidators.hasPhone(trimmed);
+    
+    return hasEmail || hasPhone || trimmed.length > 10;
+  }
+}

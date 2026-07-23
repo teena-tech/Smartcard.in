@@ -1,0 +1,82 @@
+import 'package:dio/dio.dart';
+import 'dart:io';
+import '../../core/services/dio_client.dart';
+import '../../core/services/api_config.dart';
+import '../models/message_model.dart';
+
+class SupportRepository {
+  final DioClient _dioClient = DioClient();
+
+  SupportRepository([dynamic _ = null]);
+
+  Future<List<MessageModel>> getChatMessages(String userId, {int? limit, int? afterId, int? beforeId}) async {
+    final Map<String, dynamic> query = {};
+    if (limit != null) query['limit'] = limit;
+    if (afterId != null) query['after_id'] = afterId;
+    if (beforeId != null) query['before_id'] = beforeId;
+
+    final response = await _dioClient.dio.get(
+      ApiConfig.supportMessages(userId),
+      queryParameters: query,
+    );
+    
+    final List<dynamic> data = response.data is List 
+        ? response.data 
+        : (response.data['messages'] ?? response.data['data'] ?? []);
+    return data.map((e) => MessageModel.fromJson(e)).toList();
+  }
+
+  Future<Map<String, dynamic>> getUserSupportContext(String userId) async {
+    final response = await _dioClient.dio.get(
+      ApiConfig.supportContext(userId),
+    );
+    return response.data;
+  }
+
+  Future<int> getUnreadMessageCount(String userId) async {
+    final response = await _dioClient.dio.get(
+      ApiConfig.supportUnreadCount(userId),
+    );
+    return response.data['count'] ?? 0;
+  }
+
+  Future<MessageModel> sendChatMessage(String userId, {required String text, File? attachment}) async {
+    final formData = FormData.fromMap({
+      'text': text,
+      if (attachment != null) 'attachment': await MultipartFile.fromFile(attachment.path),
+    });
+
+    final response = await _dioClient.dio.post(
+      ApiConfig.supportMessages(userId),
+      data: formData,
+    );
+    
+    final data = response.data;
+    if (data is Map<String, dynamic> && (data.containsKey('details') || data.containsKey('text'))) {
+      return MessageModel.fromJson(data);
+    }
+    
+    // Backend only returned success status, so construct the message locally
+    return MessageModel(
+      id: DateTime.now().millisecondsSinceEpoch,
+      title: '',
+      summary: text,
+      details: text,
+      source: 'user',
+      createdAt: 'Just now',
+      reaction: 'none',
+      likeCount: 0,
+      dislikeCount: 0,
+    );
+  }
+
+  Future<void> createUserReport(String reportType, String reportText) async {
+    await _dioClient.dio.post(
+      ApiConfig.userReports,
+      data: {
+        'report_type': reportType,
+        'report_text': reportText,
+      },
+    );
+  }
+}

@@ -1,0 +1,118 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart';
+import '../../viewmodels/theme_viewmodel.dart';
+import 'support_agent_screen.dart';
+import 'contact_company_screen.dart';
+import '../../core/utils/responsive.dart';
+
+class SupportScreen extends StatelessWidget {
+  const SupportScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.watch<ThemeViewModel>().colors;
+    
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/login.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: ResponsiveCenter(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
+          child: Column(
+            children: [
+              Lottie.asset(
+                'assets/lottie/people.json',
+                height: 300,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 200,
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Animation Error:\n$error',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                },
+              ),
+        
+              _buildSupportItem(
+                context, 
+                'Contact Agent', 
+                'Open agent details, call, or chat', 
+                Icons.support_agent, 
+                colors,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SupportAgentScreen()),
+                  );
+                }
+              ),
+              const SizedBox(height: 12),
+              _buildSupportItem(
+                context, 
+                'Contact Company', 
+                'Create and track your company contact request', 
+                Icons.business, 
+                colors,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ContactCompanyScreen()),
+                  );
+                }
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSupportItem(BuildContext context, String title, String subtitle, IconData icon, dynamic colors, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colors.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colors.panel,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: colors.text, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: colors.text)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: colors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
