@@ -440,7 +440,7 @@ class _HomeBodyState extends State<_HomeBody> {
                 Column(
                   children: [
                     SizedBox(
-                      height: 250,
+                      height: 220,
                       child: AutoLoopCarousel(
                         itemCount: cardViewModel.cards.length,
                         initialIndex: cardViewModel.currentIndex,

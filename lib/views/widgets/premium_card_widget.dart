@@ -116,151 +116,160 @@ class PremiumCardWidget extends StatelessWidget {
 
     return Container(
       margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      // Card dimensions
       width: double.infinity,
       constraints: const BoxConstraints(maxWidth: 680),
-      height: hasActions ? 245 : 230,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: ColorFiltered(
-              colorFilter: card.isSuspended 
-                  ? const ColorFilter.matrix(<double>[
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0.2126, 0.7152, 0.0722, 0, 0,
-                      0,      0,      0,      1, 0,
-                    ])
-                  : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: hasBgImage ? Colors.grey.shade900 : (hasBgColor ? customBgColor : null),
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: (!hasBgImage && !hasBgColor)
-                      ? const LinearGradient(
-                          colors: [Color(0xFF6B41A5), Color(0xFFC781DD)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  image: hasBgImage && bgUrl.isNotEmpty
-                      ? DecorationImage(
-                          image: NetworkImage(bgUrl),
-                          fit: BoxFit.cover,
-                          colorFilter: overlayColor != null
-                              ? ColorFilter.mode(
-                                  overlayColor.withValues(alpha: overlayOpacity),
-                                  BlendMode.srcATop,
-                                )
-                              : null,
-                        )
-                      : null,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                    width: 1.5,
+      child: AspectRatio(
+        aspectRatio: hasActions ? 1.45 : 1.62,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: ColorFiltered(
+                colorFilter: card.isSuspended 
+                    ? const ColorFilter.matrix(<double>[
+                        0.2126, 0.7152, 0.0722, 0, 0,
+                        0.2126, 0.7152, 0.0722, 0, 0,
+                        0.2126, 0.7152, 0.0722, 0, 0,
+                        0,      0,      0,      1, 0,
+                      ])
+                    : const ColorFilter.mode(Colors.transparent, BlendMode.dst),
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: hasBgImage ? Colors.grey.shade900 : (hasBgColor ? customBgColor : null),
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: (!hasBgImage && !hasBgColor)
+                        ? const LinearGradient(
+                            colors: [Color(0xFF6B41A5), Color(0xFFC781DD)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    image: hasBgImage && bgUrl.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(bgUrl),
+                            fit: BoxFit.cover,
+                            colorFilter: overlayColor != null
+                                ? ColorFilter.mode(
+                                    overlayColor.withValues(alpha: overlayOpacity),
+                                    BlendMode.srcATop,
+                                  )
+                                : null,
+                          )
+                        : null,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        blurRadius: 20,
+                        spreadRadius: 3,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 24,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, hasActions ? 56 : 16),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Center-aligned Logo (🏢)
-                  if (card.companyLogo != null && card.companyLogo!.isNotEmpty) ...[
-                    Image.network(
-                      UploadUrlResolver.resolve(card.companyLogo!, type: 'logo'),
-                      height: hasActions ? 90 : 105,
-                      width: hasActions ? 90 : 105,
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.business_rounded, 
-                        color: customTextColor, 
-                        size: hasActions ? 80 : 96,
-                      ),
-                    ),
-                  ] else ...[
-                    Icon(
-                      Icons.business_rounded, 
-                      color: customTextColor, 
-                      size: hasActions ? 80 : 96,
-                    ),
-                  ],
-                  const SizedBox(height: 8),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final cardHeight = constraints.maxHeight;
+                      final verticalPadding = cardHeight * 0.08;
+                      final bottomPadding = hasActions ? cardHeight * 0.28 : verticalPadding;
+                      final logoSize = hasActions ? cardHeight * 0.40 : cardHeight * 0.46;
 
-                  // Company Name
-                  if (card.companyName != null && card.companyName!.isNotEmpty)
-                    Text(
-                      card.companyName!,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: customTextColor,
-                        letterSpacing: 0.3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                      return Padding(
+                        padding: EdgeInsets.fromLTRB(20, verticalPadding, 20, bottomPadding),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Center-aligned Logo (🏢)
+                              if (card.companyLogo != null && card.companyLogo!.isNotEmpty) ...[
+                                Image.network(
+                                  UploadUrlResolver.resolve(card.companyLogo!, type: 'logo'),
+                                  height: logoSize,
+                                  width: logoSize,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) => Icon(
+                                    Icons.business_rounded, 
+                                    color: customTextColor, 
+                                    size: logoSize * 0.9,
+                                  ),
+                                ),
+                              ] else ...[
+                                Icon(
+                                  Icons.business_rounded, 
+                                  color: customTextColor, 
+                                  size: logoSize * 0.9,
+                                ),
+                              ],
+                              SizedBox(height: cardHeight * 0.04),
 
-                  const SizedBox(height: 4),
+                              // Company Name
+                              if (card.companyName != null && card.companyName!.isNotEmpty)
+                                Text(
+                                  card.companyName!,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    fontSize: cardHeight * 0.075,
+                                    fontWeight: FontWeight.bold,
+                                    color: customTextColor,
+                                    letterSpacing: 0.3,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
 
-                  // Designation
-                  if (card.designation?.isNotEmpty == true)
-                    Text(
-                      card.designation!,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: customTextColor.withValues(alpha: 0.75),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-                    ),
+                              SizedBox(height: cardHeight * 0.02),
+
+                              // Designation
+                              if (card.designation?.isNotEmpty == true)
+                                Text(
+                                  card.designation!,
+                                  textAlign: TextAlign.center,
+                                  style: GoogleFonts.inter(
+                                    fontSize: cardHeight * 0.055,
+                                    fontWeight: FontWeight.w500,
+                                    color: customTextColor.withValues(alpha: 0.75),
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                  ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: PulsingBadge(isActive: !card.isSuspended),
-          ),
-          if (hasActions)
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 58,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: AppColors.primaryRed,
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(20),
-                  ),
-                ),
-                padding: const EdgeInsets.only(top: 8),
-                child: bottomActions,
-              ),
+              top: 12,
+              right: 12,
+              child: PulsingBadge(isActive: !card.isSuspended),
             ),
-        ],
+            if (hasActions)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 58,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryRed,
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(20),
+                    ),
+                  ),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: bottomActions,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 }
-

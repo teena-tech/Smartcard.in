@@ -62,18 +62,28 @@ class _ContactsScreenState extends State<ContactsScreen> {
         icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
         label: Text('Scan Card', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
-      body: ResponsiveCenter(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSearchBar(colors),
-            _buildStatistics(contactViewModel, colors),
-            Expanded(
-              child: contactViewModel.isLoading
-                  ? Center(child: CircularProgressIndicator(color: colors.accent))
-                  : _buildFilteredList(contactViewModel, colors),
-            ),
-          ],
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: ResponsiveCenter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSearchBar(colors),
+              _buildStatistics(contactViewModel, colors),
+              Expanded(
+                child: contactViewModel.isLoading
+                    ? Center(child: CircularProgressIndicator(color: colors.accent))
+                    : _buildFilteredList(contactViewModel, colors),
+              ),
+            ],
+          ),
         ),
       ),
     );

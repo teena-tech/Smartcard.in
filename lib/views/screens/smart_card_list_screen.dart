@@ -152,8 +152,17 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
     final subscriptionViewModel = context.watch<SubscriptionViewModel>();
     final cards = cardViewModel.cards;
 
-    Widget body = Column(
-      children: [
+    Widget body = Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/login.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Column(
+        children: [
         Expanded(
           child: cards.isEmpty
               ? Center(
@@ -461,7 +470,8 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
             ),
           ),
       ],
-    );
+    ),
+  );
 
     if (widget.isTab) return body;
 

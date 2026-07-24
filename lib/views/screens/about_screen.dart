@@ -19,31 +19,18 @@ class AboutScreen extends StatelessWidget {
     {
       'title': 'A Leader in Digital Innovation',
       'paragraphs': [
-        'Antz Media combines creativity, technology, and measurable planning to deliver useful digital outcomes.',
-        'Whether a business is launching, expanding, or modernizing, the team builds solutions aligned with real growth goals instead of generic templates.'
+        'Antz Media combines creativity, technology and measurable planning to deliver useful digital outcomes. Whether a business is launching, expanding, or modernizing, the team builds solutions aligned with real growth goals instead of generic templates.'
       ]
     },
     {
       'title': 'What Sets Antz Media Apart?',
       'paragraphs': [
-        'Its strength lies in a connected service model that brings web development, digital marketing, branding, and multimedia production into one workflow.'
+        'Its strength lies in a connected service model that brings App development, web development, digital marketing, branding and multimedia production into one workflow.'
       ],
       'bullets': [
-        'Strategic Expertise: campaigns designed for business growth, not just visibility.',
-        'Creative Excellence: strong visuals, engaging media, and polished digital experiences.',
-        'Adaptability: support for fast-changing trends including AI-driven marketing and immersive content.'
-      ]
-    },
-    {
-      'title': 'Proven Impact Across Industries',
-      'paragraphs': [
-        'The portfolio spans ecommerce, healthcare, education, and other sectors, with work focused on improving traffic, conversion quality, and brand engagement through full-service digital execution.'
-      ]
-    },
-    {
-      'title': 'A Vision for the Future',
-      'paragraphs': [
-        'As digital channels continue to evolve, Antz Media invests in new tools, training, and transparent delivery processes so clients benefit from practical innovation and long-term partnership value.'
+        'Strategic Expertise: Campaigns designed for business growth and not just visibility.',
+        'Creative Excellence: Strong visuals, engaging media, and polished digital experiences.',
+        'Adaptability: Support for fast-changing trends including AI-driven marketing and immersive content.'
       ]
     }
   ];
@@ -51,7 +38,7 @@ class AboutScreen extends StatelessWidget {
   static const Map<String, dynamic> _termsContent = {
     'title': 'Terms and Conditions',
     'subtitle': 'Terms and Conditions',
-    'updatedAt': '23-03-2025',
+    'updatedAt': '23-07-2026',
     'sections': [
       {
         'heading': '1. Introduction',
@@ -129,7 +116,7 @@ class AboutScreen extends StatelessWidget {
   static const Map<String, dynamic> _privacyContent = {
     'title': 'Privacy Policy',
     'subtitle': 'Privacy Policy for TheSmartCards.com and Related Mobile Application',
-    'updatedAt': '24-03-2025',
+    'updatedAt': '23-07-2026',
     'sections': [
       {
         'heading': '1. Introduction',
@@ -330,7 +317,16 @@ class AboutScreen extends StatelessWidget {
     final themeViewModel = context.watch<ThemeViewModel>();
     final colors = themeViewModel.colors;
 
-    return ResponsiveCenter(
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/login.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: ResponsiveCenter(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -338,9 +334,9 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 12),
             // Brand Pill
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: colors.card,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(color: colors.border),
                 boxShadow: [
@@ -351,56 +347,11 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF01717),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFF01717).withValues(alpha: 0.15),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'SMART',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4.0,
-                          color: const Color(0xFFE31B23),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'CARDS',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4.0,
-                          color: const Color(0xFFE31B23),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              child: Image.asset(
+                'assets/images/smartlogo.png',
+                height: 48,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
               ),
             ),
             const SizedBox(height: 24),
@@ -424,7 +375,7 @@ class AboutScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Antz Media Digital Solutions',
+                    'About Antz Media',
                     style: GoogleFonts.inter(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -539,6 +490,7 @@ class AboutScreen extends StatelessWidget {
             const SizedBox(height: 20),
           ],
         ),
+      ),
       ),
     );
   }

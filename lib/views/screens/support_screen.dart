@@ -15,33 +15,46 @@ class SupportScreen extends StatelessWidget {
     final colors = context.watch<ThemeViewModel>().colors;
     
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: const BoxDecoration(
         image: DecorationImage(
           image: AssetImage('assets/images/login.png'),
           fit: BoxFit.cover,
         ),
       ),
-      child: ResponsiveCenter(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-          child: Column(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
             children: [
-              Lottie.asset(
-                'assets/lottie/people.json',
-                height: 300,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 200,
-                    alignment: Alignment.center,
-                    child: Text(
-                      'Animation Error:\n$error',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  );
-                },
+              Container(
+                height: 185,
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(),
+                alignment: Alignment.center,
+                child: Lottie.asset(
+                  'assets/lottie/people.json',
+                  height: 340,
+                  width: 340,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 185,
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Animation Error:\n$error',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    );
+                  },
+                ),
               ),
+              const SizedBox(height: 16),
         
               _buildSupportItem(
                 context, 
@@ -74,6 +87,7 @@ class SupportScreen extends StatelessWidget {
           ),
         ),
       ),
+     ),
     );
   }
 

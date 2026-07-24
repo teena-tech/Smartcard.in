@@ -53,150 +53,160 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isPremium = subscriptionViewModel.subscription?.isActive == true &&
         subscriptionViewModel.subscription?.membership.toUpperCase() != 'FREE';
 
-    return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 16),
-                        Text(
-                          'Settings',
-                          style: GoogleFonts.inter(
-                            color: darkBlue,
-                            fontSize: 36,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/login.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Text(
+              'Settings',
+              style: GoogleFonts.inter(
+                color: darkBlue,
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 24),
 
-                        // Top User Profile Card
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
+            // Top User Profile Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          context.read<DashboardViewModel>().setIndex(3);
+                        },
+                        child: CircularProfileAvatar(
+                          radius: 35,
+                          size: 70,
+                          imageUrl: profileImage != null && profileImage.isNotEmpty
+                              ? UploadUrlResolver.resolve(profileImage, type: 'profile')
+                              : null,
+                          fallbackText: user?.initials ?? 'U',
+                          backgroundColor: vibrantRed,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.displayName ?? 'User',
+                              style: GoogleFonts.inter(
+                                color: darkBlue,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () {
-                                      context.read<DashboardViewModel>().setIndex(3);
-                                    },
-                                    child: CircularProfileAvatar(
-                                      radius: 35,
-                                      size: 70,
-                                      imageUrl: profileImage != null && profileImage.isNotEmpty
-                                          ? UploadUrlResolver.resolve(profileImage, type: 'profile')
-                                          : null,
-                                      fallbackText: user?.initials ?? 'U',
-                                      backgroundColor: vibrantRed,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          user?.displayName ?? 'User',
-                                          style: GoogleFonts.inter(
-                                            color: darkBlue,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          user?.email ?? '',
-                                          style: GoogleFonts.inter(
-                                            color: mutedText,
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 6),
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
-                                            );
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius: BorderRadius.circular(20),
-                                              border: Border.all(color: vibrantRed, width: 1.5),
-                                            ),
-                                            child: Text(
-                                              isPremium ? 'PREMIUM PLAN' : 'UPGRADE TO PREMIUM',
-                                              style: GoogleFonts.inter(
-                                                color: vibrantRed,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: 0.5,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              user?.email ?? '',
+                              style: GoogleFonts.inter(
+                                color: mutedText,
+                                fontSize: 14,
                               ),
-
-                            ],
-                          ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: vibrantRed, width: 1.5),
+                                ),
+                                child: Text(
+                                  isPremium ? 'PREMIUM PLAN' : 'UPGRADE TO PREMIUM',
+                                  style: GoogleFonts.inter(
+                                    color: vibrantRed,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                    ],
+                  ),
 
-                        const SizedBox(height: 16),
+                ],
+              ),
+            ),
 
-                        // Settings Card: Profile
-                        _buildSettingItem(
-                          context: context,
-                          title: 'Profile',
-                          subtitle: 'Update your personal details, photo, address, and password.',
-                          icon: Icons.person_outline,
-                          onTap: () {
-                            context.read<DashboardViewModel>().setIndex(3);
-                          },
-                        ),
+            const SizedBox(height: 16),
 
-                        const SizedBox(height: 16),
+            // Settings Card: Profile
+            _buildSettingItem(
+              context: context,
+              title: 'Profile',
+              subtitle: 'Update your personal details, photo, address, and password.',
+              icon: Icons.person_outline,
+              onTap: () {
+                context.read<DashboardViewModel>().setIndex(3);
+              },
+            ),
 
-                        // Settings Card: Subscription
-                        _buildSettingItem(
-                          context: context,
-                          title: 'Subscription',
-                          subtitle: 'Check your current plan, coupon status, payment, and renewal details.',
-                          icon: Icons.credit_card,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 32),
-                      ],
-                    ),
+            const SizedBox(height: 16),
+
+            // Settings Card: Subscription
+            _buildSettingItem(
+              context: context,
+              title: 'Subscription',
+              subtitle: 'Check your current plan, coupon status, payment, and renewal details.',
+              icon: Icons.credit_card,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
     );
   }
 

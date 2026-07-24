@@ -230,6 +230,17 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   }
 
   Widget _wrap({required Widget child, required AppColors colors}) {
+    final decoratedChild = Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/login.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: child,
+    );
     if (widget.isStandalone) {
       return Scaffold(
         backgroundColor: Colors.transparent,
@@ -242,10 +253,10 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
           centerTitle: true,
           elevation: 0,
         ),
-        body: child,
+        body: decoratedChild,
       );
     }
-    return child;
+    return decoratedChild;
   }
 }
 
@@ -333,7 +344,7 @@ class _CardQrPage extends StatelessWidget {
                       QrImageView(
                         data: card.qrData,
                         version: QrVersions.auto,
-                        size: 240,
+                        size: 200,
                         eyeStyle: const QrEyeStyle(
                           eyeShape: QrEyeShape.square,
                           color: Color(0xFF20263A),
