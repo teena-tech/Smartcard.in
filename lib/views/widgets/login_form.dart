@@ -454,7 +454,7 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
                 Text(
                   !authViewModel.showOtp
                       ? 'Secure access to your user control center.'
-                      : 'Enter the 6-digit OTP sent to your email or mobile number.',
+                      : 'Enter the 6-digit OTP sent to your mobile number.',
                   style: GoogleFonts.inter(
                     color: AppColors.textSecondary,
                     fontSize: 12,

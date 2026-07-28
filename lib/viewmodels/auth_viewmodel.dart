@@ -138,7 +138,7 @@ class AuthViewModel extends ChangeNotifier {
       }
 
       _showOtp = true;
-      _setState(AuthState.unauthenticated, success: 'OTP sent successfully. Check your SMS/Email.');
+      _setState(AuthState.unauthenticated, success: 'OTP sent successfully. Check your SMS.');
       return true;
     } catch (e) {
       String errorMsg = e.toString()
@@ -247,7 +247,7 @@ class AuthViewModel extends ChangeNotifier {
       }
 
       _showOtp = true;
-      _setState(AuthState.unauthenticated, success: 'OTP sent successfully. Check your SMS/Email.');
+      _setState(AuthState.unauthenticated, success: 'OTP sent successfully. Check your SMS.');
       return true;
     } catch (e) {
       String errorMsg = e.toString()

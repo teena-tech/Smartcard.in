@@ -498,15 +498,9 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> {
                                         ? Image.network(
                                             thumb,
                                             fit: BoxFit.cover,
-                                            errorBuilder: (ctx, err, stack) => Image.asset(
-                                              _defaultThumb,
-                                              fit: BoxFit.cover,
-                                            ),
+                                            errorBuilder: (ctx, err, stack) => _buildTemplatePlaceholder(name),
                                           )
-                                        : Image.asset(
-                                            _defaultThumb,
-                                            fit: BoxFit.cover,
-                                          ),
+                                        : _buildTemplatePlaceholder(name),
                                   ),
                                   Positioned(
                                     top: 8,
@@ -642,5 +636,58 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> {
         .map((item) => item.trim()[0].toUpperCase())
         .toList();
     return parts.isNotEmpty ? parts.join() : 'U';
+  }
+
+  Widget _buildTemplatePlaceholder(String name) {
+    final List<Color> gradientColors;
+    final lowerName = name.toLowerCase();
+    if (lowerName.contains('glass')) {
+      gradientColors = [const Color(0xFF8B5CF6), const Color(0xFFEC4899)];
+    } else if (lowerName.contains('neon') || lowerName.contains('cyber')) {
+      gradientColors = [const Color(0xFF06B6D4), const Color(0xFF3B82F6)];
+    } else if (lowerName.contains('gold') || lowerName.contains('luxury') || lowerName.contains('premium')) {
+      gradientColors = [const Color(0xFFF59E0B), const Color(0xFFD97706)];
+    } else if (lowerName.contains('dark') || lowerName.contains('minimal') || lowerName.contains('black')) {
+      gradientColors = [const Color(0xFF334155), const Color(0xFF1E293B)];
+    } else {
+      gradientColors = [const Color(0xFFEF4444), const Color(0xFFB91C1C)];
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.style,
+              color: Colors.white70,
+              size: 28,
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                name,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

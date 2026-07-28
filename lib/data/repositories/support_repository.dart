@@ -52,8 +52,17 @@ class SupportRepository {
     );
     
     final data = response.data;
-    if (data is Map<String, dynamic> && (data.containsKey('details') || data.containsKey('text'))) {
-      return MessageModel.fromJson(data);
+    final messageData = (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>)
+        ? data['data']
+        : data;
+
+    if (messageData is Map<String, dynamic> &&
+        (messageData.containsKey('details') ||
+            messageData.containsKey('text') ||
+            messageData.containsKey('id') ||
+            messageData.containsKey('message') ||
+            messageData.containsKey('message_text'))) {
+      return MessageModel.fromJson(messageData);
     }
     
     // Backend only returned success status, so construct the message locally

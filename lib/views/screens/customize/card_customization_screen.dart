@@ -6,6 +6,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../viewmodels/card_viewmodel.dart';
 import '../../../viewmodels/customize_viewmodel.dart';
 import '../../../viewmodels/theme_viewmodel.dart';
+import '../../../viewmodels/auth_viewmodel.dart';
 import '../../widgets/common_drawer.dart';
 import '../../widgets/customize_flow_widgets.dart';
 
@@ -44,6 +45,7 @@ class _CardCustomizationScreenState extends State<CardCustomizationScreen> {
   void _handleSaveTemplate(Map<String, dynamic> template) async {
     final customizeVm = context.read<CustomizeViewModel>();
     final cardVm = context.read<CardViewModel>();
+    final authVm = context.read<AuthViewModel>();
     final userId = cardVm.userId;
     final workProfileId = cardVm.currentCard?.workProfileId;
 
@@ -54,7 +56,43 @@ class _CardCustomizationScreenState extends State<CardCustomizationScreen> {
       'template_key': template['theme_key'] ?? 'template_0',
     };
     
-    await customizeVm.saveTemplate(userId, payload, workProfileId: workProfileId);
+    try {
+      final success = await customizeVm.saveTemplate(userId, payload, workProfileId: workProfileId);
+      if (success) {
+        await cardVm.fetchCards(
+          userId,
+          fallbackName: authVm.currentUser?.displayName,
+          fallbackPhone: authVm.currentUser?.phone ?? '',
+          fallbackEmail: authVm.currentUser?.email,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Template saved successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(customizeVm.error ?? 'Failed to save template'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving template: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -75,9 +113,18 @@ class _CardCustomizationScreenState extends State<CardCustomizationScreen> {
         initials: 'U',
         onProfileTap: () {},
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
             // Live Preview Section
             Container(
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -192,6 +239,7 @@ class _CardCustomizationScreenState extends State<CardCustomizationScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

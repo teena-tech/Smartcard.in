@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../viewmodels/theme_viewmodel.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
 import '../../../viewmodels/profile_viewmodel.dart';
+import '../../../viewmodels/card_viewmodel.dart';
 import '../../../core/utils/upload_url_resolver.dart';
 import 'circular_profile_avatar.dart';
 
@@ -27,28 +28,47 @@ class SmartCardsFlowAppBar extends StatelessWidget implements PreferredSizeWidge
     final canPop = Navigator.canPop(context);
     final authVm = context.watch<AuthViewModel>();
     final profileVm = context.watch<ProfileViewModel>();
+    final cardVm = context.watch<CardViewModel>();
     final user = profileVm.user ?? authVm.currentUser;
-    final imagePath = user?.profileImage;
+    final cardImage = cardVm.currentCard?.profileImageName;
+    final imagePath = (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
     final imageUrl = (imagePath != null && imagePath.isNotEmpty)
         ? UploadUrlResolver.resolve(imagePath, type: 'profile')
         : null;
 
     return AppBar(
-      backgroundColor: colors.card,
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(
-          Icons.menu,
-          color: colors.text,
-          size: 24,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.primaryRed, AppColors.secondaryRed],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
         ),
-        onPressed: onMenuTap,
       ),
+      leading: canPop
+          ? IconButton(
+              icon: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () => Navigator.pop(context),
+            )
+          : IconButton(
+              icon: const Icon(
+                Icons.menu,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: onMenuTap,
+            ),
       centerTitle: true,
       title: Text(
         'Customize',
         style: GoogleFonts.inter(
-          color: colors.text,
+          color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 18,
         ),
@@ -59,12 +79,12 @@ class SmartCardsFlowAppBar extends StatelessWidget implements PreferredSizeWidge
           child: Container(
             margin: const EdgeInsets.only(right: 16),
             child: CircularProfileAvatar(
-              radius: 20,
-              size: 40,
+              radius: 18,
+              size: 36,
               imageUrl: imageUrl,
               fallbackText: initials,
-              backgroundColor: AppColors.primaryRed.withValues(alpha: 0.15),
-              foregroundColor: AppColors.primaryRed,
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              foregroundColor: Colors.white,
             ),
           ),
         ),

@@ -296,8 +296,17 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
           );
         },
       ),
-      body: ResponsiveCenter(
-        child: Column(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: ResponsiveCenter(
+          child: Column(
           children: [
             /// CHAT LIST
             Expanded(
@@ -360,6 +369,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             _buildComposer(colors),
           ],
         ),
+      ),
       ),
     );
   }
@@ -559,7 +569,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                               child: Text(
                                 displayMsgText,
                                 style: GoogleFonts.inter(
-                                  color: isMe ? Colors.white : colors.text,
+                                  color: isMe ? Colors.white : (isDark ? Colors.white : Colors.black),
                                   fontSize: 14.5,
                                   height: 1.4,
                                 ),
@@ -709,7 +719,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 focusNode: _focusNode,
                 maxLines: null,
                 textInputAction: TextInputAction.newline,
-                style: GoogleFonts.inter(color: colors.text, fontSize: 15),
+                style: GoogleFonts.inter(
+                  color: (context.read<ThemeViewModel>().themeMode != AppThemeMode.light)
+                      ? Colors.white
+                      : Colors.black,
+                  fontSize: 15,
+                ),
                 decoration: InputDecoration(
                   hintText: "Type a message...",
                   hintStyle: GoogleFonts.inter(color: colors.muted, fontSize: 15),

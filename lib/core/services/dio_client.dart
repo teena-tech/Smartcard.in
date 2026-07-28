@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +6,7 @@ import 'api_config.dart';
 import '../state/app_loading_service.dart';
 
 class DioClient {
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   static final DioClient _instance = DioClient._internal();
   factory DioClient() => _instance;
 
@@ -123,7 +124,7 @@ class DioClient {
           debugPrint('================================');
           return handler.next(response);
         },
-        onError: (DioException e, handler) {
+        onError: (DioException e, handler) async {
           debugPrint('========== ERROR ==========');
           debugPrint('URL: ${e.requestOptions.uri}');
           debugPrint('Status Code: ${e.response?.statusCode}');
@@ -131,6 +132,21 @@ class DioClient {
           debugPrint('Error: ${e.error}');
           debugPrint('Message: ${e.message}');
           debugPrint('=============================');
+          
+          if (e.response?.statusCode == 401 && !e.requestOptions.path.contains('login')) {
+            try {
+              final storage = const FlutterSecureStorage();
+              await storage.delete(key: 'auth_token');
+              await storage.delete(key: 'session_id');
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('auth_token');
+              await prefs.remove('session_id');
+            } catch (_) {}
+            
+            // Redirect to Login page and clear all stacks
+            navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+          }
+          
           return handler.next(e);
         },
       ),

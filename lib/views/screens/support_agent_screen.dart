@@ -8,6 +8,7 @@ import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/support_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../widgets/common_app_bar.dart';
+import '../../core/constants/app_colors.dart';
 import '../widgets/common_drawer.dart';
 import 'home_screen.dart';
 import '../../core/utils/responsive.dart';
@@ -87,9 +88,18 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
           );
         },
       ),
-      body: ResponsiveCenter(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: ResponsiveCenter(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -201,6 +211,7 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -237,27 +248,34 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
         children: [
           Text('Assigned Agent', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: colors.text)),
           const SizedBox(height: 16),
+          // Profile image + info row, left aligned
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 64,
-                height: 64,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  color: colors.panel,
                   shape: BoxShape.circle,
-                  border: Border.all(color: colors.border, width: 2),
+                  border: Border.all(color: AppColors.primaryRed, width: 2.5),
                 ),
                 clipBehavior: Clip.antiAlias,
                 alignment: Alignment.center,
                 child: (profileImage != null && profileImage.isNotEmpty)
                     ? Image.network(
                         profileImage,
-                        width: 64,
-                        height: 64,
+                        width: 80,
+                        height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (c, e, s) => Text(initials, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: colors.text)),
+                        errorBuilder: (c, e, s) => Container(
+                          color: colors.panel,
+                          child: Text(initials, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
+                        ),
                       )
-                    : Text(initials, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.bold, color: colors.text)),
+                    : Container(
+                        color: colors.panel,
+                        child: Text(initials, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -265,49 +283,57 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(name, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text)),
-                    Text(code, style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+                    if (phone != '-') ...[
+                      const SizedBox(height: 2),
+                      Text(phone, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: colors.muted)),
+                    ],
+                    if (district != '-') ...[
+                      const SizedBox(height: 2),
+                      Text(district, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: colors.muted)),
+                    ],
+                    if (pincode != '-') ...[
+                      const SizedBox(height: 2),
+                      Text(pincode, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: colors.muted)),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          // Chat (red) and Call (green) buttons below
           Row(
             children: [
               _buildActionButton(
-                Icons.chat_bubble_outline, 
-                'Chat', 
-                colors, 
+                Icons.chat_bubble_outline,
+                'Chat',
+                colors,
+                isChat: true,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SupportChatScreen()),
                   );
-                }
+                },
               ),
               const SizedBox(width: 12),
-              _buildActionButton(Icons.call_outlined, 'Call', colors, onTap: () async {
-                 final cleanPhone = phone.replaceAll(RegExp(r'[^\+\d]'), '');
-                 if (cleanPhone.isNotEmpty) {
-                    final Uri url = Uri(scheme: 'tel', path: cleanPhone);
-                    if (await canLaunchUrl(url)) {
-                       await launchUrl(url);
-                    }
-                 }
+              _buildActionButton(Icons.call_outlined, 'Call', colors, isChat: false, onTap: () async {
+                final cleanPhone = phone.replaceAll(RegExp(r'[^\+\d]'), '');
+                if (cleanPhone.isNotEmpty) {
+                  final Uri url = Uri(scheme: 'tel', path: cleanPhone);
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url);
+                  }
+                }
               }),
             ],
           ),
-          const SizedBox(height: 24),
-          _buildInfoRow('Phone', phone, colors),
-          _buildInfoRow('Email', email, colors),
-          _buildInfoRow('District', district, colors),
-          if (pincode != '-') _buildInfoRow('Pincode', pincode, colors),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, dynamic colors, {VoidCallback? onTap}) {
+  Widget _buildActionButton(IconData icon, String label, dynamic colors, {required bool isChat, VoidCallback? onTap}) {
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -315,7 +341,7 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: label.toLowerCase() == 'chat' ? const Color(0xFF2563EB) : const Color(0xFF16A34A),
+            color: isChat ? AppColors.primaryRed : const Color(0xFF16A34A),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(

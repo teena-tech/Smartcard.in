@@ -68,16 +68,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
-            Text(
-              'Settings',
-              style: GoogleFonts.inter(
-                color: darkBlue,
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 24),
 
             // Top User Profile Card
             Container(

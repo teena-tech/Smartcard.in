@@ -19,8 +19,10 @@ class ContactsScreen extends StatefulWidget {
 class _ContactsScreenState extends State<ContactsScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
-  String _activeFilter = 'All'; // 'All', 'Phone', 'SmartCard'
+  final FocusNode _searchFocus = FocusNode();
+  String _activeFilter = 'SmartCard'; // 'All', 'Phone', 'SmartCard'
   bool _hasAttemptedSync = false;
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -28,11 +30,17 @@ class _ContactsScreenState extends State<ContactsScreen> {
     _searchController.addListener(() {
       context.read<ContactViewModel>().setSearchQuery(_searchController.text);
     });
+    _searchFocus.addListener(() {
+      setState(() {
+        _isSearching = _searchFocus.hasFocus;
+      });
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -53,15 +61,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          context.read<DashboardViewModel>().setIndex(1);
-        },
-        backgroundColor: colors.accent,
-        icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
-        label: Text('Scan Card', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
+      floatingActionButton: _isSearching
+          ? null
+          : FloatingActionButton.extended(
+              onPressed: () {
+                context.read<DashboardViewModel>().setIndex(1);
+              },
+              backgroundColor: colors.accent,
+              icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+              label: Text('Scan Card', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -76,7 +87,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSearchBar(colors),
-              _buildStatistics(contactViewModel, colors),
+              if (!_isSearching) _buildStatistics(contactViewModel, colors),
               Expanded(
                 child: contactViewModel.isLoading
                     ? Center(child: CircularProgressIndicator(color: colors.accent))
@@ -94,6 +105,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: TextField(
         controller: _searchController,
+        focusNode: _searchFocus,
         style: GoogleFonts.inter(color: colors.text),
         decoration: InputDecoration(
           hintText: 'Search name, phone, company...',
@@ -109,7 +121,11 @@ class _ContactsScreenState extends State<ContactsScreen> {
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(color: colors.border),
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: colors.accent, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           suffixIcon: IconButton(
             icon: Icon(Icons.sync, color: colors.accentSoft),
             tooltip: 'Sync Phone Contacts',
@@ -188,18 +204,37 @@ class _ContactsScreenState extends State<ContactsScreen> {
   Widget _buildStatistics(ContactViewModel vm, dynamic colors) {
     final smartcard = vm.contacts.where((c) => c.source != 'phone').length;
     final phone = vm.contacts.where((c) => c.source == 'phone').length;
+    final isFiltered = _activeFilter != 'All';
+
+    Widget phoneChip = _StatChip(
+      label: 'Phone Contacts',
+      value: phone.toString(),
+      color: colors.text,
+      bgColor: colors.panel,
+      isSelected: _activeFilter == 'Phone',
+      onTap: () {
+        setState(() => _activeFilter = 'Phone');
+      },
+    );
+
+    Widget smartcardChip = _StatChip(
+      label: 'SmartCard Scans',
+      value: smartcard.toString(),
+      color: colors.accent,
+      bgColor: colors.panel,
+      isSelected: _activeFilter == 'SmartCard',
+      onTap: () {
+        setState(() => _activeFilter = 'SmartCard');
+      },
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Row(
         children: [
-          Expanded(child: _StatChip(label: 'Phone Contacts', value: phone.toString(), color: colors.text, bgColor: colors.panel, isSelected: _activeFilter == 'Phone', onTap: () {
-            setState(() => _activeFilter = _activeFilter == 'Phone' ? 'All' : 'Phone');
-          })),
+          Expanded(child: phoneChip),
           const SizedBox(width: 12),
-          Expanded(child: _StatChip(label: 'SmartCard Scans', value: smartcard.toString(), color: colors.accent, bgColor: colors.panel, isSelected: _activeFilter == 'SmartCard', onTap: () {
-            setState(() => _activeFilter = _activeFilter == 'SmartCard' ? 'All' : 'SmartCard');
-          })),
+          Expanded(child: smartcardChip),
         ],
       ),
     );
@@ -229,11 +264,11 @@ class _StatChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? color.withValues(alpha: 0.1) : bgColor.withValues(alpha: 0.6),
           border: Border.all(color: isSelected ? color : Colors.grey.withValues(alpha: 0.2), width: 1.5),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -241,16 +276,16 @@ class _StatChip extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: isSelected ? color : Colors.grey[500],
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 2),
             Text(
               value,
               style: GoogleFonts.inter(
-                fontSize: 22,
+                fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: isSelected ? color : color.withValues(alpha: 0.7),
               ),

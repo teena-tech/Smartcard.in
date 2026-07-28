@@ -94,8 +94,17 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
           );
         },
       ),
-      body: ResponsiveCenter(
-        child: RefreshIndicator(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: ResponsiveCenter(
+          child: RefreshIndicator(
           onRefresh: _loadReports,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -125,6 +134,7 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

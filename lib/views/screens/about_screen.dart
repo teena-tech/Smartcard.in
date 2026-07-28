@@ -36,8 +36,8 @@ class AboutScreen extends StatelessWidget {
   ];
 
   static const Map<String, dynamic> _termsContent = {
-    'title': 'Terms and Conditions',
-    'subtitle': 'Terms and Conditions',
+    'title': 'Terms & Conditions',
+    'subtitle': 'Terms & Conditions',
     'updatedAt': '23-07-2026',
     'sections': [
       {
@@ -448,10 +448,10 @@ class AboutScreen extends StatelessWidget {
                       GestureDetector(
                         onTap: () => _showLegalDialog(context, _termsContent, colors),
                         child: Text(
-                          'Terms and Conditions',
+                          'Terms & Conditions',
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.normal,
                             color: AppColors.primaryRed,
                           ),
                         ),
@@ -469,7 +469,7 @@ class AboutScreen extends StatelessWidget {
                           'Privacy Policy',
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.normal,
                             color: AppColors.primaryRed,
                           ),
                         ),

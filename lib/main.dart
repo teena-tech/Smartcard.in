@@ -14,6 +14,7 @@ import 'views/widgets/global_loading_overlay.dart';
 import 'viewmodels/customization_controller.dart';
 import 'views/screens/profile_mvvm_screen.dart';
 import 'views/screens/login_screen.dart';
+import 'core/services/dio_client.dart';
 import 'viewmodels/theme_viewmodel.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -89,6 +90,7 @@ class SmartCardsApp extends StatelessWidget {
     return Consumer<ThemeViewModel>(
       builder: (context, themeViewModel, child) {
         return MaterialApp(
+          navigatorKey: DioClient.navigatorKey,
           title: 'Smart Cards',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.getTheme(themeViewModel.themeMode),

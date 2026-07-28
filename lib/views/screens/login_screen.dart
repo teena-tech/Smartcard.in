@@ -55,7 +55,7 @@ class LoginScreen extends StatelessWidget {
                 Text(
                   'Login',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w300,
                         color: colors.text,
                       ),
                 ),

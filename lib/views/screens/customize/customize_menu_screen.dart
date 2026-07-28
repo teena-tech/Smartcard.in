@@ -103,7 +103,16 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
         onProfileTap: () {},
       ),
       bottomNavigationBar: const GlobalBottomNav(),
-      body: SafeArea(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: ConstrainedBox(
@@ -214,6 +223,7 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

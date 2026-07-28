@@ -42,7 +42,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     final user = profileViewModel.user ?? authViewModel.currentUser;
     final cardImage = cardViewModel.currentCard?.profileImageName;
 
-    final headerTextColor = colors.menuBg.computeLuminance() < 0.5 ? Colors.white : colors.text;
+    final headerTextColor = Colors.white;
 
     return AppBar(
       backgroundColor: colors.menuBg,
