@@ -6,7 +6,6 @@ import 'dart:async';
 import '../../viewmodels/theme_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/support_viewmodel.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
 import '../../data/models/message_model.dart';
 import '../widgets/common_app_bar.dart';
 import '../widgets/common_drawer.dart';
@@ -28,15 +27,32 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   final FocusNode _focusNode = FocusNode();
   Timer? _messagePollingTimer;
   MessageModel? _replyingToMessage;
+  bool _isInitialLoad = true;
 
   @override
   void initState() {
     super.initState();
 
-    // Auto-scroll when keyboard opens
+    // Auto-scroll when keyboard opens if user is near bottom
     _focusNode.addListener(() {
-      if (_focusNode.hasFocus) {
+      if (_focusNode.hasFocus && _scrollController.hasClients && _scrollController.offset <= 120) {
         _scrollToBottom();
+      }
+    });
+
+    // Listen to scroll events to paginate older messages when user scrolls up
+    _scrollController.addListener(() {
+      if (_scrollController.hasClients) {
+        final maxScroll = _scrollController.position.maxScrollExtent;
+        final currentScroll = _scrollController.position.pixels;
+        if (maxScroll > 0 && currentScroll >= maxScroll - 200) {
+          final authViewModel = context.read<AuthViewModel>();
+          final supportViewModel = context.read<SupportViewModel>();
+          final userId = authViewModel.currentUser?.id;
+          if (userId != null && !supportViewModel.isLoading) {
+            supportViewModel.fetchMessages(userId, loadMore: true);
+          }
+        }
       }
     });
 
@@ -49,6 +65,11 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         if (userId != null) {
           supportViewModel.fetchMessages(userId);
           supportViewModel.fetchUnreadCount(userId);
+
+          // ONLY auto-scroll to bottom if user is currently reading bottom/latest messages
+          if (_scrollController.hasClients && _scrollController.offset <= 100) {
+            _scrollToBottom(animated: true);
+          }
         }
       }
     });
@@ -61,7 +82,6 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         supportViewModel.fetchMessages(userId);
         supportViewModel.fetchUnreadCount(userId);
       }
-      _scrollToBottom();
     });
   }
 
@@ -137,27 +157,33 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     }
   }
 
-  /// Format timestamp: "12:35 PM" or "Yesterday" or "Mon"
-  String _formatTime(String createdAt) {
-    if (createdAt.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(createdAt).toLocal();
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final msgDay = DateTime(dt.year, dt.month, dt.day);
+  DateTime _parseDateStr(String raw) {
+    final str = raw.trim();
+    if (str.isEmpty || str == 'Just now') return DateTime.now();
+    final numVal = num.tryParse(str);
+    if (numVal != null) {
+      return DateTime.fromMillisecondsSinceEpoch(
+        numVal > 100000000000 ? numVal.toInt() : (numVal * 1000).toInt(),
+      ).toLocal();
+    }
+    final sanitized = str.replaceAll(' ', 'T');
+    return DateTime.tryParse(sanitized)?.toLocal() ?? DateTime.now();
+  }
 
+  /// Format timestamp: "12:35 PM" or "10:15 AM"
+  String _formatTime(String createdAt) {
+    try {
+      final dt = _parseDateStr(createdAt);
       final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
       final minute = dt.minute.toString().padLeft(2, '0');
       final period = dt.hour >= 12 ? 'PM' : 'AM';
-      final timeStr = '$hour:$minute $period';
-
-      if (msgDay == today) return timeStr;
-      final diff = today.difference(msgDay).inDays;
-      if (diff == 1) return 'Yesterday';
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      return days[dt.weekday - 1];
+      return '$hour:$minute $period';
     } catch (_) {
-      return '';
+      final now = DateTime.now();
+      final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+      final minute = now.minute.toString().padLeft(2, '0');
+      final period = now.hour >= 12 ? 'PM' : 'AM';
+      return '$hour:$minute $period';
     }
   }
 
@@ -314,12 +340,13 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 builder: (context, supportViewModel, child) {
                   final messages = supportViewModel.messages;
 
-                  // Scroll to bottom when new messages arrive
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (supportViewModel.messages.isNotEmpty) {
+                  // Scroll to bottom only once on initial load
+                  if (_isInitialLoad && messages.isNotEmpty) {
+                    _isInitialLoad = false;
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
                       _scrollToBottom(animated: false);
-                    }
-                  });
+                    });
+                  }
 
                   if (supportViewModel.isLoading && messages.isEmpty) {
                     return const Center(child: CircularProgressIndicator());
@@ -354,8 +381,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
                         return Column(
                           children: [
-                            _buildMessageBubble(msg, colors, isDark),
                             if (showDateSep) _buildDateSeparator(messages, index, colors),
+                            _buildMessageBubble(msg, colors, isDark),
                           ],
                         );
                       },
@@ -378,8 +405,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     // In reverse list, index+1 is the older message
     if (index + 1 >= messages.length) return true; // First ever message
     try {
-      final current = DateTime.parse(messages[index].createdAt).toLocal();
-      final prev = DateTime.parse(messages[index + 1].createdAt).toLocal();
+      final current = _parseDateStr(messages[index].createdAt);
+      final prev = _parseDateStr(messages[index + 1].createdAt);
       return current.day != prev.day ||
           current.month != prev.month ||
           current.year != prev.year;
@@ -391,7 +418,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   Widget _buildDateSeparator(List<MessageModel> messages, int index, dynamic colors) {
     String label = '';
     try {
-      final dt = DateTime.parse(messages[index].createdAt).toLocal();
+      final dt = _parseDateStr(messages[index].createdAt);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final msgDay = DateTime(dt.year, dt.month, dt.day);
@@ -440,7 +467,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     final timeStr = _formatTime(msg.createdAt);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -465,49 +492,58 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
               ),
               child: Container(
                 constraints: BoxConstraints(
+                  minWidth: 110, // Minimum 10 letters width box size
                   maxWidth: MediaQuery.of(context).size.width * 0.72,
                 ),
                 margin: EdgeInsets.only(
-                  left: isMe ? 60 : 0,
-                  right: isMe ? 0 : 60,
+                  left: isMe ? 50 : 0,
+                  right: isMe ? 0 : 50,
                   bottom: 4,
                 ),
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
                 decoration: BoxDecoration(
                   color: isMe
-                      ? AppColors.primaryRed
+                      ? const Color(0xFFFDE8E8) // Pale-red background for sent messages
                       : (isDark ? colors.card : const Color(0xFFF0F2F5)),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(18),
-                    topRight: const Radius.circular(18),
-                    bottomLeft: Radius.circular(isMe ? 18 : 4),
-                    bottomRight: Radius.circular(isMe ? 4 : 18),
+                    topLeft: const Radius.circular(16),
+                    topRight: const Radius.circular(16),
+                    bottomLeft: Radius.circular(isMe ? 16 : 4),
+                    bottomRight: Radius.circular(isMe ? 4 : 16),
                   ),
+                  border: isMe ? Border.all(color: const Color(0xFFFECACA), width: 1) : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.07),
+                      color: Colors.black.withOpacity(0.04),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Top row with options dropdown icon
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: GestureDetector(
-                        onTapDown: (details) => _showMessageContextMenu(context, msg, details),
-                        child: Icon(
-                          Icons.keyboard_arrow_down,
-                          size: 16,
-                          color: isMe ? Colors.white70 : colors.muted,
+                    // Top row with options dropdown icon (left side for sent message, right side for received)
+                    Row(
+                      mainAxisAlignment: isMe ? MainAxisAlignment.start : MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        GestureDetector(
+                          onTapDown: (details) => _showMessageContextMenu(context, msg, details),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 2),
+                            child: Icon(
+                              Icons.keyboard_arrow_down,
+                              size: 18,
+                              color: isMe ? const Color(0xFF991B1B) : colors.muted,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                    // Check if message text has WhatsApp style [reply:id:text] tag
+
+                    // Message content
                     Builder(
                       builder: (context) {
                         String rawText = msg.details.isNotEmpty ? msg.details : msg.summary;
@@ -531,10 +567,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 margin: const EdgeInsets.only(bottom: 6),
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.12),
+                                  color: isMe ? const Color(0xFFFCA5A5).withOpacity(0.3) : Colors.black.withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: const Border(
-                                    left: BorderSide(color: Colors.white, width: 3),
+                                  border: Border(
+                                    left: BorderSide(color: isMe ? const Color(0xFF991B1B) : AppColors.primaryRed, width: 3),
                                   ),
                                 ),
                                 child: Column(
@@ -544,7 +580,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                     Text(
                                       'You',
                                       style: GoogleFonts.inter(
-                                        color: Colors.white,
+                                        color: isMe ? const Color(0xFF991B1B) : Colors.black87,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
                                       ),
@@ -555,7 +591,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: GoogleFonts.inter(
-                                        color: Colors.white.withOpacity(0.85),
+                                        color: isMe ? const Color(0xFF7F1D1D) : Colors.black54,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -564,15 +600,13 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                               ),
 
                             // Message text
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                displayMsgText,
-                                style: GoogleFonts.inter(
-                                  color: isMe ? Colors.white : (isDark ? Colors.white : Colors.black),
-                                  fontSize: 14.5,
-                                  height: 1.4,
-                                ),
+                            Text(
+                              displayMsgText,
+                              style: GoogleFonts.inter(
+                                color: isMe ? Colors.black87 : (isDark ? Colors.white : Colors.black87),
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w500,
+                                height: 1.35,
                               ),
                             ),
                           ],
@@ -581,17 +615,20 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                     ),
                     const SizedBox(height: 4),
 
-                    // Timestamp + tick row
+                    // Timestamp + tick status row near the tick part at bottom right
                     Row(
                       mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(
-                          timeStr,
-                          style: GoogleFonts.inter(
-                            color: isMe ? Colors.white60 : colors.muted,
-                            fontSize: 10.5,
+                        if (timeStr.isNotEmpty)
+                          Text(
+                            timeStr,
+                            style: GoogleFonts.inter(
+                              color: isMe ? Colors.black54 : colors.muted,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
                         if (isMe) ...[
                           const SizedBox(width: 4),
                           _buildReadTick(msg),
@@ -611,12 +648,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     );
   }
 
-  /// Single tick indicator for sent message status
+  /// Read tick indicator for sent message status
   Widget _buildReadTick(MessageModel msg) {
     final isRead = msg.isRead;
-    final color = isRead ? const Color(0xFF4FC3F7) : Colors.white60;
+    final color = isRead ? const Color(0xFF16A34A) : Colors.black45;
 
-    return Icon(Icons.done, size: 14, color: color);
+    return Icon(isRead ? Icons.done_all : Icons.done, size: 14, color: color);
   }
 
   Widget _buildComposer(dynamic colors) {
@@ -629,16 +666,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         : '';
 
     return Container(
-      decoration: BoxDecoration(
-        color: colors.card,
-        border: Border(top: BorderSide(color: colors.border, width: 0.8)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).padding.bottom + 8,

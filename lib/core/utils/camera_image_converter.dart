@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +11,7 @@ class CameraImageConverter {
     CameraDescription camera,
     DeviceOrientation deviceOrientation,
   ) {
-    if (!Platform.isAndroid) return null;
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
 
     final rotation = _rotationFromOrientation(
       camera.sensorOrientation,

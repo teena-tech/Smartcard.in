@@ -63,4 +63,23 @@ class SubscriptionApiService {
       throw Exception(DioClient.getErrorMessage(e, 'Failed to confirm payment'));
     }
   }
+
+  Future<void> reportPaymentFailure(
+    String userId, {
+    String? reason,
+    double? amount,
+  }) async {
+    try {
+      await _dio.post(
+        ApiConfig.subscriptionFailure(userId),
+        data: {
+          'error_reason': reason ?? 'Payment failed',
+          if (amount != null) 'total_amount': amount,
+          'payment_for': 'subscription',
+        },
+      );
+    } catch (_) {
+      // Best-effort — don't throw for failure reporting
+    }
+  }
 }

@@ -197,7 +197,7 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
     switch (widget.sectionId) {
       case 'section-personal': return 'Personal Details';
       case 'section-company': return 'Professional Details';
-      case 'section-address': return 'Personal Address';
+      case 'section-address': return 'Professional Address';
       case 'section-company-contact': return 'Contact Details';
       case 'section-social': return 'Social Media';
       case 'section-about': return 'About';
@@ -362,7 +362,7 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildTextFormField(_controllers['address'], 'Personal Address', colors, maxLines: 3),
+            _buildTextFormField(_controllers['address'], 'Professional Address', colors, maxLines: 3),
             _buildTextFormField(
               _controllers['pincode'],
               'Pincode *',

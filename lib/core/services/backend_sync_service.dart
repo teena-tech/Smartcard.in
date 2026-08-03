@@ -87,6 +87,7 @@ class BackendSyncService {
         if (userId != null && userId.isNotEmpty) 'user_id': userId,
         'name': contact.name,
         'company': contact.company,
+        'company_name': contact.company,
         'designation': contact.designation,
         'phone': contact.phone,
         'alternative_phone': contact.alternativePhone ?? '',

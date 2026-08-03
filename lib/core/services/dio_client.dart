@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import 'api_config.dart';
 import '../state/app_loading_service.dart';
+import '../../viewmodels/message_viewmodel.dart';
 
 class DioClient {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -19,7 +22,7 @@ class DioClient {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'User-Agent': 'SmartCardFlutterApp/1.0',
+        if (!kIsWeb) 'User-Agent': 'SmartCardFlutterApp/1.0',
       },
       connectTimeout: const Duration(seconds: 7),
       receiveTimeout: const Duration(seconds: 7),
@@ -133,18 +136,37 @@ class DioClient {
           debugPrint('Message: ${e.message}');
           debugPrint('=============================');
           
-          if (e.response?.statusCode == 401 && !e.requestOptions.path.contains('login')) {
-            try {
-              final storage = const FlutterSecureStorage();
-              await storage.delete(key: 'auth_token');
-              await storage.delete(key: 'session_id');
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('auth_token');
-              await prefs.remove('session_id');
-            } catch (_) {}
-            
-            // Redirect to Login page and clear all stacks
-            navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+          final reqPath = e.requestOptions.path.toLowerCase();
+          final isAppBackend = e.requestOptions.uri.toString().startsWith(ApiConfig.baseUrl);
+
+          if (e.response?.statusCode == 401 &&
+              isAppBackend &&
+              !reqPath.contains('login') &&
+              !reqPath.contains('preview')) {
+            final hasAuthToken = e.requestOptions.headers.containsKey('Authorization') &&
+                e.requestOptions.headers['Authorization']?.toString().startsWith('Bearer ') == true;
+
+            if (hasAuthToken) {
+              try {
+                final storage = const FlutterSecureStorage();
+                await storage.delete(key: 'auth_token');
+                await storage.delete(key: 'session_id');
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('auth_token');
+                await prefs.remove('session_id');
+              } catch (_) {}
+              
+              // Stop background message polling
+              try {
+                final context = navigatorKey.currentContext;
+                if (context != null) {
+                  Provider.of<MessageViewModel>(context, listen: false).stopPolling();
+                }
+              } catch (_) {}
+              
+              // Redirect to Login page and clear all stacks
+              navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+            }
           }
           
           return handler.next(e);

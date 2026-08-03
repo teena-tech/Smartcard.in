@@ -130,4 +130,15 @@ class CustomizeViewModel extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<void> clearBackground(String userId, {int? workProfileId}) async {
+    try {
+      await _themeRepository.clearBackground(userId, scope: {'work_profile_id': workProfileId});
+      await fetchTheme(userId, workProfileId: workProfileId);
+    } catch (e) {
+      errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
 }

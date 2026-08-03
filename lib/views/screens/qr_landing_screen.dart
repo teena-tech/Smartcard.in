@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models/contact_model.dart';
@@ -102,23 +103,43 @@ class _QrLandingScreenState extends State<QrLandingScreen> {
                         ],
                       ),
                       padding: const EdgeInsets.all(20),
-                      child: (contact.companyLogo != null && contact.companyLogo!.trim().isNotEmpty)
-                          ? ClipOval(
-                              child: Image.network(
-                                UploadUrlResolver.resolve(contact.companyLogo!.trim(), type: 'logo'),
-                                fit: BoxFit.contain,
+                      child: ClipOval(
+                        child: Builder(
+                          builder: (_) {
+                            if (scannedContact.imagePath != null && scannedContact.imagePath!.isNotEmpty && File(scannedContact.imagePath!).existsSync()) {
+                              return Image.file(
+                                File(scannedContact.imagePath!),
+                                fit: BoxFit.cover,
+                                width: 120,
+                                height: 120,
+                              );
+                            }
+                            final profileUrl = (contact.profileImageName != null && contact.profileImageName!.trim().isNotEmpty)
+                                ? UploadUrlResolver.resolve(contact.profileImageName!.trim(), type: 'profile')
+                                : (contact.companyLogo != null && contact.companyLogo!.trim().isNotEmpty)
+                                    ? UploadUrlResolver.resolve(contact.companyLogo!.trim(), type: 'logo')
+                                    : '';
+                            if (profileUrl.isNotEmpty) {
+                              return Image.network(
+                                profileUrl,
+                                fit: BoxFit.cover,
+                                width: 120,
+                                height: 120,
                                 errorBuilder: (_, _, _) => const Icon(
-                                  Icons.business_rounded,
+                                  Icons.person,
                                   color: Colors.redAccent,
                                   size: 64,
                                 ),
-                              ),
-                            )
-                          : const Icon(
-                              Icons.business_rounded,
+                              );
+                            }
+                            return const Icon(
+                              Icons.person,
                               color: Colors.redAccent,
                               size: 64,
-                            ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),

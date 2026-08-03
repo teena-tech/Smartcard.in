@@ -13,16 +13,6 @@ class RecentMessagesList extends StatelessWidget {
 
   const RecentMessagesList({super.key, required this.messages});
 
-  // ── Sort logic ─────────────────────────────────────────────────────────────
-  //
-  // வரிசைப்படுத்தல் விதி (Tamil):
-  //  Step 1: அனைத்து messages-ஐயும் TIME-based ஆக sort செய்கிறோம்
-  //          (புதியது முதல் → பழையது கடைசி)  — TYPE பார்க்க மாட்டோம்
-  //  Step 2: அதே time-sorted list-ல் UNREAD messages-ஐ TOP-ல் வைக்கிறோம்
-  //
-  //  Final order:
-  //    [UNREAD newest] → [UNREAD older] → [READ newest] → [READ oldest]
-
   static bool _isUnread(Map<String, dynamic> msg) {
     if (msg['is_read'] == true || msg['is_read'] == 1) return false;
     final action = msg['user_action'];
@@ -45,20 +35,16 @@ class RecentMessagesList extends StatelessWidget {
     return int.tryParse(msg['id']?.toString() ?? '') ?? 0;
   }
 
-  /// Step 1: Sort ALL by time (newest first)  — no type grouping
-  /// Step 2: Float unread to top within that time order
   static List<Map<String, dynamic>> _sorted(List<Map<String, dynamic>> msgs) {
     final list = List<Map<String, dynamic>>.from(msgs);
     list.sort((a, b) {
-      final unreadA = _isUnread(a) ? 0 : 1; // 0 = unread → sorts first
+      final unreadA = _isUnread(a) ? 0 : 1;
       final unreadB = _isUnread(b) ? 0 : 1;
-      if (unreadA != unreadB) return unreadA - unreadB; // Step 2
-      return _timeMs(b) - _timeMs(a);                  // Step 1: newest first
+      if (unreadA != unreadB) return unreadA - unreadB;
+      return _timeMs(b) - _timeMs(a);
     });
     return list;
   }
-
-  // ── Field helpers ──────────────────────────────────────────────────────────
 
   String _pick(Map<String, dynamic> msg, List<String> keys, [String fallback = '']) {
     for (final key in keys) {
@@ -67,19 +53,6 @@ class RecentMessagesList extends StatelessWidget {
     }
     return fallback;
   }
-
-  String _formatDate(String raw) {
-    if (raw.isEmpty) return '';
-    try {
-      final dt = DateTime.parse(raw).toLocal();
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}'
-          '  ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return raw;
-    }
-  }
-
-  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -166,13 +139,13 @@ class RecentMessagesList extends StatelessWidget {
 
                 final String title = _pick(msg, ['title', 'subject', 'notification_title', 'name'], 'Message');
                 final String body = _pick(msg, ['details', 'summary', 'content', 'body', 'message', 'description', 'text']);
-                final String dateRaw = _pick(msg, ['created_at', 'date', 'sent_at', 'timestamp']);
-                final String formattedDate = _formatDate(dateRaw);
 
-                // Image attachment
+                // Image attachment URL resolution
                 final String attachType = (msg['attachment_type'] ?? '').toString().toLowerCase().trim();
-                final String rawUrl = msg['attachment_url']?.toString().trim() ?? '';
-                final String imageUrl = attachType == 'image' && rawUrl.isNotEmpty
+                final String rawUrl = msg['attachment_url']?.toString().trim() ??
+                    msg['image_url']?.toString().trim() ??
+                    msg['image']?.toString().trim() ?? '';
+                final String imageUrl = (attachType == 'image' || rawUrl.isNotEmpty) && rawUrl.isNotEmpty
                     ? UploadUrlResolver.resolve(rawUrl, type: 'image')
                     : '';
                 final bool hasImage = imageUrl.isNotEmpty;
@@ -188,115 +161,118 @@ class RecentMessagesList extends StatelessWidget {
                       child: InkWell(
                         onTap: goToMessages,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          child: Row(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // ── Leading icon ──────────────────────────────
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: unread
-                                    ? AppColors.primaryRed.withValues(alpha: 0.15)
-                                    : colors.border.withValues(alpha: 0.15),
-                                child: Icon(
-                                  unread ? Icons.mark_email_unread_outlined : Icons.mark_email_read_outlined,
-                                  color: unread ? AppColors.primaryRed : colors.muted,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-
-                              // ── Title + body + date ───────────────────────
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      title,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: unread ? FontWeight.w700 : FontWeight.w500,
-                                        color: colors.text,
-                                      ),
-                                    ),
-                                    if (body.isNotEmpty) ...[
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        body,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.inter(fontSize: 12, color: colors.muted),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      formattedDate.isNotEmpty ? formattedDate : '—',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: unread ? AppColors.primaryRed : colors.muted,
-                                        fontWeight: unread ? FontWeight.w600 : FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(width: 8),
-
-                              // ── Trailing: image thumbnail OR unread dot ───
-                              if (hasImage)
+                              // 1. Full Image Container at the TOP (if message has image)
+                              if (hasImage) ...[
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(10),
                                   child: Image.network(
                                     imageUrl,
-                                    width: 52,
-                                    height: 52,
+                                    height: 150,
+                                    width: double.infinity,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context2, err, stack) => Container(
-                                      width: 52,
-                                      height: 52,
+                                      height: 120,
+                                      width: double.infinity,
                                       decoration: BoxDecoration(
-                                        color: colors.border.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(8),
+                                        color: colors.border.withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
-                                      child: Icon(Icons.broken_image_outlined, size: 22, color: colors.muted),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.broken_image_outlined, size: 32, color: colors.muted),
+                                          const SizedBox(height: 4),
+                                          Text('Image not available', style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+                                        ],
+                                      ),
                                     ),
                                     loadingBuilder: (_, child, progress) {
                                       if (progress == null) return child;
                                       return Container(
-                                        width: 52,
-                                        height: 52,
+                                        height: 150,
+                                        width: double.infinity,
                                         decoration: BoxDecoration(
                                           color: colors.border.withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
                                         child: const Center(
                                           child: SizedBox(
-                                            width: 18,
-                                            height: 18,
+                                            width: 24,
+                                            height: 24,
                                             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryRed),
                                           ),
                                         ),
                                       );
                                     },
                                   ),
-                                )
-                              else if (unread)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primaryRed,
-                                      shape: BoxShape.circle,
+                                ),
+                                const SizedBox(height: 12),
+                              ],
+
+                              // 2. Icon + Title & Body + Unread indicator below image
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Leading icon
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: unread
+                                        ? AppColors.primaryRed.withValues(alpha: 0.15)
+                                        : colors.border.withValues(alpha: 0.15),
+                                    child: Icon(
+                                      unread ? Icons.mark_email_unread_outlined : Icons.mark_email_read_outlined,
+                                      color: unread ? AppColors.primaryRed : colors.muted,
+                                      size: 18,
                                     ),
                                   ),
-                                )
-                              else
-                                Icon(Icons.arrow_forward_ios, size: 12, color: colors.muted.withValues(alpha: 0.3)),
+                                  const SizedBox(width: 12),
+
+                                  // Title and Body
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: unread ? FontWeight.w700 : FontWeight.w500,
+                                            color: colors.text,
+                                          ),
+                                        ),
+                                        if (body.isNotEmpty) ...[
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            body,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(fontSize: 12, color: colors.muted),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+
+                                  if (unread) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      margin: const EdgeInsets.only(top: 6),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.primaryRed,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ],
                           ),
                         ),

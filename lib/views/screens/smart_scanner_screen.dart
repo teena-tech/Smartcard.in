@@ -247,7 +247,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
             _hasPermission = true;
             _permissionChecked = true;
           });
-          _qrController?.start().catchError((e) => debugPrint("Error starting camera: $e"));
+          _handleCameraLifecycle();
         }
         return;
       }
@@ -260,10 +260,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
         });
 
         if (result.isGranted) {
-            _qrController?.start().catchError((e) {
-              debugPrint("Error starting camera: $e");
-              _showCameraStartErrorDialog(e.toString());
-            });
+          _handleCameraLifecycle();
         } else if (result.isPermanentlyDenied) {
           _showCameraPermissionPermanentlyDeniedDialog();
         } else if (result.isDenied) {
@@ -552,8 +549,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       _qrController?.stop().catchError((e) => debugPrint("Error stopping camera: $e"));
     } catch (_) {}
 
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => ContactPreviewScreen(
           contact: state.contact,

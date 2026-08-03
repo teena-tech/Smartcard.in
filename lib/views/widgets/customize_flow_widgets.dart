@@ -10,6 +10,8 @@ import '../../../viewmodels/card_viewmodel.dart';
 import '../../../core/utils/upload_url_resolver.dart';
 import 'circular_profile_avatar.dart';
 
+import '../screens/customize/customize_menu_screen.dart';
+
 class SmartCardsFlowAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onMenuTap;
   final String initials;
@@ -54,9 +56,25 @@ class SmartCardsFlowAppBar extends StatelessWidget implements PreferredSizeWidge
                 color: Colors.white,
                 size: 24,
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                final modalRoute = ModalRoute.of(context);
+                if (modalRoute != null && modalRoute.isFirst) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CustomizeMenuScreen()),
+                  );
+                } else if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CustomizeMenuScreen()),
+                  );
+                }
+              },
             )
           : IconButton(
+
               icon: const Icon(
                 Icons.menu,
                 color: Colors.white,

@@ -60,19 +60,23 @@ class ContactParser {
       final match = phoneRegex.firstMatch(line);
       if (match != null) {
         final lowerLine = line.toLowerCase();
-        // Strip out common alphabetical labels
-        String cleanPhone = line.replaceAll(RegExp(r'^(mob(ile)?|tel(ephone)?|ph(one)?|cell|p|m|t|alt|f|fax|wa|whatsapp|landline|work)\s*[:\-\.]?\s*', caseSensitive: false), '').trim();
-        cleanPhone = cleanPhone.replaceAll(RegExp(r'[^\d+\-\s\(\)]'), '').trim();
+        // Handle slash or comma separated multiple numbers in single line (e.g. +91 90728 63555 / 90720 20000)
+        final subNumbers = line.split(RegExp(r'[/,]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+        for (final subNum in subNumbers) {
+          if (!phoneRegex.hasMatch(subNum)) continue;
+          String cleanPhone = subNum.replaceAll(RegExp(r'^(mob(ile)?|tel(ephone)?|ph(one)?|cell|p|m|t|alt|f|fax|wa|whatsapp|landline|work)\s*[:\-\.]?\s*', caseSensitive: false), '').trim();
+          cleanPhone = cleanPhone.replaceAll(RegExp(r'[^\d+\-\s\(\)]'), '').trim();
 
-        if (cleanPhone.isNotEmpty) {
-          if (lowerLine.contains('whatsapp') || lowerLine.contains('wa:') || lowerLine.contains('wa ')) {
-            whatsappList.add(cleanPhone);
-          } else if (lowerLine.contains('landline') || lowerLine.contains('tel:') || lowerLine.contains('land') || (cleanPhone.startsWith('0') && !cleanPhone.startsWith('09') && !cleanPhone.startsWith('08') && !cleanPhone.startsWith('07'))) {
-            landlineList.add(cleanPhone);
-          } else if (lowerLine.contains('mob') || lowerLine.contains('cell') || lowerLine.contains('m:')) {
-            mobileList.add(cleanPhone);
-          } else {
-            otherList.add(cleanPhone);
+          if (cleanPhone.isNotEmpty) {
+            if (lowerLine.contains('whatsapp') || lowerLine.contains('wa:') || lowerLine.contains('wa ')) {
+              whatsappList.add(cleanPhone);
+            } else if (lowerLine.contains('landline') || lowerLine.contains('tel:') || lowerLine.contains('land') || (cleanPhone.startsWith('0') && !cleanPhone.startsWith('09') && !cleanPhone.startsWith('08') && !cleanPhone.startsWith('07'))) {
+              landlineList.add(cleanPhone);
+            } else if (lowerLine.contains('mob') || lowerLine.contains('cell') || lowerLine.contains('m:')) {
+              mobileList.add(cleanPhone);
+            } else {
+              otherList.add(cleanPhone);
+            }
           }
         }
       }
@@ -203,7 +207,7 @@ class ContactParser {
 
     final List<String> addressLines = [];
     for (final line in uniqueLines) {
-      bool isPhone = mobileList.contains(line) || landlineList.contains(line) || otherList.contains(line);
+      bool isPhone = phoneRegex.hasMatch(line) || mobileList.contains(line) || landlineList.contains(line) || otherList.contains(line);
       if (line == email || isPhone || line == website || line == designation || line == companyName) {
         continue;
       }

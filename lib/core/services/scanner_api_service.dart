@@ -29,12 +29,23 @@ class ScannerApiService {
         ApiConfig.qrPreview,
         data: payload,
       );
-      return response.data as Map<String, dynamic>;
+      if (response.data != null && response.data['success'] == true) {
+        return response.data as Map<String, dynamic>;
+      }
+      if (response.data != null && response.data['message'] != null) {
+        throw Exception(response.data['message']);
+      }
+    } on DioException catch (e) {
+      final serverMsg = e.response?.data?['message']?.toString();
+      if (serverMsg != null && serverMsg.isNotEmpty) {
+        throw Exception(serverMsg);
+      }
+      throw Exception(DioClient.getErrorMessage(e, 'Failed to preview contact.'));
     } catch (e) {
-      throw Exception(
-        DioClient.getErrorMessage(e, 'Failed to preview contact.'),
-      );
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
+
+    throw Exception('Failed to preview contact.');
   }
 
   /// Save a scanned QR

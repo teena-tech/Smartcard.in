@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/state/app_loading_service.dart';
 import 'package:provider/provider.dart';
-import 'package:rive/rive.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import 'home_screen.dart';
@@ -74,9 +74,13 @@ class _SplashScreenState extends State<SplashScreen> {
         children: [
           // Full-screen Rive animation background
           Positioned.fill(
-            child: RiveAnimation.asset(
-              "assets/rive/splash_screen_animation_2.riv",
-              fit: BoxFit.cover,
+            child: Center(
+              child: Image(
+                image: AssetImage('assets/images/smartlogo.png'),
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ],

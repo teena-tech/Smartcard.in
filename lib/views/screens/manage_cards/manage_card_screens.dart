@@ -8,9 +8,11 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart'
     hide ImageSource;
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import '../../../viewmodels/dashboard_viewmodel.dart';
 import '../../../viewmodels/theme_viewmodel.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
 import '../../../viewmodels/card_viewmodel.dart';
+import '../../../models/card_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/upload_url_resolver.dart';
 import '../../widgets/manage_cards/widgets/manage_cards_header.dart';
@@ -228,6 +230,37 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                   _pickAndCropImage(sectionId, ImageSource.gallery);
                 },
               ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.delete_outline, color: Colors.red.shade600),
+                ),
+                title: Text(
+                  sectionId == 'section-profile-image' ? 'Remove Photo' : 'Remove Logo',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w500,
+                    color: Colors.red.shade600,
+                  ),
+                ),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final viewModel = context.read<CardViewModel>();
+                  final authVm = context.read<AuthViewModel>();
+                  final currentUserId = authVm.currentUser?.id.toString() ?? viewModel.userId;
+                  if (sectionId == 'section-profile-image') {
+                    await viewModel.handleRemoveProfileImage(currentUserId);
+                    if (context.mounted && authVm.currentUser != null) {
+                      authVm.updateUser(authVm.currentUser!.copyWith(profileImage: ''));
+                    }
+                  } else {
+                    await viewModel.handleRemoveCompanyLogo(currentUserId);
+                  }
+                },
+              ),
               const SizedBox(height: 8),
             ],
           ),
@@ -260,6 +293,55 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
     ).then((_) {
       viewModel.closeSection(keepChanges: false);
     });
+  }
+
+  Widget _buildSuspendButton(BuildContext context, CardViewModel viewModel) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: viewModel.isSuspended ? Colors.green : Colors.orange,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      onPressed: viewModel.isBusy
+          ? null
+          : () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: Text(viewModel.isSuspended ? 'Unsuspend Card' : 'Suspend Card'),
+                  content: Text(
+                    viewModel.isSuspended
+                        ? 'Are you sure you want to unsuspend this card? It will become active again.'
+                        : 'Are you sure you want to suspend this card? All actions will be disabled until unsuspended.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        await viewModel.handleToggleSuspension();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: viewModel.isSuspended ? Colors.green : Colors.orange,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: Text(viewModel.isSuspended ? 'Unsuspend' : 'Suspend'),
+                    ),
+                  ],
+                ),
+              );
+            },
+      icon: Icon(
+        viewModel.isSuspended ? Icons.play_circle_outline : Icons.pause_circle_outline,
+        size: 18,
+      ),
+      label: Text(viewModel.isSuspended ? 'Unsuspend' : 'Suspend'),
+    );
   }
 
   @override
@@ -298,7 +380,18 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
     }
 
     final cards = viewModel.cards;
-    final details = viewModel.selectedCardDetails;
+    final currentCard = viewModel.currentCard;
+    final details = viewModel.selectedCardDetails ??
+        (currentCard != null
+            ? CardProfileDetails(
+                firstName: currentCard.name,
+                companyName: currentCard.companyName,
+                email: currentCard.email ?? '',
+                phone: currentCard.phone,
+                profileImageName: currentCard.profileImageName ?? '',
+                companyLogoName: currentCard.companyLogo ?? '',
+              )
+            : null);
     final logoUrl = details != null
         ? _resolveImgUrl(details.companyLogoName, 'logo', viewModel.userId)
         : '';
@@ -306,9 +399,18 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: null,
-      body: SafeArea(
-        child: Column(
-          children: [
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
             // Tabs Row
 
             // Main Editor Panel
@@ -414,7 +516,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                             offset: const Offset(0, -16),
                             child: Container(
                               decoration: const BoxDecoration(
-                                color: Color(0xFFF2F2F2),
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.vertical(
                                   top: Radius.circular(18),
                                 ),
@@ -628,9 +730,9 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
 
                                   const SizedBox(height: 12),
 
-                                  // Personal Address Card
+                                  // Professional Address Card
                                   buildSummaryCard(
-                                    title: 'Personal Address',
+                                    title: 'Professional Address',
                                     hasContent:
                                         details.address.isNotEmpty ||
                                         details.pincode.isNotEmpty ||
@@ -1123,98 +1225,125 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
+                          // ─── Footer Action Buttons (mirrors React UserEditFooterActions) ───
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primaryRed,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: const Text('Delete Card'),
-                                          content: const Text('Are you sure you want to delete this card? This action cannot be undone.'),
-                                          actions: [
-                                            ElevatedButton(
-                                              onPressed: () => Navigator.pop(ctx),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.green.shade600,
-                                                foregroundColor: Colors.white,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            child: viewModel.isPrimaryCardSelected
+                                // ── Primary card: only show Suspend/Unsuspend ──
+                                ? _buildSuspendButton(context, viewModel)
+                                // ── Secondary card: show Make Primary + Delete + Suspend ──
+                                : Column(
+                                    children: [
+                                      // Row 1: Make Primary + Delete
+                                      Row(
+                                        children: [
+                                          if (viewModel.canSetSelectedAsPrimary)
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(0xFF4F46E5), // Indigo
+                                                  foregroundColor: Colors.white,
+                                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                ),
+                                                onPressed: viewModel.isBusy
+                                                    ? null
+                                                    : () {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (ctx) => AlertDialog(
+                                                            title: const Text('Set As Primary Card'),
+                                                            content: const Text(
+                                                              'Make this your primary card? Your primary card is the one shared by default.',
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () => Navigator.pop(ctx),
+                                                                child: const Text('Cancel'),
+                                                              ),
+                                                              ElevatedButton(
+                                                                onPressed: () async {
+                                                                  Navigator.pop(ctx);
+                                                                  await viewModel.handleSetPrimaryCard();
+                                                                },
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor: const Color(0xFF4F46E5),
+                                                                  foregroundColor: Colors.white,
+                                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                                ),
+                                                                child: Text(
+                                                                  viewModel.isBusy ? 'Updating...' : 'Set Primary',
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                icon: const Icon(Icons.star_outline, size: 18),
+                                                label: Text(viewModel.isBusy ? 'Updating...' : 'Make Primary'),
                                               ),
-                                              child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                                             ),
-                                            TextButton(
-                                              onPressed: () async {
-                                                Navigator.pop(ctx);
-                                                await viewModel.handleDeleteCard();
-                                                if (context.mounted) {
-                                                  Navigator.pop(context);
-                                                }
-                                              },
-                                              child: const Text('Delete', style: TextStyle(color: AppColors.primaryRed)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.delete_outline),
-                                    label: const Text('Delete'),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: viewModel.isSuspended ? Colors.green : Colors.orange,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    ),
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: Text(viewModel.isSuspended ? 'Unsuspend Card' : 'Suspend Card'),
-                                          content: Text(
-                                            viewModel.isSuspended 
-                                              ? 'Are you sure you want to unsuspend this card? It will become active again.'
-                                              : 'Are you sure you want to suspend this card? All actions will be disabled until unsuspended.'
-                                          ),
-                                          actions: [
-                                            ElevatedButton(
-                                              onPressed: () => Navigator.pop(ctx),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: Colors.green.shade600,
-                                                foregroundColor: Colors.white,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                          if (viewModel.canSetSelectedAsPrimary && viewModel.canDeleteSelectedCard)
+                                            const SizedBox(width: 10),
+                                          if (viewModel.canDeleteSelectedCard)
+                                            Expanded(
+                                              child: ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: AppColors.primaryRed,
+                                                  foregroundColor: Colors.white,
+                                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                                ),
+                                                onPressed: viewModel.isBusy
+                                                    ? null
+                                                    : () {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (ctx) => AlertDialog(
+                                                            title: const Text('Delete Card'),
+                                                            content: const Text(
+                                                              'Are you sure you want to delete this card? This action cannot be undone.',
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () => Navigator.pop(ctx),
+                                                                child: const Text('Cancel'),
+                                                              ),
+                                                              ElevatedButton(
+                                                                onPressed: () async {
+                                                                  Navigator.pop(ctx);
+                                                                  await viewModel.handleDeleteCard();
+                                                                  if (context.mounted) {
+                                                                    try {
+                                                                      context.read<DashboardViewModel>().setIndex(2);
+                                                                    } catch (_) {}
+                                                                  }
+                                                                },
+                                                                style: ElevatedButton.styleFrom(
+                                                                  backgroundColor: AppColors.primaryRed,
+                                                                  foregroundColor: Colors.white,
+                                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                                ),
+                                                                child: const Text('Delete'),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      },
+                                                icon: const Icon(Icons.delete_outline, size: 18),
+                                                label: const Text('Delete'),
                                               ),
-                                              child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                                             ),
-                                            TextButton(
-                                              onPressed: () async {
-                                                Navigator.pop(ctx);
-                                                await viewModel.handleToggleSuspension();
-                                              },
-                                              child: Text(viewModel.isSuspended ? 'Unsuspend' : 'Suspend', style: TextStyle(color: viewModel.isSuspended ? Colors.green : Colors.orange)),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                    icon: Icon(viewModel.isSuspended ? Icons.play_circle_outline : Icons.pause_circle_outline),
-                                    label: Text(viewModel.isSuspended ? 'Unsuspend' : 'Suspend'),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      // Row 2: Suspend/Unsuspend (full width)
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: _buildSuspendButton(context, viewModel),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
                           ),
                           const SizedBox(height: 32),
                         ],
@@ -1224,6 +1353,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

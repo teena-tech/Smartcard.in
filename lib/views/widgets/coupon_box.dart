@@ -59,7 +59,7 @@ class _CouponBoxState extends State<CouponBox> {
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Enter coupon code',
+                      hintText: 'Enter coupon code (optional)',
                       hintStyle: GoogleFonts.poppins(
                         color: Theme.of(context).textTheme.bodySmall?.color,
                       ),

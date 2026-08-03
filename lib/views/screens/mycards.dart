@@ -88,21 +88,57 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     try {
       final boundary = _qrKeys[index]?.currentContext
           ?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary == null) return;
+      if (boundary == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not generate QR code PNG image.')),
+        );
+        return;
+      }
       final image = await boundary.toImage(pixelRatio: 3.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
-      await saveFileToDevice('${card.name}_qr.png',
-          byteData.buffer.asUint8List());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('PNG saved!')));
-      }
+
+      final cleanName = (card.companyName.isNotEmpty ? card.companyName : card.name)
+          .replaceAll(RegExp(r'[^\w\.-]'), '_');
+      final fileName = '${cleanName}_QR.png';
+
+      await saveFileToDevice(fileName, byteData.buffer.asUint8List());
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'PNG image downloaded successfully! ($fileName)',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('PNG error: $e')));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+          content: Text('PNG download error: $e'),
+        ),
+      );
     }
   }
 
@@ -128,17 +164,48 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
         }
       }
       buf.writeln('</svg>');
+
+      final cleanName = (card.companyName.isNotEmpty ? card.companyName : card.name)
+          .replaceAll(RegExp(r'[^\w\.-]'), '_');
+      final fileName = '${cleanName}_QR.svg';
+
       await saveFileToDevice(
-          '${card.name}_qr.svg', Uint8List.fromList(utf8.encode(buf.toString())));
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('SVG saved!')));
-      }
+          fileName, Uint8List.fromList(utf8.encode(buf.toString())));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'SVG image downloaded successfully! ($fileName)',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('SVG error: $e')));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
+          content: Text('SVG download error: $e'),
+        ),
+      );
     }
   }
 
@@ -244,9 +311,9 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     if (widget.isStandalone) {
       return Scaffold(
         backgroundColor: Colors.transparent,
-        drawer: const CommonDrawer(currentRoute: 'Share Card'),
+        drawer: const CommonDrawer(currentRoute: 'My Cards'),
         appBar: AppBar(
-          title: Text('Share Card',
+          title: Text('SHARE CARD',
               style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
           backgroundColor: AppColors.primaryRed,
           foregroundColor: Colors.white,
@@ -458,8 +525,8 @@ class _ActionBtn extends StatelessWidget {
         Text(label,
             style: GoogleFonts.inter(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: colors.muted)),
+                fontWeight: FontWeight.bold,
+                color: Colors.black)),
       ],
     );
   }

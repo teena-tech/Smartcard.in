@@ -15,7 +15,7 @@ class ShareScreen extends StatelessWidget {
     final colors = context.watch<ThemeViewModel>().colors;
     
     return Scaffold(
-      backgroundColor: colors.backgroundStart,
+      backgroundColor: Colors.transparent,
       drawer: const CommonDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -37,29 +37,39 @@ class ShareScreen extends StatelessWidget {
         centerTitle: true,
       ),
       bottomNavigationBar: const GlobalBottomNav(),
-      body: ResponsiveCenter(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.share, size: 80, color: AppColors.primaryRed.withValues(alpha: 0.15)),
-            const SizedBox(height: 24),
-            Text(
-              'Share Screen',
-              style: GoogleFonts.inter(
-                color: colors.text,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: ResponsiveCenter(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.share, size: 80, color: AppColors.primaryRed.withValues(alpha: 0.15)),
+              const SizedBox(height: 24),
+              Text(
+                'Share Screen',
+                style: GoogleFonts.inter(
+                  color: colors.text,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Share your card with others',
-              style: GoogleFonts.inter(
-                color: colors.muted,
-                fontSize: 14,
+              const SizedBox(height: 8),
+              Text(
+                'Share your card with others',
+                style: GoogleFonts.inter(
+                  color: colors.muted,
+                  fontSize: 14,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

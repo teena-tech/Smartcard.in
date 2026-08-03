@@ -21,7 +21,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/contact_parser.dart';
 import '../../core/database/hive_database.dart';
 import 'camera_scan_screen.dart';
-import "package:edge_detection/edge_detection.dart";
 import 'package:image_cropper/image_cropper.dart';
 import 'qr_landing_screen.dart';
 
@@ -326,8 +325,6 @@ class _QrScanScreenState extends State<QrScanScreen>
     }
 
     if (!_isDisposed) _processQrCode(code);
-  }
-
   Future<void> _processQrCode(String code) async {
     debugPrint('🔍 [QrScan] Processing QR value: $code');
     setState(() { _isProcessing = true; });
@@ -335,6 +332,41 @@ class _QrScanScreenState extends State<QrScanScreen>
 
     ScannedContactModel? scanned;
     ContactModel? contact;
+
+    final trimmedLower = code.trim().toLowerCase();
+    final isUrl = trimmedLower.startsWith('http://') ||
+        trimmedLower.startsWith('https://') ||
+        trimmedLower.startsWith('www.');
+
+    final isVCard = trimmedLower.contains('begin:vcard') || 
+                    trimmedLower.contains('mecard:');
+
+    bool isBusinessCard = false;
+    if (isUrl) {
+      // Accept any domain that includes "smartcards"
+      isBusinessCard = trimmedLower.contains('smartcards');
+    } else if (isVCard) {
+      isBusinessCard = true;
+    }
+
+    if (!isBusinessCard) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Text(
+              'Business Card Only',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+        _resetScanner();
+      }
+      if (context.mounted) setState(() { _isProcessing = false; });
+      return;
+    }
 
     // ── Step 1: Extract contact data (API preview → local fallback) ──────────
     try {

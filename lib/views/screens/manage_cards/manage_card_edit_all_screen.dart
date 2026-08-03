@@ -578,9 +578,10 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
 
     if (success) {
       final card = viewModel.currentCard;
-      final liveLink = (card?.qrCode != null && card!.qrCode!.isNotEmpty)
-          ? card.qrCode!
-          : 'https://thesmartcards.in/profile/${card?.userId ?? viewModel.userId}';
+      final liveLink = card?.profileUrl ?? 
+          ((card?.qrCode != null && card!.qrCode!.isNotEmpty)
+              ? card.qrCode!
+              : 'https://thesmartcards.com/profile/${card?.workProfileId ?? viewModel.userId}');
 
       try {
         final uri = Uri.parse(liveLink);
@@ -968,11 +969,11 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
 
             const SizedBox(height: 24),
 
-            // Personal Address Section
-            _buildSectionTitle('Personal Address', colors),
+            // Professional Address Section
+            _buildSectionTitle('Professional Address', colors),
             _buildTextFormField(
               _controllers['address'],
-              'Personal Address',
+              'Professional Address',
               colors,
               maxLines: 3,
             ),

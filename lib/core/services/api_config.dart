@@ -125,7 +125,8 @@ class ApiConfig {
   // ⚡ CONFIGURATION SWITCH
   // Set this to 'false' to connect to the LIVE server.
   // Set this to 'true' to connect to your LOCAL backend server.
-  static bool get useLocalBackend => false;
+  static bool get useLocalBackend =>
+      (dotenv.env['USE_LOCAL_BACKEND']?.toLowerCase() ?? 'true') == 'true';
 
   static String get baseUrl {
     if (!useLocalBackend) {
@@ -142,7 +143,7 @@ class ApiConfig {
         return 'http://$_localPhysicalIp:5000';
       }
 
-      if (Platform.isAndroid) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         return _localAndroidEmulatorUrl;
       }
     } catch (_) {}

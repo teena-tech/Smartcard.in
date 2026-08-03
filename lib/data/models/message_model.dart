@@ -30,7 +30,9 @@ class MessageModel {
       summary: json['summary'] ?? '',
       details: json['details'] ?? json['message_text'] ?? json['text'] ?? json['message'] ?? '',
       source: json['source'] ?? json['sender'] ?? json['sender_type'] ?? 'user',
-      createdAt: json['created_at'] ?? '',
+      createdAt: (json['created_at'] ?? json['createdAt'] ?? json['created'] ?? json['time'] ?? json['date'] ?? '').toString().isNotEmpty
+          ? (json['created_at'] ?? json['createdAt'] ?? json['created'] ?? json['time'] ?? json['date']).toString()
+          : DateTime.now().toIso8601String(),
       readAt: (json['user_action'] is Map) ? json['user_action']['read_at'] : null,
       reaction: (json['user_action'] is Map) ? (json['user_action']['reaction'] ?? 'none') : 'none',
       likeCount: (json['stats'] is Map) ? (json['stats']['like_count'] ?? 0) : 0,

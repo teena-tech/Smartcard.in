@@ -59,7 +59,7 @@ class _LoadingOverlayContentState extends State<_LoadingOverlayContent>
       opacity: _fadeAnim,
       child: Container(
         color: Theme.of(context).brightness == Brightness.light 
-            ? Colors.white 
+            ? const Color(0xFFFFF0F0) 
             : Colors.black87,
         child: Center(
           child: SizedBox(

@@ -23,7 +23,7 @@ class UploadUrlResolver {
     String? fallback = '',
   }) {
     final raw = (value ?? '').trim();
-    if (raw.isEmpty) return fallback ?? '';
+    if (raw.isEmpty || raw.toLowerCase() == 'null' || raw.toLowerCase() == 'undefined') return fallback ?? '';
     if (raw.startsWith('data:')) return raw;
 
     String resolved;

@@ -184,30 +184,7 @@ class CustomizationController extends ChangeNotifier {
     }
   }
 
-  void duplicateCard(int index) {
-    if (_profiles.length < maxCards && index >= 0 && index < _profiles.length) {
-      final newCard = _profiles[index].clone();
-      _profiles.add(newCard);
-      _activeProfileIndex = _profiles.length - 1;
-      notifyListeners();
-    }
-  }
-
-  void deleteCard(int index) {
-    if (index > 0 && index < _profiles.length) {
-      // Prevent deleting index 0
-      _profiles.removeAt(index);
-      if (_activeProfileIndex >= _profiles.length) {
-        _activeProfileIndex = _profiles.length - 1;
-      } else if (_activeProfileIndex == index) {
-        // If we deleted the active one, shift to previous
-        _activeProfileIndex = index - 1;
-      } else if (_activeProfileIndex > index) {
-        _activeProfileIndex--;
-      }
-      notifyListeners();
-    }
-  }
+  // Note: Card deletion and duplication are handled via CardViewModel connected to Backend API.
 
   void renameCard(int index, String newName) {
     if (index >= 0 && index < _profiles.length && newName.trim().isNotEmpty) {

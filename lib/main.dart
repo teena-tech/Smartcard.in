@@ -12,8 +12,11 @@ import 'core/database/local_data_source/sync_queue_data_source.dart';
 import 'core/services/backend_sync_service.dart';
 import 'views/widgets/global_loading_overlay.dart';
 import 'viewmodels/customization_controller.dart';
-import 'views/screens/profile_mvvm_screen.dart';
+import 'views/screens/profile_screen.dart';
 import 'views/screens/login_screen.dart';
+import 'views/screens/customize/customize_theme_screen.dart';
+
+
 import 'core/services/dio_client.dart';
 import 'viewmodels/theme_viewmodel.dart';
 
@@ -81,7 +84,6 @@ void _preloadLottieAssets() {
   });
 }
 
-
 class SmartCardsApp extends StatelessWidget {
   const SmartCardsApp({super.key});
 
@@ -100,9 +102,10 @@ class SmartCardsApp extends StatelessWidget {
             );
           },
           routes: {
-            '/profile': (context) => const ProfileMvvmScreen(),
+            '/profile': (context) => const ProfileScreen(),
             '/login': (context) => const LoginScreen(),
           },
+
           home: const SplashScreen(),
         );
       },

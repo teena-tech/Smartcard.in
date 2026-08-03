@@ -25,6 +25,8 @@ class CardModel {
   final String? profileImageName;
   final bool isSuspended;
   final String? profileUrl; // Computed profile link from backend (CARD_BASE_URL/profile/{id})
+  final String? templateId;
+  final String? templateKey;
 
   /// The URL to encode into the QR code and display/share.
   /// Reads directly from database `qr_code` field (e.g., https://thesmartcards.com/?sc=...) 
@@ -39,7 +41,7 @@ class CardModel {
     if (profileUrl != null && profileUrl!.isNotEmpty) {
       return profileUrl!;
     }
-    return 'https://thesmartcards.com/profile/$userId';
+    return 'https://thesmartcards.com/profile/$workProfileId';
   }
 
 
@@ -68,6 +70,8 @@ class CardModel {
     this.profileImageName,
     this.isSuspended = false,
     this.profileUrl,
+    this.templateId,
+    this.templateKey,
   });
 
 
@@ -141,6 +145,8 @@ class CardModel {
     String? profileImageName,
     bool? isSuspended,
     String? profileUrl,
+    String? templateId,
+    String? templateKey,
   }) {
     return CardModel(
       userId: userId ?? this.userId,
@@ -157,16 +163,18 @@ class CardModel {
       tabLabel: tabLabel ?? this.tabLabel,
       captionName: captionName ?? this.captionName,
       isTemporary: isTemporary ?? this.isTemporary,
-      companyLogo: companyLogo ?? this.companyLogo,
+      companyLogo: companyLogo == '' ? '' : (companyLogo ?? this.companyLogo),
       designation: designation ?? this.designation,
       backgroundImage: backgroundImage ?? this.backgroundImage,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       textColor: textColor ?? this.textColor,
       bgImageColor: bgImageColor ?? this.bgImageColor,
       opacity: opacity ?? this.opacity,
-      profileImageName: profileImageName ?? this.profileImageName,
+      profileImageName: profileImageName == '' ? '' : (profileImageName ?? this.profileImageName),
       isSuspended: isSuspended ?? this.isSuspended,
       profileUrl: profileUrl ?? this.profileUrl,
+      templateId: templateId ?? this.templateId,
+      templateKey: templateKey ?? this.templateKey,
     );
   }
 }

@@ -7,7 +7,6 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart' hide ImageSource;
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/upload_url_resolver.dart';
@@ -106,7 +105,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     final customizeVm = context.read<CustomizeViewModel>();
     final user = authVm.currentUser;
     final userId = user?.id ?? '';
-    final workProfileId = cardVm.currentCard?.userId;
+    final workProfileId = cardVm.currentCard?.workProfileId ?? cardVm.currentCard?.userId;
 
     if (userId.isEmpty) {
       if (!context.mounted) return;
@@ -820,7 +819,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     final cardVm = context.read<CardViewModel>();
     final customizeVm = context.read<CustomizeViewModel>();
     final userId = authVm.currentUser?.id ?? '';
-    final workProfileId = cardVm.currentCard?.userId;
+    final workProfileId = cardVm.currentCard?.workProfileId ?? cardVm.currentCard?.userId;
 
     if (userId.isEmpty) {
       setState(() => _error = 'User id not found');

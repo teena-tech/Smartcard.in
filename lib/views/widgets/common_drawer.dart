@@ -6,6 +6,7 @@ import '../../viewmodels/theme_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/card_viewmodel.dart';
+import '../../viewmodels/message_viewmodel.dart';
 import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 import 'circular_profile_avatar.dart';
@@ -271,15 +272,19 @@ Icons.info_outline,
                       width: double.infinity,
                       height: 44,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          context.read<AuthViewModel>().logout();
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
+                        onPressed: () async {
+                          // Stop polling before logout to prevent unauthenticated requests
+                          context.read<MessageViewModel>().stopPolling();
+                          await context.read<AuthViewModel>().logout();
+                          if (context.mounted) {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          }
                         },
                         icon: const Icon(Icons.logout, size: 16),
                         label: const Text('Logout'),

@@ -167,19 +167,23 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
     AppLoadingService.instance.startTask();
     try {
-      // Send null / empty image to clear — adjust endpoint if backend differs
-      final response =
-          await _repository.updateUserProfile(userId, {'profile_image': ''});
-      if (response != null) {
-        await loadProfile(userId);
-        _imageVersion++;
-        _isUploadingImage = false;
-        notifyListeners();
-        return true;
+      // 1. Send update to API to clear profile image on backend
+      try {
+        await _repository.updateUserProfile(userId, {
+          'profile_image': '',
+          'image': '',
+        });
+      } catch (_) {}
+
+      // 2. Clear local profile image state immediately
+      if (_user != null) {
+        _user = _user!.copyWith(profileImage: '');
       }
+      _imageVersion++;
+      _successMessage = 'Profile photo removed successfully.';
       _isUploadingImage = false;
       notifyListeners();
-      return false;
+      return true;
     } catch (e) {
       _errorMessage     = 'Failed to remove image: ${e.toString()}';
       _isUploadingImage = false;
@@ -189,6 +193,7 @@ class ProfileViewModel extends ChangeNotifier {
       AppLoadingService.instance.endTask();
     }
   }
+
 
   // ── Legacy upload (kept for CardViewModel compatibility) ───
   Future<bool> uploadProfileImage(

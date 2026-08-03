@@ -332,28 +332,14 @@ class AboutScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 12),
-            // Brand Pill
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: colors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                'assets/images/smartlogo.png',
-                height: 48,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
-              ),
+            // Brand Logo (Transparent)
+            Image.asset(
+              'assets/images/smartlogo.png',
+              height: 54,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
             ),
+
             const SizedBox(height: 24),
             // About Container
             Container(

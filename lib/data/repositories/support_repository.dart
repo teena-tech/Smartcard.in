@@ -72,7 +72,7 @@ class SupportRepository {
       summary: text,
       details: text,
       source: 'user',
-      createdAt: 'Just now',
+      createdAt: DateTime.now().toIso8601String(),
       reaction: 'none',
       likeCount: 0,
       dislikeCount: 0,

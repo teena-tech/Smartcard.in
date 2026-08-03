@@ -375,4 +375,10 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     }
   }
+
+  void updateUser(UserModel newUser) {
+    _currentUser = newUser;
+    notifyListeners();
+  }
 }
+

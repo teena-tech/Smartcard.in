@@ -10,6 +10,21 @@ import 'scanner_api_service.dart';
 class QrExtractionService {
   static const Duration _apiTimeout = Duration(seconds: 8);
 
+  static bool _isSmartCardDomain(String value) {
+    final lower = value.toLowerCase();
+    return lower.contains('thesmartcards.com') ||
+        lower.contains('thesmartcards.in') ||
+        lower.contains('thesmartcards') ||
+        lower.contains('thesmartcard') ||
+        lower.contains('smartcards') ||
+        lower.contains('smartcard') ||
+        lower.contains('scard') ||
+        lower.contains('localhost') ||
+        lower.contains('127.0.0.1') ||
+        lower.contains('10.0.2.2') ||
+        lower.contains('192.168.');
+  }
+
   static Future<ScannedContactModel> extract(String qrValue) async {
     final trimmed = qrValue.trim();
     if (trimmed.isEmpty) {
@@ -21,8 +36,13 @@ class QrExtractionService {
     }
 
     if (_isUrl(trimmed)) {
+      if (!_isSmartCardDomain(trimmed)) {
+        throw Exception('Only SmartCards QR codes are supported.');
+      }
       final fromApi = await _fetchFromApi(trimmed);
       if (fromApi != null) return fromApi;
+
+      throw Exception('Card not available in database.');
     }
 
     if (_isWhatsAppLink(trimmed)) {
@@ -180,6 +200,9 @@ class QrExtractionService {
           data['pincode']?.toString(),
         ].where((s) => s != null && s.trim().isNotEmpty).join(', ');
 
+        final rawProfileImg = (data['profile_image'] ?? data['profileImage'] ?? data['user_image'] ?? data['image'] ?? data['avatar'])?.toString();
+        final rawCompanyLogo = (data['company_logo'] ?? data['logo'] ?? data['companyLogo'])?.toString();
+
         return ScannedContactModel(
           id: data['contact_user_id']?.toString() ??
               DateTime.now().millisecondsSinceEpoch.toString(),
@@ -193,6 +216,18 @@ class QrExtractionService {
           website: cleanWebsite,
           address: addressParts.isNotEmpty ? addressParts : (data['address'] ?? '').toString(),
           socialLinks: socialLinksList,
+          profileImage: (rawProfileImg != null &&
+                  rawProfileImg.trim().isNotEmpty &&
+                  rawProfileImg.trim().toLowerCase() != 'null' &&
+                  rawProfileImg.trim().toLowerCase() != 'undefined')
+              ? rawProfileImg.trim()
+              : null,
+          companyLogo: (rawCompanyLogo != null &&
+                  rawCompanyLogo.trim().isNotEmpty &&
+                  rawCompanyLogo.trim().toLowerCase() != 'null' &&
+                  rawCompanyLogo.trim().toLowerCase() != 'undefined')
+              ? rawCompanyLogo.trim()
+              : null,
           createdAt: DateTime.now(),
         );
       }
@@ -210,6 +245,12 @@ class QrExtractionService {
       final uri = Uri.parse(trimmed);
       if (uri.queryParameters.containsKey('sc')) {
         return uri.queryParameters['sc']!;
+      }
+      if (uri.pathSegments.isNotEmpty) {
+        final lastSegment = uri.pathSegments.last.trim();
+        if (lastSegment.isNotEmpty && lastSegment.toLowerCase() != 'profile') {
+          return lastSegment;
+        }
       }
     } catch (_) {}
     return qrValue.trim();

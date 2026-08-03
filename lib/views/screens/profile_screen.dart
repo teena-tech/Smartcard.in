@@ -9,6 +9,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/card_viewmodel.dart';
 import '../../viewmodels/theme_viewmodel.dart';
+import '../../viewmodels/message_viewmodel.dart';
 import '../../models/user_model.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/upload_url_resolver.dart';
@@ -27,10 +28,19 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFFF2F3F7),
-      drawer: CommonDrawer(currentRoute: 'Dashboard'),
-      body: ResponsiveCenter(child: _ProfileBody()),
+    return Scaffold(
+      drawer: const CommonDrawer(currentRoute: 'Dashboard'),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: const ResponsiveCenter(child: _ProfileBody()),
+      ),
     );
   }
 }
@@ -40,7 +50,19 @@ class ProfileBody extends StatelessWidget {
   const ProfileBody({super.key});
 
   @override
-  Widget build(BuildContext context) => const _ProfileBody();
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/login.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: const ResponsiveCenter(child: _ProfileBody()),
+    );
+  }
 }
 
 class _ProfileBody extends StatefulWidget {
@@ -319,13 +341,35 @@ class _ProfileBodyState extends State<_ProfileBody> {
                         color: Colors.red.shade600)),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final userId =
-                      context.read<AuthViewModel>().currentUser?.id;
+                  final authVm = context.read<AuthViewModel>();
+                  final userId = authVm.currentUser?.id;
                   if (userId == null) return;
-                  await context
+
+                  final success = await context
                       .read<ProfileViewModel>()
                       .removeProfileImage(userId);
+
+                  if (success && authVm.currentUser != null) {
+                    authVm.updateUser(authVm.currentUser!.copyWith(profileImage: ''));
+                    context.read<CardViewModel>().clearProfileImage();
+                  }
+
+
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Profile photo removed successfully.',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                        ),
+                        backgroundColor: Colors.green.shade700,
+                        behavior: SnackBarBehavior.floating,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 },
+
               ),
               const SizedBox(height: 8),
             ],
@@ -1004,6 +1048,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
       final success = await authVm.deleteAccount(userId);
       if (success) {
         if (context.mounted) {
+          context.read<MessageViewModel>().stopPolling();
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const LoginScreen()),

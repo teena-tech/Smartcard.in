@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../viewmodels/card_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/subscription_viewmodel.dart';
-import '../../models/card_model.dart';
 import '../widgets/premium_card_widget.dart';
 import '../widgets/premium_upgrade_dialog.dart';
 import 'customize/customize_menu_screen.dart';
@@ -23,133 +21,40 @@ class SmartCardListScreen extends StatefulWidget {
 }
 
 class _SmartCardListScreenState extends State<SmartCardListScreen> {
-  
+  Future<void> _handleCreateNewCard() async {
+    final authUser = context.read<AuthViewModel>().currentUser;
+    final cardViewModel = context.read<CardViewModel>();
+    final subscriptionViewModel = context.read<SubscriptionViewModel>();
+    final cards = cardViewModel.cards;
+    final userId = authUser?.id ?? '';
 
-  void _showLivePreviewModal(BuildContext context, CardModel card) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final linkToDisplay = (card.qrCode != null && card.qrCode!.isNotEmpty) 
-            ? card.qrCode! 
-            : 'https://www.google.com';
+    if (userId.isNotEmpty && subscriptionViewModel.subscription == null) {
+      await subscriptionViewModel.fetchSubscription(userId);
+      if (!mounted) return;
+    }
 
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.red, width: 2),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Live Card Preview',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  PremiumCardWidget(card: card),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: QrImageView(
-                      data: linkToDisplay,
-                      version: QrVersions.auto,
-                      size: 140,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Scan or visit card link:',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  InkWell(
-                    onTap: () async {
-                      try {
-                        final uri = Uri.parse(linkToDisplay);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        }
-                      } catch (_) {}
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        linkToDisplay,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'CLOSE',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    final sub = subscriptionViewModel.subscription;
+    bool isPremium = false;
+    if (sub != null) {
+      final mem = sub.membership.toUpperCase();
+      if (sub.isActive || mem == 'PREMIUM' || mem == 'PAID' || mem != 'FREE') {
+        isPremium = true;
+      }
+    } else if (authUser != null && userId.isNotEmpty) {
+      // Logged in user fallback
+      isPremium = true;
+    }
+
+    if (!isPremium && cards.isNotEmpty) {
+      PremiumUpgradeDialog.show(context);
+    } else {
+      cardViewModel.handleAddMoreCard(context, masterProfile: authUser);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final cardViewModel = context.watch<CardViewModel>();
-    final subscriptionViewModel = context.watch<SubscriptionViewModel>();
     final cards = cardViewModel.cards;
 
     Widget body = Container(
@@ -198,7 +103,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   itemCount: cards.length + 1,
-                  itemBuilder: (context, index) {
+                  itemBuilder: (_, index) {
                     if (index == cards.length) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 8.0, bottom: 24.0),
@@ -223,27 +128,15 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                                 letterSpacing: 0.5,
                               ),
                             ),
-                            onPressed: () {
-                              final isPremium = subscriptionViewModel.subscription?.isActive == true &&
-                                  subscriptionViewModel.subscription?.membership.toUpperCase() != 'FREE';
-                              if (!isPremium && cards.isNotEmpty) {
-                                PremiumUpgradeDialog.show(context);
-                              } else if (isPremium && cards.length >= 5) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Maximum limit of 5 cards reached for Premium members.'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              } else {
-                                cardViewModel.handleAddMoreCard(context, masterProfile: context.read<AuthViewModel>().currentUser);
-                              }
-                            },
+                            onPressed: _handleCreateNewCard,
                           ),
                         ),
                       );
                     }
                     final card = cards[index];
+                    final sub = context.read<SubscriptionViewModel>().subscription;
+                    final isUserPremium = sub != null && (sub.isActive || sub.membership.toUpperCase() == 'PREMIUM');
+                    final canEditCard = card.isPrimary || isUserPremium;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 24),
@@ -253,7 +146,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                           PremiumCardWidget(
                               card: card,
                               margin: EdgeInsets.zero,
-                              bottomActions: card.isSuspended ? null : Row(
+                              bottomActions: (!canEditCard || card.isSuspended) ? null : Row(
                               children: [
                                 // Details Button
                                 Expanded(
@@ -356,7 +249,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                                       onTap: () async {
                                         cardViewModel.setCurrentIndex(index);
                                         context.read<ProfileViewModel>().incrementCardViews(card.accountUserId.toString());
-                                        String liveLink = 'https://thesmartcards.com/profile/${card.userId}';
+                                        String liveLink = card.profileUrl ?? 'https://thesmartcards.com/profile/${card.workProfileId}';
                                         final dbQr = card.qrCode ?? '';
                                         if (dbQr.isNotEmpty) {
                                           try {
@@ -364,6 +257,8 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                                             final scVal = dbUri.queryParameters['sc'];
                                             if (scVal != null && scVal.isNotEmpty) {
                                               liveLink = 'https://thesmartcards.com/?sc=$scVal';
+                                            } else if (dbQr.startsWith('http://') || dbQr.startsWith('https://')) {
+                                              liveLink = dbQr;
                                             }
                                           } catch (_) {}
                                         }
@@ -397,7 +292,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                               ],
                             ),
                           ),
-                          // Central Unsuspend Button
+                          // Central Unsuspend Button or Premium Upgrade Badge
                           if (card.isSuspended)
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
@@ -407,17 +302,37 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                 elevation: 8,
                               ),
-                              onPressed: () {
-                                cardViewModel.setCurrentIndex(index);
-                                context.read<DashboardViewModel>().setIndex(2);
-                                if (!widget.isTab) {
-                                  Navigator.pop(context);
-                                }
-                              },
-                              icon: const Icon(Icons.play_circle_fill, color: Colors.green),
+                              icon: const Icon(Icons.lock_open_rounded, color: Colors.orange),
                               label: Text(
-                                'Tap to Unsuspend',
+                                'UNSUSPEND CARD',
                                 style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                              ),
+                              onPressed: () {
+                                _handleCreateNewCard();
+                              },
+                            )
+                          else if (!canEditCard)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(color: Colors.amber.withValues(alpha: 0.6), width: 1.5),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.lock, color: Colors.amber, size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Upgrade to Premium to Edit',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.amber,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                         ],
@@ -450,22 +365,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                onPressed: () {
-                  final isPremium = subscriptionViewModel.subscription?.isActive == true &&
-                      subscriptionViewModel.subscription?.membership.toUpperCase() != 'FREE';
-                  if (!isPremium && cards.isNotEmpty) {
-                    PremiumUpgradeDialog.show(context);
-                  } else if (isPremium && cards.length >= 5) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Maximum limit of 5 cards reached for Premium members.'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  } else {
-                    cardViewModel.handleAddMoreCard(context, masterProfile: context.read<AuthViewModel>().currentUser);
-                  }
-                },
+                onPressed: _handleCreateNewCard,
               ),
             ),
           ),

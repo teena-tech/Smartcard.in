@@ -20,6 +20,9 @@ class SubscriptionViewModel extends ChangeNotifier {
   String _appliedCouponCode = '';
   bool _isPaymentButtonDisabled = false;
 
+  // Backend-provided order amounts (set after createPaymentOrder)
+  double? _backendOrderAmount;
+
   // Getters
   SubscriptionStatus get status => _status;
   PaymentStatus get paymentStatus => _paymentStatus;
@@ -31,28 +34,45 @@ class SubscriptionViewModel extends ChangeNotifier {
   String get appliedCouponCode => _appliedCouponCode;
   bool get isPaymentButtonDisabled => _isPaymentButtonDisabled;
 
-  // Pricing constants
-  static const double baseAmount = 360.0;
+  // Display pricing (used for UI display on plan cards)
+  static const double displayBaseAmount = 365.0;
+  static const double displayGstPercent = 18.0;
+  double get displayGstAmount => (displayBaseAmount * displayGstPercent) / 100;
+  double get displayTotalAmount => displayBaseAmount + displayGstAmount;
+
+  // Actual pricing — prefer backend amount from order response
+  // Fallback to display amounts for the checkout UI before order is created
+  static const double baseAmount = 365.0;
   static const double gstPercent = 18.0;
 
-  double get gstAmount => (baseAmount * gstPercent) / 100;
-  double get totalAmount => baseAmount + gstAmount;
-
   double get discountedAmount {
-    if (_appliedCoupon?.success == true && _appliedCoupon?.coupon?.type == 'discount') {
-      final coupon = _appliedCoupon!.coupon!;
-      if (coupon.discountAmount != null && coupon.discountAmount! > 0) {
-        return coupon.discountAmount!;
-      } else if (coupon.discountPercentage != null && coupon.discountPercentage! > 0) {
-        return (baseAmount * coupon.discountPercentage!) / 100;
+    if (_appliedCoupon?.success == true) {
+      if (_appliedCoupon?.coupon?.type == 'discount') {
+        final coupon = _appliedCoupon!.coupon!;
+        if (coupon.discountAmount != null && coupon.discountAmount! > 0) {
+          return coupon.discountAmount!.clamp(0, baseAmount);
+        } else if (coupon.discountPercentage != null && coupon.discountPercentage! > 0) {
+          return ((baseAmount * coupon.discountPercentage!) / 100).clamp(0, baseAmount);
+        }
       }
     }
     return 0.0;
   }
 
+  double get netBaseAmount => (baseAmount - discountedAmount).clamp(0, double.infinity);
+  double get gstAmount => (netBaseAmount * gstPercent) / 100;
+  double get totalAmount => netBaseAmount + gstAmount;
+
   double get payableAmount {
     if (!isPaymentRequired) return 0.0;
-    return (totalAmount - discountedAmount).clamp(0, double.infinity);
+    // Prefer explicit backend payable amount if available
+    if (_appliedCoupon?.payableAmount != null && _appliedCoupon!.payableAmount! >= 0) {
+      return _appliedCoupon!.payableAmount!;
+    }
+    if (_backendOrderAmount != null) {
+      return _backendOrderAmount!;
+    }
+    return totalAmount;
   }
 
   bool get isPaymentRequired {
@@ -61,6 +81,12 @@ class SubscriptionViewModel extends ChangeNotifier {
       if (_appliedCoupon?.application?.type == 'subscription_duration') return false;
     }
     return true;
+  }
+
+  /// Whether the applied coupon is a subscription_duration type (free premium days)
+  bool get isSubscriptionDurationCoupon {
+    return _appliedCoupon?.success == true &&
+        _appliedCoupon?.application?.type == 'subscription_duration';
   }
 
   void clearMessages() {
@@ -73,12 +99,14 @@ class SubscriptionViewModel extends ChangeNotifier {
     _paymentStatus = PaymentStatus.initial;
     _paymentConfirm = null;
     _isPaymentButtonDisabled = false;
+    _backendOrderAmount = null;
     notifyListeners();
   }
 
   void resetCoupon() {
     _appliedCoupon = null;
     _appliedCouponCode = '';
+    _backendOrderAmount = null;
     notifyListeners();
   }
 
@@ -116,6 +144,7 @@ class SubscriptionViewModel extends ChangeNotifier {
 
     _status = SubscriptionStatus.loading;
     _errorMessage = null;
+    _successMessage = null;
     notifyListeners();
 
     try {
@@ -125,6 +154,8 @@ class SubscriptionViewModel extends ChangeNotifier {
       if (_appliedCoupon!.success) {
         _appliedCouponCode = code.trim();
         _successMessage = _appliedCoupon!.message ?? 'Coupon applied!';
+        // Clear any backend order amount so it recalculates
+        _backendOrderAmount = null;
         // If a subscription duration coupon was applied, refresh subscription status
         if (_appliedCoupon?.application?.type == 'subscription_duration' ||
             _appliedCoupon?.application?.applied == true) {
@@ -154,6 +185,19 @@ class SubscriptionViewModel extends ChangeNotifier {
         userId,
         couponCode: _appliedCouponCode.isNotEmpty ? _appliedCouponCode : null,
       );
+
+      // Extract backend-calculated amount from order response
+      final orderData = response['data']?['order'] as Map<String, dynamic>?;
+      if (orderData != null) {
+        final amountPaise = orderData['amount'] as int?;
+        if (amountPaise != null && amountPaise > 0) {
+          _backendOrderAmount = amountPaise / 100.0;
+          notifyListeners();
+        }
+      }
+
+      _paymentStatus = PaymentStatus.initial;
+      notifyListeners();
       return response;
     } catch (e) {
       _errorMessage = _cleanError(e);
@@ -190,6 +234,15 @@ class SubscriptionViewModel extends ChangeNotifier {
       _isPaymentButtonDisabled = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Report payment failure to backend (for email notification)
+  Future<void> reportPaymentFailure(String userId, {String? reason, double? amount}) async {
+    try {
+      await _api.reportPaymentFailure(userId, reason: reason, amount: amount);
+    } catch (_) {
+      // Silently fail — this is best-effort
     }
   }
 }

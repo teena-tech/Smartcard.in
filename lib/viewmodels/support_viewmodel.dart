@@ -48,9 +48,18 @@ class SupportViewModel extends ChangeNotifier {
 
       if (loadMore) {
         // For pagination: add new messages while avoiding duplicates
-        final existingIds = _messages.map((m) => m.id).toSet();
-        final newMessages = fetchedMessages.where((m) => !existingIds.contains(m.id)).toList();
-        _messages.addAll(newMessages);
+        final Map<int, MessageModel> uniqueMap = {for (final m in _messages) m.id: m};
+        for (final msg in fetchedMessages) {
+          uniqueMap[msg.id] = msg;
+        }
+        _messages = uniqueMap.values.toList()
+          ..sort((a, b) {
+            final aDate = _parseDateStr(a.createdAt);
+            final bDate = _parseDateStr(b.createdAt);
+            final dateCmp = bDate.compareTo(aDate);
+            if (dateCmp != 0) return dateCmp;
+            return b.id.compareTo(a.id);
+          });
       } else {
         // Source of truth: replace list directly with backend fetched messages
         final Map<int, MessageModel> uniqueMap = {};
@@ -58,7 +67,13 @@ class SupportViewModel extends ChangeNotifier {
           uniqueMap[msg.id] = msg;
         }
         _messages = uniqueMap.values.toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          ..sort((a, b) {
+            final aDate = _parseDateStr(a.createdAt);
+            final bDate = _parseDateStr(b.createdAt);
+            final dateCmp = bDate.compareTo(aDate);
+            if (dateCmp != 0) return dateCmp;
+            return b.id.compareTo(a.id);
+          });
       }
 
       _setState(SupportState.loaded);
@@ -132,5 +147,18 @@ class SupportViewModel extends ChangeNotifier {
       return e.message;
     }
     return e.toString();
+  }
+
+  DateTime _parseDateStr(String raw) {
+    final str = raw.trim();
+    if (str.isEmpty) return DateTime.now();
+    final numVal = num.tryParse(str);
+    if (numVal != null) {
+      return DateTime.fromMillisecondsSinceEpoch(
+        numVal > 100000000000 ? numVal.toInt() : (numVal * 1000).toInt(),
+      ).toLocal();
+    }
+    final sanitized = str.replaceAll(' ', 'T');
+    return DateTime.tryParse(sanitized)?.toLocal() ?? DateTime.now();
   }
 }

@@ -22,7 +22,6 @@ import 'smart_scanner_screen.dart';
 import 'profile_screen.dart';
 import 'smart_card_list_screen.dart';
 import 'manage_cards/manage_card_screens.dart' as new_manage_cards;
-import 'manage_cards/manage_card_edit_all_screen.dart';
 import 'mycards.dart' as my_cards_list;
 import 'contacts_screen.dart';
 import 'messages_screen.dart';
@@ -50,6 +49,35 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Future<void> _handleCreateNewCard() async {
+    final authUser = context.read<AuthViewModel>().currentUser;
+    final cardVm = context.read<CardViewModel>();
+    final subVm = context.read<SubscriptionViewModel>();
+    final userId = authUser?.id ?? '';
+
+    if (userId.isNotEmpty && subVm.subscription == null) {
+      await subVm.fetchSubscription(userId);
+      if (!mounted) return;
+    }
+
+    final sub = subVm.subscription;
+    bool isPremium = false;
+    if (sub != null) {
+      final mem = sub.membership.toUpperCase();
+      if (sub.isActive || mem == 'PREMIUM' || mem == 'PAID' || mem != 'FREE') {
+        isPremium = true;
+      }
+    } else if (authUser != null && userId.isNotEmpty) {
+      isPremium = true;
+    }
+
+    if (!isPremium && cardVm.cards.isNotEmpty) {
+      PremiumUpgradeDialog.show(context);
+    } else {
+      cardVm.handleAddMoreCard(context, masterProfile: authUser);
+    }
+  }
 
   @override
   void initState() {
@@ -141,13 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () => Scaffold.of(context).openDrawer(),
             ),
           ),
-          title: dashboardViewModel.currentIndex == 0
-              ? null
-              : Text(
-                  _getTitle(dashboardViewModel.currentIndex),
-                  style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-          centerTitle: dashboardViewModel.currentIndex == 0 ? false : true,
+          title: Text(
+            _getTitle(dashboardViewModel.currentIndex),
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
           actions: dashboardViewModel.currentIndex == 2
               ? [
                   IconButton(
@@ -156,17 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                    onPressed: () {
-                      final cardVm = context.read<CardViewModel>();
-                      final subVm = context.read<SubscriptionViewModel>();
-                      final isPremium = subVm.subscription?.isActive == true &&
-                          subVm.subscription?.membership.toUpperCase() != 'FREE';
-                      if (!isPremium && cardVm.cards.isNotEmpty) {
-                        PremiumUpgradeDialog.show(context);
-                      } else {
-                        cardVm.handleAddMoreCard(context, masterProfile: context.read<AuthViewModel>().currentUser);
-                      }
-                    },
+                    onPressed: _handleCreateNewCard,
                   ),
                   const SizedBox(width: 8),
                 ]
@@ -224,6 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   String _getTitle(int index) {
     switch (index) {
+      case 0: return 'Dashboard';
       case 1: return 'Scan';
       case 2: return 'My Business Cards';
       case 3: return 'My Profile';
@@ -232,9 +249,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 6: return 'Support';
       case 7: return 'Settings';
       case 8: return 'About';
-       case 9: return 'Share Card';
+      case 9: return 'SHARE CARD';
       case 10:
-        return 'SHARE CARD';
+        return 'MY CARDS';
       default:
         return '';
     }

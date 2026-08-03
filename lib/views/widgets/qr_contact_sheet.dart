@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/scanned_contact_model.dart';
+import '../../core/utils/upload_url_resolver.dart';
 
 /// Bottom sheet showing QR-extracted contact fields.
 class QrContactSheet extends StatelessWidget {
@@ -17,6 +18,10 @@ class QrContactSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? profileImgUrl = (contact.profileImage != null && contact.profileImage!.isNotEmpty)
+        ? UploadUrlResolver.resolve(contact.profileImage, type: 'profile')
+        : null;
+
     return Padding(
       padding: EdgeInsets.only(
         left: 24,
@@ -41,23 +46,45 @@ class QrContactSheet extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF5252).withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+              if (profileImgUrl != null) ...[
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: const Color(0xFFFF5252),
+                  backgroundImage: NetworkImage(profileImgUrl),
                 ),
-                child: const Icon(Icons.qr_code_scanner, color: Color(0xFFFF5252), size: 28),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  'QR Contact Detected',
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                const SizedBox(width: 14),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF5252).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(Icons.qr_code_scanner, color: Color(0xFFFF5252), size: 28),
+                ),
+                const SizedBox(width: 14),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      contact.name.isNotEmpty ? contact.name : 'QR Contact Detected',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    if (contact.company.isNotEmpty)
+                      Text(
+                        contact.company,
+                        style: GoogleFonts.inter(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],

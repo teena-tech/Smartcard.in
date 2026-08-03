@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/scanned_contact_model.dart';
@@ -24,7 +25,17 @@ class ExportService {
     }
 
     String csvString = csvBuffer.toString();
-    final directory = await getTemporaryDirectory();
+    if (kIsWeb) return;
+    Directory directory;
+    try {
+      directory = await getTemporaryDirectory();
+    } catch (_) {
+      try {
+        directory = Directory.systemTemp;
+      } catch (_) {
+        return;
+      }
+    }
     final path = '${directory.path}/contacts_export.csv';
     final file = File(path);
     await file.writeAsString(csvString);
@@ -53,7 +64,17 @@ class ExportService {
       vcfBuffer.writeln('');
     }
 
-    final directory = await getTemporaryDirectory();
+    if (kIsWeb) return;
+    Directory directory;
+    try {
+      directory = await getTemporaryDirectory();
+    } catch (_) {
+      try {
+        directory = Directory.systemTemp;
+      } catch (_) {
+        return;
+      }
+    }
     final path = '${directory.path}/contacts_export.vcf';
     final file = File(path);
     await file.writeAsString(vcfBuffer.toString());

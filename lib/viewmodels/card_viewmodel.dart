@@ -7,7 +7,6 @@ import '../repositories/card_repository.dart';
 import '../repositories/user_repository.dart';
 import '../repositories/theme_repository.dart';
 import '../repositories/auth_repository.dart';
-import '../views/screens/manage_cards/manage_card_screens.dart';
 import '../core/utils/upload_url_resolver.dart';
 import '../core/state/app_loading_service.dart';
 
@@ -136,6 +135,8 @@ class CardViewModel extends ChangeNotifier {
             final textColor = theme['text_color']?.toString();
             final bgImageColor = theme['bg_image_color']?.toString();
             final opacity = theme['opacity']?.toString();
+            final templateId = theme['template_id']?.toString();
+            final templateKey = theme['template_key']?.toString();
 
             updatedCard = updatedCard.copyWith(
               backgroundImage: bgImage,
@@ -143,6 +144,8 @@ class CardViewModel extends ChangeNotifier {
               textColor: textColor,
               bgImageColor: bgImageColor,
               opacity: opacity,
+              templateId: templateId,
+              templateKey: templateKey,
             );
           }
           return updatedCard;
@@ -163,14 +166,15 @@ class CardViewModel extends ChangeNotifier {
 
   Future<void> _loadDetailedProfile(CardModel card) async {
     try {
+      final targetUserId = card.accountUserId > 0 ? card.accountUserId.toString() : userId;
       final details = await _userRepository.getCardProfileDetails(
-        userId, // Account user ID
+        targetUserId,
         workProfileId: card.workProfileId,
       );
       if (details != null) {
         try {
           final galleryData = await _userRepository.getUserGallery(
-            userId,
+            targetUserId,
             workProfileId: card.workProfileId,
           );
           if (galleryData != null) {
@@ -204,20 +208,33 @@ class CardViewModel extends ChangeNotifier {
           }
         } catch (_) {}
         _selectedCardDetails = details;
+      } else {
+        _createFallbackCardDetails(card);
       }
-    } catch (e) {
-      _errorMessage = 'Failed to load card details: $e';
+    } catch (_) {
+      _createFallbackCardDetails(card);
     }
+  }
+
+  void _createFallbackCardDetails(CardModel card) {
+    _selectedCardDetails = CardProfileDetails(
+      firstName: card.name,
+      companyName: card.companyName,
+      email: card.email ?? '',
+      phone: card.phone,
+      profileImageName: card.profileImageName ?? '',
+      companyLogoName: card.companyLogo ?? '',
+    );
   }
 
   Future<void> setCurrentIndex(int index) async {
     if (index >= 0 && index < _cards.length) {
       _currentIndex = index;
-      _selectedCardDetails = null;
-      _isLoading = true;
-      notifyListeners(); // Show loading state briefly if needed
-      await _loadDetailedProfile(_cards[index]);
+      _createFallbackCardDetails(_cards[index]);
       _isLoading = false;
+      _errorMessage = null;
+      notifyListeners();
+      await _loadDetailedProfile(_cards[index]);
       notifyListeners();
     }
   }
@@ -265,7 +282,7 @@ class CardViewModel extends ChangeNotifier {
   bool get canDeleteSelectedCard => _cards.length > 1 && !isPrimaryCardSelected;
   bool get isPrimaryCardSelected => currentCard?.isPrimary ?? false;
   bool get isSuspended => currentCard?.isSuspended ?? false;
-  String get userId => _cards.isNotEmpty ? _cards.first.accountUserId.toString() : '';
+  String get userId => currentCard?.accountUserId.toString() ?? (_cards.isNotEmpty ? _cards.first.accountUserId.toString() : '');
 
   void clearMessages() {
     _errorMessage = null;
@@ -274,75 +291,152 @@ class CardViewModel extends ChangeNotifier {
   }
   void openSection(String sectionId) {}
   void closeSection({bool keepChanges = false}) {}
-  void handleAddMoreCard(BuildContext context, {UserModel? masterProfile}) {
-    // Copy company and website from existing details if available
-    final defaultCompany = _selectedCardDetails?.companyName ?? '';
-    final defaultWebsites = _selectedCardDetails?.website != null 
-        ? List<Map<String, String>>.from(_selectedCardDetails!.website.map((w) => Map<String, String>.from(w)))
-        : <Map<String, String>>[];
-
-    // Create a new blank card instance locally for the UI flow
-    final newCard = CardModel(
-      userId: int.tryParse(userId) ?? 0,
-      cardId: 0,
-      workProfileId: 0,
-      accountUserId: int.tryParse(userId) ?? 0,
-      cardNo: _cards.length + 1,
-      name: 'Card ${_cards.length + 1}',
-      companyName: defaultCompany,
-      phone: masterProfile?.phone ?? '',
-      email: masterProfile?.email ?? '',
-      designation: '',
-      companyLogo: null,
-      qrCode: null,
-      tabLabel: 'Card ${_cards.length + 1}',
-      captionName: 'Card ${_cards.length + 1}',
-      isPrimary: false,
-      isTemporary: true,
-      backgroundImage: null,
-    );
-    _cards.add(newCard);
-    
-    // Set default details populated with master profile information
-    _selectedCardDetails = CardProfileDetails(
-      firstName: masterProfile?.firstName ?? 'New',
-      lastName: masterProfile?.lastName ?? 'User',
-      phone: masterProfile?.phone ?? '',
-      email: masterProfile?.email ?? '',
-      designation: '',
-      companyName: defaultCompany,
-      companyAddress: '',
-      companyCity: '',
-      companyState: '',
-      companyDistrict: '',
-      companyPincode: '',
-      companyEmails: [],
-      contactNumbers: masterProfile?.phone != null && masterProfile!.phone!.isNotEmpty ? [masterProfile.phone!] : [],
-      whatsappNumbers: [],
-      aboutCompany: '',
-      website: defaultWebsites,
-      youtubeLinks: [],
-      fbLink: '',
-      instaLink: '',
-      linkedin: '',
-      xLink: '',
-      existingPhotos: [],
-    );
-    
-    _currentIndex = _cards.length - 1;
-    notifyListeners();
-    
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ManageCardsScreen(isTab: false),
+  Future<void> handleAddMoreCard(BuildContext context, {UserModel? masterProfile}) async {
+    final bool? confirmCreate = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Create New Card'),
+        content: const Text('Do you want to create a new smart card profile?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Yes'),
+          ),
+        ],
       ),
-    ).then((_) {
-      // Refresh cards after returning so new card appears in Home & My Cards
-      if (userId.isNotEmpty) {
-        fetchCards(userId);
+    );
+
+    if (confirmCreate != true) return;
+
+    _isBusy = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final activeUserIdStr = userId.isNotEmpty ? userId : (masterProfile?.id ?? '');
+      final activeUserId = int.tryParse(activeUserIdStr) ?? 0;
+
+      final defaultFirstName = (masterProfile?.firstName != null && masterProfile!.firstName!.trim().isNotEmpty)
+          ? masterProfile.firstName!.trim()
+          : (_selectedCardDetails?.firstName ?? 'New');
+      final defaultLastName = (masterProfile?.lastName != null && masterProfile!.lastName!.trim().isNotEmpty)
+          ? masterProfile.lastName!.trim()
+          : (_selectedCardDetails?.lastName ?? 'User');
+      final defaultProfileImg = (masterProfile?.profileImage != null && masterProfile!.profileImage!.trim().isNotEmpty)
+          ? masterProfile.profileImage!.trim()
+          : (_selectedCardDetails?.profileImageName ?? '');
+      final defaultCompany = _selectedCardDetails?.companyName ?? '';
+      final defaultDesignation = _selectedCardDetails?.designation ?? '';
+      final defaultLogo = _selectedCardDetails?.companyLogoName ?? '';
+      final defaultWebsites = _selectedCardDetails?.website != null 
+          ? List<Map<String, String>>.from(_selectedCardDetails!.website.map((w) => Map<String, String>.from(w)))
+          : <Map<String, String>>[];
+
+      // 1. Instantly create local CardModel pre-filled with existing profile name and image
+      final newCardNo = _cards.length + 1;
+      final newCard = CardModel(
+        userId: activeUserId,
+        cardId: DateTime.now().millisecondsSinceEpoch % 1000000,
+        workProfileId: DateTime.now().millisecondsSinceEpoch % 1000000,
+        accountUserId: activeUserId,
+        cardNo: newCardNo,
+        name: '$defaultFirstName $defaultLastName'.trim().isNotEmpty 
+            ? '$defaultFirstName $defaultLastName'.trim() 
+            : 'Card $newCardNo',
+        companyName: defaultCompany,
+        phone: masterProfile?.phone ?? _selectedCardDetails?.phone ?? '',
+        email: masterProfile?.email ?? _selectedCardDetails?.email ?? '',
+        designation: defaultDesignation,
+        companyLogo: defaultLogo.isNotEmpty ? defaultLogo : null,
+        qrCode: 'https://thesmartcards.in?sc=$newCardNo',
+        tabLabel: 'Card $newCardNo',
+        captionName: 'Card $newCardNo',
+        isPrimary: false,
+        isTemporary: false,
+        backgroundImage: null,
+        profileImageName: defaultProfileImg,
+      );
+
+      _cards.add(newCard);
+      _currentIndex = _cards.length - 1;
+      notifyListeners();
+
+      // 2. Persist to backend API in background
+      if (activeUserIdStr.isNotEmpty) {
+        final newCardPayload = {
+          'first_name': defaultFirstName,
+          'last_name': defaultLastName,
+          'phone': masterProfile?.phone ?? _selectedCardDetails?.phone ?? '',
+          'email': masterProfile?.email ?? _selectedCardDetails?.email ?? '',
+          'designation': defaultDesignation,
+          'company_name': defaultCompany,
+          'company_address': _selectedCardDetails?.companyAddress ?? '',
+          'company_pincode': _selectedCardDetails?.companyPincode ?? '',
+          'company_city_id': _selectedCardDetails?.companyCityId ?? '',
+          'company_state_id': _selectedCardDetails?.companyStateId ?? '',
+          'company_city': _selectedCardDetails?.companyCity ?? '',
+          'company_state': _selectedCardDetails?.companyState ?? '',
+          'company_district': _selectedCardDetails?.companyDistrict ?? '',
+          'company_email': _selectedCardDetails?.companyEmails ?? [],
+          'company_phone': masterProfile?.phone != null && masterProfile!.phone!.isNotEmpty ? [masterProfile.phone!] : [],
+          'whatsapp_number': _selectedCardDetails?.whatsappNumbers ?? [],
+          'facebook_link': _selectedCardDetails?.fbLink ?? '',
+          'instagram_link': _selectedCardDetails?.instaLink ?? '',
+          'linkedin_link': _selectedCardDetails?.linkedin ?? '',
+          'twitter_link': _selectedCardDetails?.xLink ?? '',
+          'website': defaultWebsites,
+          'description': _selectedCardDetails?.aboutCompany ?? '',
+          'youtube_links': _selectedCardDetails?.youtubeLinks ?? [],
+          'profile_image': defaultProfileImg,
+          'company_logo': defaultLogo,
+        };
+
+        try {
+          await _userRepository.createUserAdditionalCard(activeUserIdStr, newCardPayload);
+          _successMessage = 'New card created successfully!';
+          await fetchCards(activeUserIdStr);
+          if (_cards.isNotEmpty) {
+            _currentIndex = _cards.length - 1;
+          }
+        } catch (apiErr) {
+          debugPrint('Backend sync note: $apiErr');
+        }
       }
-    });
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('New card created successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to create card: $e';
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create card: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      _isBusy = false;
+      notifyListeners();
+    }
   }
 
   Future<bool> handleDuplicateCard(CardModel card) async {
@@ -400,18 +494,37 @@ class CardViewModel extends ChangeNotifier {
 
   Future<void> handleSetPrimaryCard() async {
     if (currentCard == null) return;
+    final targetWorkProfileId = currentCard!.workProfileId;
+    final targetUserId = userId;
+    if (targetUserId.isEmpty || targetWorkProfileId <= 0) return;
+
     _isBusy = true;
     _errorMessage = null;
     notifyListeners();
+    AppLoadingService.instance.startTask();
     try {
-      await _userRepository.setUserPrimaryCard(userId, currentCard!.cardId, {});
-      _successMessage = 'Primary card updated!';
-      await fetchCards(userId);
+      await _userRepository.setUserPrimaryCard(targetUserId, targetWorkProfileId, {});
+      
+      // Update local cards list primary flags immediately
+      _cards = _cards.map((c) {
+        return c.copyWith(isPrimary: c.workProfileId == targetWorkProfileId);
+      }).toList();
+
+      _successMessage = 'Primary card updated successfully!';
+      
+      await fetchCards(targetUserId);
+
+      final newIndex = _cards.indexWhere((c) => c.workProfileId == targetWorkProfileId);
+      if (newIndex >= 0) {
+        _currentIndex = newIndex;
+        await _loadDetailedProfile(_cards[_currentIndex]);
+      }
     } catch (e) {
       _errorMessage = 'Failed to set primary card: $e';
     } finally {
       _isBusy = false;
       notifyListeners();
+      AppLoadingService.instance.endTask();
     }
   }
 
@@ -425,6 +538,10 @@ class CardViewModel extends ChangeNotifier {
       _successMessage = 'Card deleted successfully!';
       _currentIndex = 0;
       await fetchCards(userId);
+      if (_cards.isNotEmpty) {
+        _currentIndex = 0;
+        await _loadDetailedProfile(_cards[0]);
+      }
     } catch (e) {
       _errorMessage = 'Failed to delete card: $e';
     } finally {
@@ -461,6 +578,18 @@ class CardViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void clearProfileImage() {
+    if (_cards.isNotEmpty && _currentIndex >= 0 && _currentIndex < _cards.length) {
+      _cards[_currentIndex] = _cards[_currentIndex].copyWith(profileImageName: '');
+    }
+    if (_selectedCardDetails != null) {
+      _selectedCardDetails!.profileImageName = '';
+    }
+    UploadUrlResolver.bustCache();
+    notifyListeners();
+  }
+
 
   Future<Map<String, dynamic>?> fetchPincodeDetails(String pincode) async {
     try {
@@ -614,6 +743,80 @@ class CardViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> handleRemoveProfileImage([String? passedUserId]) async {
+    final targetUserId = (passedUserId != null && passedUserId.isNotEmpty) ? passedUserId : userId;
+    if (targetUserId.isEmpty) return;
+
+    _isBusy = true;
+    _errorMessage = null;
+    notifyListeners();
+    AppLoadingService.instance.startTask();
+    try {
+      await _userRepository.deleteProfileImage(
+        targetUserId,
+        workProfileId: currentCard?.workProfileId,
+      );
+      UploadUrlResolver.bustCache();
+      if (_selectedCardDetails != null) {
+        _selectedCardDetails!.profileImageName = '';
+      }
+      if (_cards.isNotEmpty && _currentIndex >= 0 && _currentIndex < _cards.length) {
+        _cards[_currentIndex] = _cards[_currentIndex].copyWith(profileImageName: '');
+      }
+      _successMessage = 'Profile photo removed successfully!';
+      try {
+        await fetchCards(targetUserId);
+      } catch (_) {}
+    } catch (e) {
+      _errorMessage = 'Failed to remove profile photo: $e';
+    } finally {
+      _isBusy = false;
+      notifyListeners();
+      AppLoadingService.instance.endTask();
+    }
+  }
+
+  Future<void> handleRemoveCompanyLogo([String? passedUserId]) async {
+    final targetUserId = (passedUserId != null && passedUserId.isNotEmpty) ? passedUserId : userId;
+    if (targetUserId.isEmpty) return;
+
+    _isBusy = true;
+    _errorMessage = null;
+    notifyListeners();
+    AppLoadingService.instance.startTask();
+    try {
+      await _userRepository.deleteCompanyLogo(
+        targetUserId,
+        workProfileId: currentCard?.workProfileId,
+      );
+      UploadUrlResolver.bustCache();
+      if (_selectedCardDetails != null) {
+        _selectedCardDetails!.companyLogoName = '';
+      }
+      if (_cards.isNotEmpty && _currentIndex >= 0 && _currentIndex < _cards.length) {
+        _cards[_currentIndex] = _cards[_currentIndex].copyWith(companyLogo: '');
+      }
+      _successMessage = 'Company logo removed successfully!';
+      try {
+        await fetchCards(targetUserId);
+      } catch (_) {}
+    } catch (e) {
+      _errorMessage = 'Failed to remove company logo: $e';
+    } finally {
+      _isBusy = false;
+      notifyListeners();
+      AppLoadingService.instance.endTask();
+    }
+  }
+
+  void clearCompanyLogo() {
+    if (_selectedCardDetails != null) {
+      _selectedCardDetails!.companyLogoName = '';
+    }
+    UploadUrlResolver.bustCache();
+    notifyListeners();
+  }
+
   Future<void> handleRemoveGalleryImage(String photo) async {
     if (currentCard == null) return;
     _isBusy = true;
@@ -634,4 +837,28 @@ class CardViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  void updateActiveCardTheme({
+    String? backgroundImage,
+    String? backgroundColor,
+    String? textColor,
+    String? bgImageColor,
+    String? opacity,
+    String? templateId,
+    String? templateKey,
+  }) {
+    if (_cards.isEmpty) return;
+    final updatedCard = _cards[_currentIndex].copyWith(
+      backgroundImage: backgroundImage,
+      backgroundColor: backgroundColor,
+      textColor: textColor,
+      bgImageColor: bgImageColor,
+      opacity: opacity,
+      templateId: templateId,
+      templateKey: templateKey,
+    );
+    _cards[_currentIndex] = updatedCard;
+    notifyListeners();
+  }
 }
+

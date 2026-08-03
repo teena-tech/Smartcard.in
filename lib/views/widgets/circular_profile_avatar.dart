@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
 import 'lottie_loader.dart';
 
-class CircularProfileAvatar extends StatelessWidget {
+class CircularProfileAvatar extends StatefulWidget {
   final double radius;
   final String? imageUrl;
   final String? imagePath;
@@ -15,6 +17,7 @@ class CircularProfileAvatar extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final BoxShadow? shadow;
   final String? cacheKey;
+  final bool animateRing;
 
   const CircularProfileAvatar({
     super.key,
@@ -30,26 +33,124 @@ class CircularProfileAvatar extends StatelessWidget {
     this.padding,
     this.shadow,
     this.cacheKey,
+    this.animateRing = true,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final avatarSize = size ?? radius * 2;
-    final effectiveBackgroundColor = backgroundColor ?? Colors.white;
-    final decoration = BoxDecoration(
-      shape: BoxShape.circle,
-      color: effectiveBackgroundColor,
-      border: borderColor != null
-          ? Border.all(color: borderColor!, width: borderWidth)
-          : null,
-      boxShadow: shadow != null ? [shadow!] : null,
-    );
+  State<CircularProfileAvatar> createState() => _CircularProfileAvatarState();
+}
 
+class _CircularProfileAvatarState extends State<CircularProfileAvatar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarSize = widget.size ?? widget.radius * 2;
+    final effectiveBackgroundColor = widget.backgroundColor ?? Colors.white;
+
+    if (!widget.animateRing) {
+      return _buildStaticAvatar(avatarSize, effectiveBackgroundColor);
+    }
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final angle = _controller.value * 2 * math.pi;
+        final pulseScale = 1.0 + 0.05 * math.sin(angle * 2);
+
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Outer Rotating & Pulsing Gradient Ring
+            Transform.rotate(
+              angle: angle,
+              child: Container(
+                width: avatarSize + 6,
+                height: avatarSize + 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    colors: [
+                      AppColors.primaryRed,
+                      const Color(0xFFFF6B6B),
+                      const Color(0xFF3B82F6),
+                      const Color(0xFF10B981),
+                      AppColors.primaryRed,
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryRed.withValues(alpha: 0.35 * pulseScale),
+                      blurRadius: 6 * pulseScale,
+                      spreadRadius: 1 * pulseScale,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Inner White Gap
+            Container(
+              width: avatarSize + 2,
+              height: avatarSize + 2,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+            ),
+
+            // Avatar Main Body
+            Container(
+              width: avatarSize,
+              height: avatarSize,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: effectiveBackgroundColor,
+                border: widget.borderColor != null
+                    ? Border.all(color: widget.borderColor!, width: widget.borderWidth)
+                    : null,
+                boxShadow: widget.shadow != null ? [widget.shadow!] : null,
+              ),
+              padding: widget.padding ?? EdgeInsets.all(widget.borderWidth > 0 ? 0 : 0),
+              child: ClipOval(
+                child: _buildImageContent(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStaticAvatar(double avatarSize, Color effectiveBackgroundColor) {
     return Container(
       width: avatarSize,
       height: avatarSize,
-      decoration: decoration,
-      padding: padding ?? EdgeInsets.all(borderWidth > 0 ? 0 : 0),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: effectiveBackgroundColor,
+        border: widget.borderColor != null
+            ? Border.all(color: widget.borderColor!, width: widget.borderWidth)
+            : null,
+        boxShadow: widget.shadow != null ? [widget.shadow!] : null,
+      ),
+      padding: widget.padding ?? EdgeInsets.all(widget.borderWidth > 0 ? 0 : 0),
       child: ClipOval(
         child: _buildImageContent(),
       ),
@@ -57,15 +158,15 @@ class CircularProfileAvatar extends StatelessWidget {
   }
 
   Widget _buildImageContent() {
-    final hasImage = (imageUrl != null && imageUrl!.isNotEmpty) ||
-        (imagePath != null && imagePath!.isNotEmpty);
+    final hasImage = (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) ||
+        (widget.imagePath != null && widget.imagePath!.isNotEmpty);
 
     if (!hasImage) {
       return Center(
         child: Text(
-          fallbackText.isEmpty ? 'U' : fallbackText,
+          widget.fallbackText.isEmpty ? 'U' : widget.fallbackText,
           style: TextStyle(
-            color: foregroundColor ?? Colors.black87,
+            color: widget.foregroundColor ?? Colors.black87,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -73,8 +174,8 @@ class CircularProfileAvatar extends StatelessWidget {
     }
 
     // Handle network images
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      final normalizedUrl = imageUrl!.trim();
+    if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
+      final normalizedUrl = widget.imageUrl!.trim();
       if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
         return Image.network(
           normalizedUrl,
@@ -91,8 +192,8 @@ class CircularProfileAvatar extends StatelessWidget {
     }
 
     // Handle local file images
-    if (imagePath != null && imagePath!.isNotEmpty) {
-      final file = File(imagePath!);
+    if (widget.imagePath != null && widget.imagePath!.isNotEmpty) {
+      final file = File(widget.imagePath!);
       if (file.existsSync()) {
         return Image.file(
           file,
@@ -107,12 +208,12 @@ class CircularProfileAvatar extends StatelessWidget {
 
   Widget _fallbackContent() {
     return Container(
-      color: backgroundColor ?? Colors.grey.shade200,
+      color: widget.backgroundColor ?? Colors.grey.shade200,
       child: Center(
         child: Text(
-          fallbackText.isEmpty ? 'U' : fallbackText,
+          widget.fallbackText.isEmpty ? 'U' : widget.fallbackText,
           style: TextStyle(
-            color: foregroundColor ?? Colors.black54,
+            color: widget.foregroundColor ?? Colors.black54,
             fontWeight: FontWeight.w700,
           ),
         ),

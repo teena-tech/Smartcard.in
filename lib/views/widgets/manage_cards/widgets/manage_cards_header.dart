@@ -55,7 +55,7 @@ Widget buildProfileHeader(
                     ),
                   ),
                   Text(
-                    'My Profile',
+                    'My Card',
                     style: GoogleFonts.inter(
                       color: Colors.white,
                       fontSize: 16,

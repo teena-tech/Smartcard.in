@@ -302,6 +302,50 @@ class UserRepository {
     }
   }
 
+  /// Deletes profile image
+  Future<bool> deleteProfileImage(String userId, {int? workProfileId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (workProfileId != null && workProfileId > 0) {
+        queryParams['work_profile_id'] = workProfileId.toString();
+      }
+      final response = await _dioClient.dio.delete(
+        ApiConfig.userProfileImage(userId),
+        queryParameters: queryParams,
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (_) {
+      try {
+        await updateUserProfile(userId, {'profile_image': '', 'image': ''});
+        return true;
+      } catch (e) {
+        throw DioClient.getErrorMessage(e, 'Failed to delete profile image');
+      }
+    }
+  }
+
+  /// Deletes company logo
+  Future<bool> deleteCompanyLogo(String userId, {int? workProfileId}) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (workProfileId != null && workProfileId > 0) {
+        queryParams['work_profile_id'] = workProfileId.toString();
+      }
+      final response = await _dioClient.dio.delete(
+        ApiConfig.companyLogo(userId),
+        queryParameters: queryParams,
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (_) {
+      try {
+        await updateUserProfile(userId, {'logo': '', 'company_logo': ''});
+        return true;
+      } catch (e) {
+        throw DioClient.getErrorMessage(e, 'Failed to delete company logo');
+      }
+    }
+  }
+
   /// Loads the dashboard messages used by the Messages page
   Future<List<Map<String, dynamic>>> getDashboardMessages({
     int limit = 200,

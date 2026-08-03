@@ -14,7 +14,6 @@ import '../../viewmodels/dashboard_viewmodel.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../widgets/circular_profile_avatar.dart';
 import '../../core/utils/upload_url_resolver.dart';
-import 'premium_payment_screen.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -27,7 +26,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   final TextEditingController _couponController = TextEditingController();
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  bool _showBenefits = false;
   late Razorpay _razorpay;
   String? _lastSuccessMessage;
   String? _lastErrorMessage;
@@ -58,12 +56,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final userId = authViewModel.currentUser?.id ?? '1';
 
     final paymentData = {
-      'razorpay_payment_id': response.paymentId,
-      'razorpay_order_id': response.orderId,
-      'razorpay_signature': response.signature,
+      'razorpay_payment_id': response.paymentId ?? '',
+      'razorpay_order_id': response.orderId ?? '',
+      'razorpay_signature': response.signature ?? '',
       'coupon_code': subscriptionViewModel.appliedCouponCode.isNotEmpty
           ? subscriptionViewModel.appliedCouponCode
           : null,
+      'base_amount': SubscriptionViewModel.baseAmount,
+      'discount_amount': subscriptionViewModel.discountedAmount,
+      'payable_amount': subscriptionViewModel.payableAmount,
+      'gst_amount': subscriptionViewModel.gstAmount,
+      'total_amount': subscriptionViewModel.totalAmount,
       'payment_for': 'subscription',
     };
 
@@ -92,14 +95,34 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Future<void> _loadSubscription() async {
     final authViewModel = context.read<AuthViewModel>();
+    final profileViewModel = context.read<ProfileViewModel>();
     final subscriptionViewModel = context.read<SubscriptionViewModel>();
     final userId = authViewModel.currentUser?.id;
     if (userId != null) {
-      await subscriptionViewModel.fetchSubscription(userId);
+      await Future.wait<void>([
+        profileViewModel.loadProfile(userId),
+        subscriptionViewModel.fetchSubscription(userId),
+      ]);
     }
   }
 
-  Future<void> _initiatePayment() async {
+  void _openCheckoutModal({bool preserveCoupon = false}) {
+    final vm = context.read<SubscriptionViewModel>();
+    vm.clearMessages();
+    if (!preserveCoupon) {
+      vm.resetCoupon();
+      _couponController.clear();
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildPremiumCheckoutSheet(),
+    );
+  }
+
+  Future<bool> _initiatePayment() async {
     final subscriptionViewModel = context.read<SubscriptionViewModel>();
     final authViewModel = context.read<AuthViewModel>();
 
@@ -108,10 +131,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     final userId = authViewModel.currentUser?.id;
     if (userId == null || userId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User session not found. Please log in.')),
-      );
-      return;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User session not found. Please log in.')),
+        );
+      }
+      return false;
     }
 
     // If no payment is required or payable amount is zero, activate directly
@@ -123,57 +148,36 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         'coupon_code': subscriptionViewModel.appliedCouponCode.isNotEmpty
             ? subscriptionViewModel.appliedCouponCode
             : null,
-        'payment_for': 'subscription',
+        'base_amount': SubscriptionViewModel.baseAmount,
+        'discount_amount': subscriptionViewModel.discountedAmount,
         'payable_amount': 0.0,
+        'gst_amount': 0.0,
+        'total_amount': 0.0,
+        'payment_for': 'subscription',
       };
 
       final success = await subscriptionViewModel.confirmPayment(userId, paymentData);
       if (success && mounted) {
         _showSuccessDialog();
       }
-      return;
+      return success;
     }
 
     // 1. Create Order on Backend
     final orderRes = await subscriptionViewModel.createPaymentOrder(userId);
     if (orderRes == null || orderRes['success'] != true) {
-      return;
+      return false;
     }
 
     final data = orderRes['data']?['order'] as Map<String, dynamic>?;
     final razorpayKeyId = data?['razorpay_key_id']?.toString() ?? '';
     final orderId = data?['razorpay_order_id']?.toString() ?? '';
-    final amountPaise = data?['amount'] as int? ?? (subscriptionViewModel.payableAmount * 100).toInt();
+    // Round up to nearest rupee — Razorpay/UPI/QR requires whole rupee amounts
+    final int roundedRupees = subscriptionViewModel.payableAmount.ceil();
+    final amountPaise = data?['amount'] as int? ?? (roundedRupees * 100);
 
-    // 2. Local dev mock payment fallback if order is mock or key empty
-    if (orderId.startsWith('devorder_') || razorpayKeyId == 'rzp_test_mock_key' || razorpayKeyId.isEmpty) {
-      final stamp = DateTime.now().millisecondsSinceEpoch;
-      final rand = DateTime.now().microsecond % 9000 + 1000;
-      final paymentData = {
-        'razorpay_payment_id': 'devpay_${userId}_${stamp}_$rand',
-        'razorpay_order_id': orderId.isNotEmpty ? orderId : 'devorder_${stamp}_$rand',
-        'razorpay_signature': 'devsig_${stamp}_$rand',
-        'coupon_code': subscriptionViewModel.appliedCouponCode.isNotEmpty
-            ? subscriptionViewModel.appliedCouponCode
-            : null,
-        'base_amount': SubscriptionViewModel.baseAmount,
-        'discount_amount': subscriptionViewModel.discountedAmount,
-        'payable_amount': subscriptionViewModel.payableAmount,
-        'gst_amount': subscriptionViewModel.gstAmount,
-        'total_amount': subscriptionViewModel.totalAmount,
-        'payment_for': 'subscription',
-        'dev_mock_payment': 1,
-      };
-
-      final success = await subscriptionViewModel.confirmPayment(userId, paymentData);
-      if (success && mounted) {
-        _showSuccessDialog();
-      }
-      return;
-    }
-
-    // 3. Open Razorpay Checkout for actual Razorpay Key
-    final options = {
+    // 2. Open Razorpay Checkout for real payment
+    final options = <String, dynamic>{
       'key': razorpayKeyId,
       'amount': amountPaise,
       'name': 'SmartCard Premium',
@@ -183,13 +187,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         'contact': authViewModel.currentUser?.phone ?? '',
         'email': authViewModel.currentUser?.email ?? '',
       },
-      'external': {
-        'wallets': ['paytm']
-      }
     };
 
     try {
+      debugPrint('🚀 Opening Razorpay with key=$razorpayKeyId, orderId=$orderId, amount=$amountPaise');
       _razorpay.open(options);
+      subscriptionViewModel.resetPaymentState();
+      return true;
     } catch (e) {
       debugPrint('Error opening Razorpay checkout: $e');
       subscriptionViewModel.resetPaymentState();
@@ -198,6 +202,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           SnackBar(content: Text('Could not launch Razorpay checkout: $e')),
         );
       }
+      return false;
     }
   }
 
@@ -264,6 +269,363 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPremiumCheckoutSheet() {
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter modalSetState) {
+        final vm = context.watch<SubscriptionViewModel>();
+
+        // Round payable amount UP to nearest whole rupee (Razorpay requires whole rupees, no decimals)
+        final int roundedAmount = vm.payableAmount.ceil();
+        final String displayAmount = '${roundedAmount}';
+
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFFAF5F5),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Top Header Bar
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryRed,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'Premium Checkout',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 48), // Balance back icon
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Card Container
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        'Premium Subscription',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1E233A),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '365 + 18% GST',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Price Display
+                      Column(
+                        children: [
+                          if (vm.appliedCoupon != null && vm.appliedCoupon!.success && vm.discountedAmount > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Text(
+                                '₹ ${(vm.totalAmount).ceil()}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade500,
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                vm.isPaymentRequired ? '₹ $displayAmount' : 'FREE',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.bold,
+                                  color: vm.isPaymentRequired ? AppColors.primaryRed : Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (vm.appliedCoupon != null && vm.appliedCoupon!.success)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                vm.appliedCoupon!.message ?? 'Coupon Applied Successfully!',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Features Bullet List
+                      ...[
+                        'Professional Profile Update',
+                        'Theme Customization',
+                        'Social Media Links',
+                        'Thumbnail in Social Media',
+                      ].map((feature) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              color: Color(0xFF22C55E),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              feature,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF334155),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                      const SizedBox(height: 20),
+
+                      // Discount Coupon Code Field
+                      if (vm.appliedCoupon != null && vm.appliedCoupon!.success)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      vm.appliedCouponCode.toUpperCase(),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.green.shade800,
+                                      ),
+                                    ),
+                                    if (vm.appliedCoupon?.message != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          vm.appliedCoupon!.message!,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            color: Colors.green.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  vm.resetCoupon();
+                                  _couponController.clear();
+                                },
+                                child: Icon(Icons.close, color: Colors.green.shade600, size: 20),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _couponController,
+                                      decoration: InputDecoration(
+                                        hintText: 'DISCOUNT COUPON CODE (OPTIONAL)',
+                                        hintStyle: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                        border: InputBorder.none,
+                                      ),
+                                      textCapitalization: TextCapitalization.characters,
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 6),
+                                    child: ElevatedButton(
+                                      onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
+                                          ? null
+                                          : () async {
+                                              final userId = context.read<AuthViewModel>().currentUser?.id;
+                                              if (userId != null && _couponController.text.trim().isNotEmpty) {
+                                                await vm.applyCoupon(userId, _couponController.text.trim());
+                                                if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {
+                                                  if (!vm.isSubscriptionDurationCoupon) {
+                                                    await vm.createPaymentOrder(userId);
+                                                  }
+                                                }
+                                              }
+                                            },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFB85450),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      ),
+                                      child: vm.status == SubscriptionStatus.loading
+                                          ? const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : Text(
+                                              'APPLY',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Inline error message
+                            if (vm.errorMessage != null && vm.errorMessage!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6, left: 4),
+                                child: Text(
+                                  vm.errorMessage!,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.red.shade600,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      const SizedBox(height: 20),
+
+                      // Pay Now Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: (vm.paymentStatus == PaymentStatus.processing || vm.status == SubscriptionStatus.loading)
+                              ? null
+                              : () async {
+                                  final nav = Navigator.of(context);
+                                  final success = await _initiatePayment();
+                                  if (success) {
+                                    nav.pop(); // Close checkout sheet ONLY on successful launch/upgrade
+                                  }
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryRed,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          child: vm.paymentStatus == PaymentStatus.processing
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  vm.isPaymentRequired ? 'Pay Now' : 'Apply & Upgrade',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -413,10 +775,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               padding: const EdgeInsets.all(16),
             child: Consumer<SubscriptionViewModel>(
               builder: (context, vm, child) {
-                final authVm = context.watch<AuthViewModel>();
-                final profileVm = context.watch<ProfileViewModel>();
-                final user = profileVm.user ?? authVm.currentUser;
-                final profileImage = user?.profileImage;
                 final displayName = user?.displayName ?? 'User';
                 final email = user?.email ?? '';
 
@@ -492,12 +850,32 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   ),
                 );
 
-                if (vm.subscription?.isActive == true) {
-                  return Column(
-                    children: [
-                      profileCard,
+                final isPremiumUser = vm.subscription?.isActive == true;
+                final planButtonText = isPremiumUser ? 'Extend Plan' : 'Upgrade Plan';
+
+                final List<Widget> slides = [];
+                slides.add(_buildCarouselCard(
+                  title: 'PREMIUM',
+                  price: '₹ 365',
+                  billingInfo: '/ Year',
+                  features: [
+                    {'included': true, 'label': 'Unlimited Cards/Professional profiles'},
+                    {'included': true, 'label': 'Unlimited card scans & contact save'},
+                    {'included': true, 'label': 'All premium card themes available'},
+                    {'included': true, 'label': 'Ad-free experience'},
+                  ],
+                  buttonLabel: planButtonText,
+                  onPressed: _openCheckoutModal,
+                ));
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    profileCard,
+                    if (vm.subscription?.isActive == true)
                       Container(
                         width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 20),
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -512,29 +890,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         ),
                         child: Column(
                           children: [
-                            const Icon(
-                              Icons.verified_user_rounded,
-                              color: Colors.green,
-                              size: 80,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Your Premium plan is active!',
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 20),
-                            const Divider(),
-                            const SizedBox(height: 16),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text('Membership Type', style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
-                                Text(vm.subscription?.membership ?? 'Premium', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
+                                Text('PREMIUM', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -549,14 +909,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Start Date', style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
-                                Text(vm.subscription?.subscriptionStart ?? '', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 14)),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
                                 Text('End Date', style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
                                 Text(vm.subscription?.subscriptionEnd ?? '', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 14)),
                               ],
@@ -564,57 +916,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           ],
                         ),
                       ),
-                    ],
-                  );
-                }
-
-                final isExpired = vm.subscription != null && 
-                    !vm.subscription!.isActive && 
-                    vm.subscription!.membership.toLowerCase() != 'free';
-
-                final List<Widget> slides = [];
-                if (!isExpired) {
-                  slides.add(_buildCarouselCard(
-                    title: 'FREE',
-                    price: '₹ 0',
-                    billingInfo: '/ Year',
-                    features: [
-                      {'included': true, 'label': 'Create 1 smart card'},
-                      {'included': true, 'label': 'Standard theme layouts'},
-                      {'included': false, 'label': 'Cloud Sync & backup'},
-                      {'included': false, 'label': 'Premium theme layouts'},
-                    ],
-                    buttonLabel: 'Current Plan',
-                    onPressed: null, // Disabled
-                    isCurrentPlan: true,
-                  ));
-                } else {
-                  slides.add(_buildCarouselCard(
-                    title: 'PREMIUM',
-                    price: '₹ 365',
-                    billingInfo: '/ Year',
-                    features: [
-                      {'included': true, 'label': 'Create unlimited smart cards'},
-                      {'included': true, 'label': 'Premium theme layouts'},
-                      {'included': true, 'label': 'Cloud Sync & backup'},
-                      {'included': true, 'label': 'Priority Customer Support'},
-                    ],
-                    buttonLabel: 'Upgrade',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PremiumPaymentScreen(),
-                        ),
-                      );
-                    },
-                  ));
-                }
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    profileCard,
                     // Carousel Card Container
                     Container(
                       width: double.infinity,
@@ -647,7 +948,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   child: TextField(
                                     controller: _couponController,
                                     decoration: InputDecoration(
-                                      hintText: 'HAVE A PROMO CODE? APPLY HERE',
+                                      hintText: 'HAVE A PROMO CODE? APPLY HERE (OPTIONAL)',
                                       hintStyle: GoogleFonts.inter(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
@@ -661,12 +962,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                 Container(
                                   margin: const EdgeInsets.symmetric(vertical: 4),
                                   child: ElevatedButton(
-                                    onPressed: vm.isPaymentButtonDisabled
+                                    onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
                                         ? null
-                                        : () {
+                                        : () async {
                                             final userId = context.read<AuthViewModel>().currentUser?.id;
                                             if (userId != null && _couponController.text.trim().isNotEmpty) {
-                                              vm.applyCoupon(userId, _couponController.text.trim());
+                                              await vm.applyCoupon(userId, _couponController.text.trim());
+                                               if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {
+                                                 if (!vm.isSubscriptionDurationCoupon) {
+                                                   _openCheckoutModal(preserveCoupon: true);
+                                                   await vm.createPaymentOrder(userId);
+                                                 }
+                                               }
                                             }
                                           },
                                     style: ElevatedButton.styleFrom(
@@ -726,43 +1033,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             ),
                           if (slides.length > 1) const SizedBox(height: 16),
 
-                          // Compare Plans Button
-                          SizedBox(
-                            width: 160,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _showBenefits = !_showBenefits;
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryRed,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: Text(
-                                _showBenefits ? 'Hide Details' : 'Upgrade Plan',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
 
-                    // Conditionally Show Benefits
-                    if (_showBenefits) ...[
-                      const SizedBox(height: 20),
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
+                    const SizedBox(height: 20),
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
@@ -778,60 +1056,85 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Premium Benefits',
+                              'Free User Privileges',
                               style: GoogleFonts.poppins(
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1E233A),
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 12),
                             const _BenefitItem(
-                              icon: Icons.card_membership,
-                              title: 'Unlimited Cards',
-                              subtitle: 'Create and manage unlimited smart cards',
+                              icon: Icons.badge,
+                              title: 'Lifetime digital business card',
+                              subtitle: 'Single card theme with customization',
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             const _BenefitItem(
-                              icon: Icons.qr_code,
-                              title: 'QR Code Generation',
-                              subtitle: 'Generate unlimited QR codes for your cards',
+                              icon: Icons.person,
+                              title: 'Professional profile management',
+                              subtitle: '1 profile management included',
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
+                            const _BenefitItem(
+                              icon: Icons.qr_code_scanner,
+                              title: '25 scans & contact saves',
+                              subtitle: 'Business card scanning and storage limit',
+                            ),
+                            const SizedBox(height: 12),
                             const _BenefitItem(
                               icon: Icons.share,
-                              title: 'Easy Sharing',
-                              subtitle: 'Share your cards with anyone, anywhere',
+                              title: 'Multi-channel sharing',
+                              subtitle: 'Share via App, QR code, NFC & link',
+                            ),
+                            const SizedBox(height: 20),
+                            const Divider(),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Premium Features',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryRed,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Everything in the Free plan, plus:',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             const _BenefitItem(
-                              icon: Icons.cloud_sync,
-                              title: 'Cloud Sync',
-                              subtitle: 'Sync your cards across all devices',
+                              icon: Icons.style,
+                              title: 'Unlimited Cards & Profiles',
+                              subtitle: 'Create and manage unlimited cards and professional profiles',
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             const _BenefitItem(
-                              icon: Icons.priority_high,
-                              title: 'Priority Support',
-                              subtitle: 'Get 24/7 priority customer support',
+                              icon: Icons.center_focus_strong,
+                              title: 'Unlimited Card Scans',
+                              subtitle: 'Scan and save unlimited business contacts',
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 12),
                             const _BenefitItem(
-                              icon: Icons.security,
-                              title: 'Advanced Security',
-                              subtitle: 'Enhanced security features for your data',
+                              icon: Icons.palette,
+                              title: 'All Premium Card Themes',
+                              subtitle: 'Full access to all current and upcoming premium themes',
+                            ),
+                            const SizedBox(height: 12),
+                            const _BenefitItem(
+                              icon: Icons.block,
+                              title: 'Ad-free Experience',
+                              subtitle: 'Zero advertisements displayed across the app',
                             ),
                             const SizedBox(height: 24),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const PremiumPaymentScreen(),
-                                    ),
-                                  );
-                                },
+                                onPressed: _openCheckoutModal,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primaryRed,
                                   foregroundColor: Colors.white,
@@ -842,7 +1145,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   elevation: 0,
                                 ),
                                 child: Text(
-                                  'Upgrade',
+                                  planButtonText,
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -854,8 +1157,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         ),
                       ),
                     ],
-                  ],
-                );
+                  );
               },
             ),
           ),
@@ -1079,47 +1381,6 @@ class _BenefitItem extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SummaryItem extends StatelessWidget {
-  final String label;
-  final String amount;
-  final bool isBold;
-  final bool isDiscount;
-  final bool isTotal;
-
-  const _SummaryItem({
-    required this.label,
-    required this.amount,
-    this.isBold = false,
-    this.isDiscount = false,
-    this.isTotal = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: isTotal ? AppColors.primaryRed : null,
-          ),
-        ),
-        Text(
-          amount,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: isDiscount ? Colors.green : (isTotal ? AppColors.primaryRed : null),
           ),
         ),
       ],

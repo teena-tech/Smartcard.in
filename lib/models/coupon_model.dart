@@ -20,12 +20,23 @@ class CouponModel {
     final couponJson = dataJson?['coupon'] as Map<String, dynamic>?;
     final applicationJson = dataJson?['application'] as Map<String, dynamic>?;
     
+    // payable_amount can come from top-level or data level
+    final payableAmount = (json['payable_amount'] as num?)?.toDouble()
+        ?? (dataJson?['payable_amount'] as num?)?.toDouble();
+
+    // For subscription_duration coupons, application.applied is true and payment is not required
+    // For discount coupons, application.applied is false and payment IS required
+    final applicationType = applicationJson?['type']?.toString();
+    final applicationApplied = applicationJson?['applied'] as bool? ?? false;
+    final isSubscriptionDuration = applicationType == 'subscription_duration';
+    final paymentRequired = isSubscriptionDuration ? false : !applicationApplied || applicationType == 'discount';
+
     return CouponModel(
       success: json['success'] as bool? ?? false,
       coupon: couponJson != null ? CouponData.fromJson(couponJson) : null,
       application: applicationJson != null ? CouponApplication.fromJson(applicationJson) : null,
-      payableAmount: (json['payable_amount'] as num?)?.toDouble(),
-      paymentRequired: applicationJson?['applied'] as bool? ?? !(applicationJson?['type'] == 'subscription_duration'),
+      payableAmount: payableAmount,
+      paymentRequired: paymentRequired,
       message: json['message']?.toString(),
     );
   }
@@ -119,13 +130,13 @@ class CouponData {
     return CouponData(
       type: json['type']?.toString() ?? '',
       discountAmount: (json['discount_amount'] as num?)?.toDouble(),
-      discountPercentage: json['discount_percentage'] as int?,
-      extraDays: json['subscription_days'] as int?,
+      discountPercentage: (json['discount_percentage'] as num?)?.toInt(),
+      extraDays: (json['subscription_days'] as num?)?.toInt(),
       code: json['code']?.toString(),
       status: json['status']?.toString(),
       description: json['description']?.toString(),
       expiryDate: json['expiry_date']?.toString(),
-      subscriptionDays: json['subscription_days'] as int?,
+      subscriptionDays: (json['subscription_days'] as num?)?.toInt(),
     );
   }
 

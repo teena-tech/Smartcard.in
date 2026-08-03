@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class EditorToolbar extends StatelessWidget {
+  final VoidCallback? onThemeTap;
   final VoidCallback onBgImageTap;
   final VoidCallback onColorsTap;
   final VoidCallback onOverlayTap;
@@ -12,6 +13,7 @@ class EditorToolbar extends StatelessWidget {
 
   const EditorToolbar({
     super.key,
+    this.onThemeTap,
     required this.onBgImageTap,
     required this.onColorsTap,
     required this.onOverlayTap,
@@ -34,6 +36,8 @@ class EditorToolbar extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
+            if (onThemeTap != null)
+              _buildToolbarBtn(Icons.view_quilt_outlined, 'Themes', onThemeTap!),
             _buildToolbarBtn(Icons.image_outlined, 'Bg Image', onBgImageTap),
             _buildToolbarBtn(Icons.color_lens_outlined, 'Colors', onColorsTap),
             _buildToolbarBtn(Icons.layers_outlined, 'Overlay', onOverlayTap),

@@ -141,6 +141,7 @@ class ThemeRepository {
           : await MultipartFile.fromFile(filePath ?? '', filename: fileName);
       
       final formData = FormData.fromMap({
+        'bg_image': filePart,
         'bg_image_upload': filePart,
         ...(payload ?? {}),
         ...queryParams,
@@ -229,10 +230,11 @@ class ThemeRepository {
         }
       }
       return [];
-    } on DioException catch (e) {
-      throw DioClient.getErrorMessage(e, 'Failed to fetch templates');
+    } catch (_) {
+      return [];
     }
   }
+
 
   Future<Map<String, dynamic>?> saveTemplate(
     String userId,

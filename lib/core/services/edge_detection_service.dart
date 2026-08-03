@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:edge_detection/edge_detection.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
@@ -70,62 +69,30 @@ class EdgeDetectionService {
     );
   }
 
-  /// Native edge UI — user can drag corners (camera or gallery).
+  static Future<Directory?> _getSafeTempDir() async {
+    if (kIsWeb) return null;
+    try {
+      return await getTemporaryDirectory();
+    } catch (_) {
+      try {
+        return Directory.systemTemp;
+      } catch (_) {
+        return null;
+      }
+    }
+  }
+
+  /// Manual edge UI fallback (returns sourcePath directly).
   static Future<String?> manualAdjustEdges(
     String sourcePath, {
     bool fromGallery = true,
   }) async {
-    final dir = await getTemporaryDirectory();
-    final outPath =
-        '${dir.path}/manual_card_${DateTime.now().millisecondsSinceEpoch}.jpg';
-
-    try {
-      if (fromGallery) {
-        // Copy source so plugin can read it; user adjusts in native crop UI.
-        await File(sourcePath).copy(outPath);
-        final ok = await EdgeDetection.detectEdgeFromGallery(
-          outPath,
-          androidCropTitle: 'Adjust Card Edges',
-          androidCropBlackWhiteTitle: 'Enhance',
-          androidCropReset: 'Reset',
-        );
-        return ok ? outPath : null;
-      } else {
-        final ok = await EdgeDetection.detectEdge(
-          outPath,
-          canUseGallery: false,
-          androidScanTitle: 'Scan Card',
-          androidCropTitle: 'Adjust Edges',
-          androidCropBlackWhiteTitle: 'Enhance',
-          androidCropReset: 'Reset',
-        );
-        return ok ? outPath : null;
-      }
-    } on Exception catch (e) {
-      debugPrint('Manual edge adjust failed: $e');
-      return null;
-    }
+    return sourcePath;
   }
 
-  /// Camera capture with built-in auto edge + manual adjust (native scanner).
+  /// Camera capture fallback.
   static Future<String?> scanFromCamera() async {
-    final dir = await getTemporaryDirectory();
-    final outPath =
-        '${dir.path}/camera_card_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    try {
-      final ok = await EdgeDetection.detectEdge(
-        outPath,
-        canUseGallery: false,
-        androidScanTitle: 'Align Business Card',
-        androidCropTitle: 'Adjust Edges',
-        androidCropBlackWhiteTitle: 'Low Light Boost',
-        androidCropReset: 'Reset',
-      );
-      return ok ? outPath : null;
-    } on Exception catch (e) {
-      debugPrint('Camera edge scan failed: $e');
-      return null;
-    }
+    return null;
   }
 
   static Future<String> _autoDetectIsolate(Map<String, dynamic> params) async {
@@ -166,7 +133,8 @@ class EdgeDetectionService {
     final resized = img.copyResize(output, width: 1200);
     final compressed = img.encodeJpg(resized, quality: 90);
 
-    final tempDir = await getTemporaryDirectory();
+    final tempDir = await _getSafeTempDir();
+    if (tempDir == null) return imagePath;
     final outPath =
         '${tempDir.path}/auto_card_${DateTime.now().millisecondsSinceEpoch}.jpg';
     await File(outPath).writeAsBytes(compressed);

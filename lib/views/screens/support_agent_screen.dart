@@ -15,6 +15,7 @@ import '../../core/utils/responsive.dart';
 import 'support_chat_screen.dart';
 import 'contact_company_screen.dart';
 import '../widgets/global_bottom_nav.dart';
+import '../../core/utils/upload_url_resolver.dart';
 
 class SupportAgentScreen extends StatefulWidget {
   const SupportAgentScreen({super.key});
@@ -224,12 +225,11 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
         ? nameFromMap
         : (constructedName.isNotEmpty ? constructedName : 'Assigned Agent');
 
-    final code = agent['code']?.toString() ?? '-';
     final phone = agent['phone']?.toString() ?? '-';
-    final email = agent['email']?.toString() ?? '-';
     final district = agent['district']?.toString() ?? '-';
     final pincode = agent['pincode']?.toString() ?? agent['pin_code']?.toString() ?? '-';
     final profileImage = agent['profile_image']?.toString() ?? agent['image']?.toString() ?? agent['avatar']?.toString() ?? agent['profile_picture']?.toString();
+    final profileImageUrl = UploadUrlResolver.resolve(profileImage, type: 'profile');
     final initials = name.isNotEmpty ? name[0].toUpperCase() : 'A';
     
     return Container(
@@ -261,19 +261,21 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 alignment: Alignment.center,
-                child: (profileImage != null && profileImage.isNotEmpty)
+                child: (profileImageUrl.isNotEmpty)
                     ? Image.network(
-                        profileImage,
+                        profileImageUrl,
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
                         errorBuilder: (c, e, s) => Container(
                           color: colors.panel,
+                          alignment: Alignment.center,
                           child: Text(initials, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
                         ),
                       )
                     : Container(
                         color: colors.panel,
+                        alignment: Alignment.center,
                         child: Text(initials, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
                       ),
               ),
@@ -353,19 +355,6 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, dynamic colors) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 14, color: colors.muted)),
-          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: colors.text)),
-        ],
       ),
     );
   }

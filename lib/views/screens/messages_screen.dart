@@ -103,8 +103,17 @@ class _MessagesScreenState extends State<MessagesScreen>
     final colors = context.watch<ThemeViewModel>().colors;
     final viewModel = context.watch<MessageViewModel>();
 
-    return Stack(
-      children: [
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/login.png'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Stack(
+        children: [
         ResponsiveCenter(
           child: viewModel.isLoading
               ? const Center(child: CircularProgressIndicator(color: AppColors.primaryRed))
@@ -387,6 +396,7 @@ class _MessagesScreenState extends State<MessagesScreen>
             ),
           ),
       ],
+    ),
     );
   }
 

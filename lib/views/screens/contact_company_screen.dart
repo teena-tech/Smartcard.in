@@ -217,25 +217,42 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
                   return;
                 }
 
-                setState(() => _isSubmitting = true);
-                final supportVm = context.read<SupportViewModel>();
-                final success = await supportVm.submitReport(_selectedType, text);
+                // 1. Optimistic update: Add request immediately to UI list
+                final now = DateTime.now();
+                final dateStr = '${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year} '
+                    '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
                 
-                if (!mounted) return;
-                
-                if (success) {
+                final optimisticReport = {
+                  'id': now.millisecondsSinceEpoch.toString(),
+                  'report_type': _selectedType,
+                  'report_text': text,
+                  'status': 'PENDING',
+                  'created_at': dateStr,
+                };
+
+                setState(() {
+                  _reports.insert(0, optimisticReport);
                   _textController.clear();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Request submitted successfully!')),
-                  );
-                  _loadReports();
-                } else {
-                  final err = supportVm.errorMessage ?? 'Failed to submit request';
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(err)),
-                  );
-                }
-                setState(() => _isSubmitting = false);
+                  _isSubmitting = false;
+                });
+
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Request submitted successfully!'),
+                    backgroundColor: Color(0xFF16A34A),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+
+                // 2. Perform network submission in background
+                final supportVm = context.read<SupportViewModel>();
+                supportVm.submitReport(_selectedType, text).then((success) {
+                  if (mounted) _loadReports();
+                }).catchError((e) {
+                  debugPrint('Background report submit error: $e');
+                  if (mounted) _loadReports();
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFA0000),

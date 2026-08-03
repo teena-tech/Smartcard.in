@@ -18,17 +18,28 @@ class SubscriptionModel {
   });
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
-    final subscription = json['subscription'] as Map<String, dynamic>? ?? {};
-    final lastPaymentJson = json['last_payment'] as Map<String, dynamic>?;
-    
+    // Handle both top-level and nested { data: { ... } } responses from backend API
+    final root = json['data'] is Map<String, dynamic> ? json['data'] as Map<String, dynamic> : json;
+    final subscription = root['subscription'] as Map<String, dynamic>? ?? {};
+    final paymentJson = root['payment'] as Map<String, dynamic>? ?? root['last_payment'] as Map<String, dynamic>?;
+    final cardsJson = root['cards'] as Map<String, dynamic>?;
+
+    final rawMembership = (root['membership'] ?? subscription['membership'] ?? 'FREE').toString().toUpperCase();
+    final subStatus = (subscription['status'] ?? '').toString().toLowerCase();
+
+    final daysRemaining = (subscription['days_remaining'] as num?)?.toInt() ?? 0;
+    final isPremiumRole = rawMembership == 'PREMIUM';
+    final hasActiveSubDays = daysRemaining > 0;
+    final isSubActiveStatus = subStatus == 'active';
+
     return SubscriptionModel(
-      membership: json['membership']?.toString() ?? subscription['membership']?.toString() ?? 'FREE',
+      membership: (isPremiumRole && hasActiveSubDays) ? 'PREMIUM' : (isPremiumRole ? 'PREMIUM' : 'FREE'),
       subscriptionStart: subscription['start_date']?.toString() ?? subscription['subscription_start']?.toString() ?? '',
       subscriptionEnd: subscription['end_date']?.toString() ?? subscription['subscription_end']?.toString() ?? '',
-      daysRemaining: subscription['days_remaining'] as int? ?? 0,
-      linkedCards: subscription['linked_cards'] as int? ?? 0,
-      isActive: subscription['status']?.toString().toLowerCase() == 'active' || subscription['is_active'] == true,
-      lastPayment: lastPaymentJson != null ? LastPayment.fromJson(lastPaymentJson) : null,
+      daysRemaining: daysRemaining,
+      linkedCards: (cardsJson?['total'] as num?)?.toInt() ?? (subscription['linked_cards'] as num?)?.toInt() ?? 0,
+      isActive: isSubActiveStatus && hasActiveSubDays,
+      lastPayment: paymentJson != null ? LastPayment.fromJson(paymentJson) : null,
     );
   }
 

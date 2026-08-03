@@ -59,18 +59,34 @@ class BusinessCardValidator {
       return true;
     }
 
-    // Accept links (websites/social links) or email/phone protocols
-    if (upper.startsWith('HTTP://') ||
-        upper.startsWith('HTTPS://') ||
-        upper.startsWith('MAILTO:') ||
-        upper.startsWith('TEL:')) {
+    // Accept ONLY SmartCards domain QR code URLs — reject all other HTTP/HTTPS URLs
+    if (upper.startsWith('MAILTO:') || upper.startsWith('TEL:')) {
       return true;
+    }
+    if (upper.startsWith('HTTP://') || upper.startsWith('HTTPS://')) {
+      final lower = trimmed.toLowerCase();
+      final isSmartCard = lower.contains('thesmartcard') ||
+          lower.contains('smartcard') ||
+          lower.contains('scard') ||
+          lower.contains('localhost') ||
+          lower.contains('127.0.0.1') ||
+          lower.contains('10.0.2.2') ||
+          lower.contains('192.168.');
+      return isSmartCard; // skip all other domain QR codes
+    }
+
+    // Reject any other URI scheme (upi://, intent://, geo://, etc.)
+    // Only allow plain text, vCard, meCard, SmartCards URLs, tel:, mailto:
+    final schemeMatch = RegExp(r'^([a-zA-Z][a-zA-Z0-9+\-.]+)://').firstMatch(trimmed);
+    if (schemeMatch != null) {
+      // Has a URI scheme — only allowed schemes are SmartCards http/https
+      return false; // all other schemes (upi, intent, geo, market, etc.) rejected
     }
 
     // If it is just plain text, check if it contains phone/email
     final hasEmail = AppValidators.hasEmail(trimmed);
     final hasPhone = AppValidators.hasPhone(trimmed);
-    
-    return hasEmail || hasPhone || trimmed.length > 10;
+
+    return hasEmail || hasPhone;
   }
 }

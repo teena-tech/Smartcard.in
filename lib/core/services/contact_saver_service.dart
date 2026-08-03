@@ -7,6 +7,7 @@ import '../../models/scanned_contact_model.dart';
 class ContactSaverService {
   /// Checks and automatically requests system contacts write permission.
   static Future<bool> requestContactsPermission() async {
+    if (kIsWeb) return false;
     try {
       // Use permission_handler first since it has native setup and avoid QuisApp missing plugin exception
       final status = await Permission.contacts.request();
@@ -23,6 +24,7 @@ class ContactSaverService {
   /// Saves a [ScannedContactModel] directly into the device's native address book.
   /// Prevents duplicates based on matching phone number or email address.
   static Future<bool> saveToDevice(ScannedContactModel scanned) async {
+    if (kIsWeb) return true;
     try {
       final permission = await requestContactsPermission();
       if (!permission) {
@@ -117,7 +119,7 @@ class ContactSaverService {
 
   /// Checks if a duplicate contact exists in the device address book.
   static Future<bool> isDuplicate(String phone, String email) async {
-    if (phone.isEmpty && email.isEmpty) return false;
+    if (kIsWeb || (phone.isEmpty && email.isEmpty)) return false;
 
     try {
       final permission = await FlutterContacts.requestPermission(readonly: true);
