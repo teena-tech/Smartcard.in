@@ -959,14 +959,9 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   Widget _buildSheetHeaderActions(Color textColor) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          icon: Icon(Icons.close, color: textColor),
-          onPressed: () => setState(() => _activeSheet = ''),
-        ),
-      ],
+    return IconButton(
+      icon: Icon(Icons.close, color: textColor),
+      onPressed: () => setState(() => _activeSheet = ''),
     );
   }
 
@@ -1750,9 +1745,10 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                   ),
                                 ),
                               ),
+                              // Top Left Preview Badge
                               Positioned(
                                 top: 12,
-                                right: 12,
+                                left: 12,
                                 child: GestureDetector(
                                   onTap: () async {
                                     final card = cardVm.currentCard;
@@ -1780,7 +1776,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                       vertical: 6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.1),
+                                      color: Colors.black.withValues(alpha: 0.35),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
                                     ),
@@ -1802,6 +1798,68 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                   ),
                                 ),
                               ),
+                              // Action Buttons when sheet is inactive
+                              if (_hasChanges && _activeSheet.isEmpty)
+                                Positioned(
+                                  bottom: 16,
+                                  right: 16,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Reject Button (X)
+                                      GestureDetector(
+                                        onTap: _loadData,
+                                        child: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: const Color(0xFFEF4444),
+                                            border: Border.all(color: Colors.white, width: 2),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.3),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      // Save Button (✓)
+                                      GestureDetector(
+                                        onTap: _saving ? null : _saveChanges,
+                                        child: Container(
+                                          width: 40,
+                                          height: 40,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: const Color(0xFF22C55E),
+                                            border: Border.all(color: Colors.white, width: 2),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(alpha: 0.3),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: _saving
+                                              ? const Padding(
+                                                  padding: EdgeInsets.all(9.0),
+                                                  child: CircularProgressIndicator(
+                                                    color: Colors.white,
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              : const Icon(Icons.check, color: Colors.white, size: 24),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               if (_backgroundImageEnabled && _canNavigateImages) ...[
                                 // Left Arrow
                                 Align(
@@ -1836,62 +1894,6 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                   ),
                                 ),
                               ],
-                              if (_hasChanges)
-                                Positioned(
-                                  bottom: 12,
-                                  right: 12,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: _loadData,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.red.withValues(alpha: 0.15),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(alpha: 0.1),
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Icon(Icons.close, color: Colors.white, size: 20),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      GestureDetector(
-                                        onTap: _saving ? null : _saveChanges,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.green.withValues(alpha: 0.15),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(alpha: 0.1),
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: _saving
-                                              ? const SizedBox(
-                                                  width: 20,
-                                                  height: 20,
-                                                  child: CircularProgressIndicator(
-                                                    color: Colors.white,
-                                                    strokeWidth: 2,
-                                                  ),
-                                                )
-                                              : const Icon(Icons.check, color: Colors.white, size: 20),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                             ],
                           ),
                         ),
@@ -1904,25 +1906,96 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                       left: 0,
                       right: 0,
                       bottom: 0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colors.section,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, -5),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Floating Action Buttons sitting FULLY ABOVE the top-right corner of the popup!
+                          if (_hasChanges)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 16, bottom: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Reject Button (X)
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: _loadData,
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: const Color(0xFFEF4444),
+                                        border: Border.all(color: Colors.white, width: 2),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.3),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  // Save Button (✓)
+                                  GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: _saving ? null : () async {
+                                      await _saveChanges();
+                                    },
+                                    child: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: const Color(0xFF22C55E),
+                                        border: Border.all(color: Colors.white, width: 2),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black.withValues(alpha: 0.3),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: _saving
+                                          ? const Padding(
+                                              padding: EdgeInsets.all(9.0),
+                                              child: CircularProgressIndicator(
+                                                color: Colors.white,
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Icon(Icons.check, color: Colors.white, size: 24),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                          child: _activeSheet == 'bgImage' ? _buildBgImageSheet(context, colors.section, colors.text)
-                              : _activeSheet == 'colors' ? _buildColorsSheet(context, colors.section, colors.text)
-                              : _activeSheet == 'overlay' ? _buildOverlaySheet(context, colors.section, colors.text)
-                              : _buildLogoSheet(context, colors.section, colors.text),
-                        ),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colors.section,
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, -5),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                              child: _activeSheet == 'bgImage' ? _buildBgImageSheet(context, colors.section, colors.text)
+                                  : _activeSheet == 'colors' ? _buildColorsSheet(context, colors.section, colors.text)
+                                  : _activeSheet == 'overlay' ? _buildOverlaySheet(context, colors.section, colors.text)
+                                  : _buildLogoSheet(context, colors.section, colors.text),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],

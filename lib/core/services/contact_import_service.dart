@@ -1,23 +1,30 @@
+import 'dart:io';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import '../../models/scanned_contact_model.dart';
 
 class ContactImportService {
-  /// Request permissions and load phone contacts.
+  /// Request permissions and load phone contacts in batches of 50.
   /// Deduplicates based on exact phone number or email match with existing contacts.
-  static Future<List<ScannedContactModel>> importPhoneContacts(List<ScannedContactModel> existingContacts) async {
+  static Future<List<ScannedContactModel>> importPhoneContacts(
+    List<ScannedContactModel> existingContacts, {
+    Function(List<ScannedContactModel> batch)? onBatchLoaded,
+    int batchSize = 50,
+  }) async {
     final bool permissionGranted = await FlutterContacts.requestPermission(readonly: true);
     if (!permissionGranted) {
       throw Exception('Contacts permission denied. Please enable it in Settings.');
     }
 
-    // Get all contacts fully populated
+    // Get contacts with properties & photos
     final List<Contact> phoneContacts = await FlutterContacts.getContacts(
       withProperties: true,
       withPhoto: true,
       withAccounts: false,
     );
 
-    final List<ScannedContactModel> newContacts = [];
+    final List<ScannedContactModel> allNewContacts = [];
+    final List<ScannedContactModel> currentBatch = [];
+
     final existingPhones = existingContacts.map((e) => _cleanPhone(e.phone)).where((p) => p.isNotEmpty).toSet();
     final existingEmails = existingContacts.map((e) => e.email.toLowerCase()).where((e) => e.isNotEmpty).toSet();
 
@@ -42,9 +49,15 @@ class ContactImportService {
       final designation = contact.organizations.isNotEmpty ? contact.organizations.first.title : '';
       final website = contact.websites.isNotEmpty ? contact.websites.first.url : '';
       final address = contact.addresses.isNotEmpty ? contact.addresses.first.address : '';
-      
-      // We aren't doing base64 image decoding directly here, we could save it to disk, 
-      // but to keep it lightweight we'll skip the image or process it later.
+
+      String? photoPath;
+      if (contact.photo != null && contact.photo!.isNotEmpty) {
+        try {
+          final file = File('${Directory.systemTemp.path}/phone_photo_${contact.id}.jpg');
+          await file.writeAsBytes(contact.photo!, flush: true);
+          photoPath = file.path;
+        } catch (_) {}
+      }
 
       final model = ScannedContactModel(
         id: 'phone_${contact.id}', // Prefix to identify source ID
@@ -56,6 +69,7 @@ class ContactImportService {
         email: email,
         website: website,
         address: address,
+        profileImage: photoPath,
         socialLinks: const [],
         source: 'phone',
         syncStatus: 'pending',
@@ -63,13 +77,30 @@ class ContactImportService {
         createdAt: DateTime.now(),
       );
 
-      newContacts.add(model);
-      
+      currentBatch.add(model);
+      allNewContacts.add(model);
+
       if (cleanedPhone.isNotEmpty) existingPhones.add(cleanedPhone);
       if (cleanedEmail.isNotEmpty) existingEmails.add(cleanedEmail);
+
+      // Deliver first 50 contacts immediately, then subsequent 50-contact batches
+      if (currentBatch.length >= batchSize) {
+        if (onBatchLoaded != null) {
+          onBatchLoaded(List.from(currentBatch));
+        }
+        currentBatch.clear();
+        // Brief pause to allow Flutter UI thread to render first batch instantly
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
     }
 
-    return newContacts;
+    // Deliver remaining contacts in final batch
+    if (currentBatch.isNotEmpty && onBatchLoaded != null) {
+      onBatchLoaded(List.from(currentBatch));
+      currentBatch.clear();
+    }
+
+    return allNewContacts;
   }
 
   static String _cleanPhone(String phone) {

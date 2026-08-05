@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
+import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Auto + optional manual business-card edge detection and perspective crop.
@@ -90,9 +91,18 @@ class EdgeDetectionService {
     return sourcePath;
   }
 
-  /// Camera capture fallback.
+  /// Camera capture for OCR card scanner using ImageSource.camera.
   static Future<String?> scanFromCamera() async {
-    return null;
+    try {
+      final image = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 92,
+      );
+      return image?.path;
+    } catch (e) {
+      debugPrint("Camera capture error: $e");
+      return null;
+    }
   }
 
   static Future<String> _autoDetectIsolate(Map<String, dynamic> params) async {

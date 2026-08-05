@@ -172,9 +172,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final data = orderRes['data']?['order'] as Map<String, dynamic>?;
     final razorpayKeyId = data?['razorpay_key_id']?.toString() ?? '';
     final orderId = data?['razorpay_order_id']?.toString() ?? '';
-    // Round up to nearest rupee — Razorpay/UPI/QR requires whole rupee amounts
-    final int roundedRupees = subscriptionViewModel.payableAmount.ceil();
-    final amountPaise = data?['amount'] as int? ?? (roundedRupees * 100);
+    final amountPaise = data?['amount'] as int? ?? (subscriptionViewModel.payableAmount * 100).round();
 
     // 2. Open Razorpay Checkout for real payment
     final options = <String, dynamic>{
@@ -272,14 +270,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     );
   }
 
+  String _formatAmount(double amount) {
+    if (amount % 1 == 0) {
+      return amount.toInt().toString();
+    }
+    final str = amount.toStringAsFixed(2);
+    if (str.endsWith('.00')) {
+      return str.substring(0, str.length - 3);
+    }
+    return str;
+  }
+
   Widget _buildPremiumCheckoutSheet() {
     return StatefulBuilder(
       builder: (BuildContext context, StateSetter modalSetState) {
         final vm = context.watch<SubscriptionViewModel>();
 
-        // Round payable amount UP to nearest whole rupee (Razorpay requires whole rupees, no decimals)
-        final int roundedAmount = vm.payableAmount.ceil();
-        final String displayAmount = '${roundedAmount}';
+        final String displayAmount = _formatAmount(vm.payableAmount);
 
         return Container(
           decoration: const BoxDecoration(
@@ -367,7 +374,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 4.0),
                               child: Text(
-                                '₹ ${(vm.totalAmount).ceil()}',
+                                '₹ ${_formatAmount(vm.totalAmount)}',
                                 style: GoogleFonts.poppins(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,

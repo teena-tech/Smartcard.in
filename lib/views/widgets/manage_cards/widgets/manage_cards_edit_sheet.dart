@@ -323,38 +323,6 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
           children: [
             _buildTextFormField(_controllers['companyName'], 'Company Name', colors),
             _buildTextFormField(_controllers['designation'], 'Designation *', colors, validator: (v) => v!.trim().isEmpty ? 'Required' : null),
-            _buildTextFormField(_controllers['companyAddress'], 'Professional Address', colors, maxLines: 3),
-            _buildTextFormField(
-              _controllers['companyPincode'],
-              'Pincode *',
-              colors,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              onChanged: (val) => _lookupPincode(val, isPersonal: false),
-              validator: (v) => v!.length != 6 ? 'Must be 6 digits' : null,
-            ),
-            if (_pincodeLoading)
-              const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: LinearProgressIndicator(color: AppColors.primaryRed)),
-            if (_pincodeError.isNotEmpty)
-              Text(_pincodeError, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
-            if (_offices.isNotEmpty) ...[
-              _buildInputLabel('Select City / PO Location *', colors),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedOfficeIndex,
-                dropdownColor: Colors.white,
-                style: GoogleFonts.inter(color: colors.text, fontSize: 14),
-                decoration: _getInputDecoration('Location', colors),
-                items: _offices.asMap().entries.map((e) {
-                  return DropdownMenuItem(value: e.key.toString(), child: Text(e.value['city'] ?? ''));
-                }).toList(),
-                onChanged: (val) {
-                  setState(() => _selectedOfficeIndex = val);
-                  if (val != null) _applyOfficeSelection(int.parse(val), isPersonal: false);
-                },
-              ),
-            ],
-            _buildTextFormField(_controllers['companyDistrict'], 'District', colors),
-            _buildTextFormField(_controllers['companyState'], 'State', colors),
           ],
         );
 

@@ -43,21 +43,15 @@ class ScanProcessingService {
   }) async {
     final inputImage = InputImage.fromFilePath(imagePath);
 
-    final barcodes = await _barcodeScanner.processImage(inputImage);
-    // Debug: log barcode detection results to help troubleshoot scanner issues
+    List<dynamic> barcodes = [];
     try {
-      if (barcodes.isNotEmpty) {
-        for (final b in barcodes) {
-          debugPrint('🔍 Barcode detected: format=${b.format}, value=${b.rawValue}, bbox=${b.boundingBox}');
-        }
-      } else {
-        debugPrint('🔍 No barcodes detected in image: $imagePath');
-      }
+      barcodes = await _barcodeScanner.processImage(inputImage);
     } catch (e) {
-      debugPrint('🔍 Barcode debug log error: $e');
+      debugPrint('⚠️ Barcode scanning plugin unavailable/error: $e');
     }
+
     if (barcodes.isNotEmpty) {
-      final qrValue = barcodes.first.rawValue ?? '';
+      final qrValue = (barcodes.first.rawValue ?? '').toString();
       if (qrValue.isNotEmpty && BusinessCardValidator.validateQr(qrValue)) {
         final contact = await QrExtractionService.extract(qrValue);
         final cropped = await EdgeDetectionService.processImage(
@@ -109,13 +103,13 @@ class ScanProcessingService {
       throw Exception('Edge detection cancelled');
     }
 
-    if (BusinessCardValidator.validateText(rawText)) {
+    if (BusinessCardValidator.validateText(rawText) || rawText.length >= 6) {
       final contact = ContactParser.parse(rawText).copyWith(imagePath: cropped);
       return ScanProcessingResult(contact: contact, imagePath: cropped);
     }
 
     if (barcodes.isNotEmpty) {
-      final qrValue = barcodes.first.rawValue ?? '';
+      final qrValue = (barcodes.first.rawValue ?? '').toString();
       if (qrValue.isNotEmpty) {
         final contact = await QrExtractionService.extract(qrValue);
         return ScanProcessingResult(
@@ -126,7 +120,7 @@ class ScanProcessingService {
       }
     }
 
-    throw Exception('No business card or QR detected. Try manual edge adjust.');
+    throw Exception('No business card or QR detected. Position card clearly and retry.');
   }
 
   Future<ScanProcessingResult> processQrString(String qrValue) async {

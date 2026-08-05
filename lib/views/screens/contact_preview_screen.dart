@@ -401,55 +401,7 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Settings Box
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      children: [
-                        SwitchListTile(
-                          title: Text(
-                            'Save to Device Address Book',
-                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                          subtitle: Text(
-                            'Exports contact card fields automatically.',
-                            style: GoogleFonts.inter(fontSize: 11, color: Colors.white38),
-                          ),
-                          value: _saveToDevice,
-                          activeThumbColor: Colors.redAccent,
-                          onChanged: (val) {
-                            setState(() {
-                              _saveToDevice = val;
-                            });
-                          },
-                        ),
-                        Divider(color: Colors.white.withValues(alpha: 0.2)),
-                        SwitchListTile(
-                          title: Text(
-                            'Sync to Cloud Server',
-                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
-                          subtitle: Text(
-                            'Secures backup on backend cloud account.',
-                            style: GoogleFonts.inter(fontSize: 11, color: Colors.white38),
-                          ),
-                          value: _uploadToCloud,
-                          activeThumbColor: Colors.redAccent,
-                          onChanged: (val) {
-                            setState(() {
-                              _uploadToCloud = val;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
                   // Save Contact Button (Matching First Sheet style)
                   SizedBox(

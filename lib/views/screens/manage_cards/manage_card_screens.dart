@@ -411,10 +411,14 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-            // Tabs Row
-
-            // Main Editor Panel
-            Expanded(
+              if (details != null)
+                StickyManageCardsTopBar(
+                  viewModel: viewModel,
+                  details: details,
+                  resolveImgUrl: _resolveImgUrl,
+                ),
+              // Main Editor Panel
+              Expanded(
               child: details == null
                   ? Center(
                       child: Column(
@@ -672,55 +676,6 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                             icon: Icons.work_outline,
                                             label: 'Designation',
                                             value: details.designation,
-                                            iconColor: const Color(0xFFD32F2F),
-                                            iconBg: const Color(0xFFFCF0F0),
-                                          ),
-                                        if (details.companyAddress.isNotEmpty ||
-                                            details
-                                                .companyDistrict
-                                                .isNotEmpty ||
-                                            details.companyState.isNotEmpty)
-                                          buildFieldRow(
-                                            icon: Icons.location_on_outlined,
-                                            label: 'Address',
-                                            value:
-                                                [
-                                                      if (details
-                                                          .companyAddress
-                                                          .isNotEmpty)
-                                                        details.companyAddress,
-                                                      [
-                                                            if (details
-                                                                .companyDistrict
-                                                                .isNotEmpty)
-                                                              details
-                                                                  .companyDistrict
-                                                            else if (details
-                                                                .companyCity
-                                                                .isNotEmpty)
-                                                              details
-                                                                  .companyCity,
-                                                            if (details
-                                                                .companyState
-                                                                .isNotEmpty)
-                                                              details
-                                                                  .companyState,
-                                                          ]
-                                                          .where(
-                                                            (s) => s.isNotEmpty,
-                                                          )
-                                                          .join(', '),
-                                                    ]
-                                                    .where((s) => s.isNotEmpty)
-                                                    .join('\n'),
-                                            iconColor: const Color(0xFFD32F2F),
-                                            iconBg: const Color(0xFFFCF0F0),
-                                          ),
-                                        if (details.companyPincode.isNotEmpty)
-                                          buildFieldRow(
-                                            icon: Icons.pin_drop_outlined,
-                                            label: 'Pin Code',
-                                            value: details.companyPincode,
                                             iconColor: const Color(0xFFD32F2F),
                                             iconBg: const Color(0xFFFCF0F0),
                                           ),

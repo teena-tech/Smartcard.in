@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../models/scanned_contact_model.dart';
 import '../screens/contact_detail_screen.dart';
 import '../../viewmodels/theme_viewmodel.dart';
+import '../../core/utils/upload_url_resolver.dart';
 
 class ContactListTile extends StatelessWidget {
   final ScannedContactModel contact;
@@ -19,6 +21,34 @@ class ContactListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.watch<ThemeViewModel>().colors;
     final initial = contact.name.isNotEmpty ? contact.name[0].toUpperCase() : '?';
+
+    final String rawImage = (contact.profileImage != null && contact.profileImage!.isNotEmpty)
+        ? contact.profileImage!
+        : ((contact.imagePath != null && contact.imagePath!.isNotEmpty) ? contact.imagePath! : '');
+
+    final String imageSource = rawImage.isNotEmpty ? UploadUrlResolver.resolve(rawImage, type: 'profile') : '';
+
+    Widget imageWidget;
+    if (imageSource.isEmpty) {
+      imageWidget = _buildFallbackInitial(initial, colors);
+    } else if (imageSource.startsWith('http://') || imageSource.startsWith('https://')) {
+      imageWidget = Image.network(
+        imageSource,
+        fit: BoxFit.cover,
+        errorBuilder: (c, e, s) => _buildFallbackInitial(initial, colors),
+      );
+    } else {
+      final file = File(imageSource);
+      if (file.existsSync()) {
+        imageWidget = Image.file(
+          file,
+          fit: BoxFit.cover,
+          errorBuilder: (c, e, s) => _buildFallbackInitial(initial, colors),
+        );
+      } else {
+        imageWidget = _buildFallbackInitial(initial, colors);
+      }
+    }
 
     return InkWell(
       onTap: () {
@@ -57,12 +87,7 @@ class ContactListTile extends StatelessWidget {
                 color: colors.panel,
               ),
               clipBehavior: Clip.antiAlias,
-              child: (contact.profileImage != null && contact.profileImage!.isNotEmpty)
-                  ? Image.network(contact.profileImage!, fit: BoxFit.cover, errorBuilder: (c, e, s) => _buildFallbackInitial(initial, colors))
-                  : ((contact.imagePath != null && contact.imagePath!.isNotEmpty)
-                      ? Image.network(contact.imagePath!, fit: BoxFit.cover, errorBuilder: (c, e, s) => _buildFallbackInitial(initial, colors))
-                      : _buildFallbackInitial(initial, colors)),
-
+              child: imageWidget,
             ),
             const SizedBox(width: 12),
             

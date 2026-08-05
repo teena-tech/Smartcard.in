@@ -37,26 +37,30 @@ class _LandingScreenState extends State<LandingScreen> {
   void _startAutoPlay() {
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (!mounted) {
+      if (!mounted || !context.mounted) {
         timer.cancel();
         return;
       }
       if (!_pageController.hasClients) return;
-      final viewModel = context.read<LandingViewModel>();
-      final slides = viewModel.slides;
-      if (slides.isEmpty) return;
+      try {
+        final viewModel = context.read<LandingViewModel>();
+        final slides = viewModel.slides;
+        if (slides.isEmpty) return;
 
-      int nextPage = _currentPage + 1;
-      if (nextPage >= slides.length) {
-        nextPage = 0;
-      }
+        int nextPage = _currentPage + 1;
+        if (nextPage >= slides.length) {
+          nextPage = 0;
+        }
 
-      if (_pageController.hasClients && mounted) {
-        _pageController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOut,
-        );
+        if (_pageController.hasClients && mounted && context.mounted) {
+          _pageController.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+          );
+        }
+      } catch (_) {
+        timer.cancel();
       }
     });
   }

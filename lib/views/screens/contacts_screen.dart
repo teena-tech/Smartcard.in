@@ -106,6 +106,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocus,
+        textCapitalization: TextCapitalization.none,
         style: GoogleFonts.inter(color: colors.text),
         decoration: InputDecoration(
           hintText: 'Search name, phone, company...',

@@ -469,9 +469,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       }
     }
 
-    try {
-      await _qrController?.stop();
-    } catch (_) {}
+    await _releaseCameraForExternalAction();
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
       imageQuality: 92,
@@ -483,17 +481,27 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
           manualEdgeAdjust: false,
         ),
       );
-    } else {
+    } else if (context.mounted) {
+      _handleCameraLifecycle();
+    }
+  }
+
+  Future<void> _releaseCameraForExternalAction() async {
+    if (_qrController != null) {
       try {
-        await _qrController?.start();
-      } catch (_) {}
+        await _qrController!.stop();
+        await _qrController!.dispose();
+      } catch (e) {
+        debugPrint("Error disposing camera before external action: $e");
+      }
+      _qrController = null;
+      if (mounted) setState(() {});
+      await Future.delayed(const Duration(milliseconds: 200));
     }
   }
 
   Future<void> _scanCardWithEdgeCamera() async {
-    try {
-      await _qrController?.stop();
-    } catch (_) {}
+    await _releaseCameraForExternalAction();
     if (context.mounted) {
       context.read<ScanBloc>().add(const ProcessEdgeCameraScan());
     }
@@ -546,7 +554,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
   Future<void> _saveAndPreview(ScanSuccess state) async {
     if (!context.mounted) return;
     try {
-      _qrController?.stop().catchError((e) => debugPrint("Error stopping camera: $e"));
+      await _qrController?.stop();
     } catch (_) {}
 
     await Navigator.of(context, rootNavigator: true).push(
@@ -568,9 +576,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
     if (context.mounted) {
       setState(() {});
       context.read<ScanBloc>().add(ResetScanState());
-      try {
-        _qrController?.start().catchError((e) => debugPrint("Error starting camera: $e"));
-      } catch (_) {}
+      _handleCameraLifecycle();
     }
   }
 
@@ -655,19 +661,19 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
           } else if (state is ScanFailure) {
             _isProcessingQr = false;
             _lastQr = null;
-            try {
-              await _qrController?.start();
-            } catch (_) {}
+            _handleCameraLifecycle();
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    state.error,
-                    style: const TextStyle(color: Colors.white),
+              if (state.error != 'Card scan cancelled') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      state.error,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    backgroundColor: Colors.orangeAccent,
                   ),
-                  backgroundColor: Colors.orangeAccent,
-                ),
-              );
+                );
+              }
             }
           } else if (state is ScanTimeout) {
             _resetQrScanner();

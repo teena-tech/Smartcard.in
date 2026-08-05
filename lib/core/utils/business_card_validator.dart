@@ -7,8 +7,8 @@ class BusinessCardValidator {
     final cleaned = text.trim();
     if (cleaned.isEmpty) return false;
 
-    // A business card must have a minimum length to be legitimate
-    if (cleaned.length < 15) return false;
+    // Minimum text length
+    if (cleaned.length < 8) return false;
 
     final lowerText = cleaned.toLowerCase();
 
@@ -17,34 +17,33 @@ class BusinessCardValidator {
     final hasPhone = AppValidators.hasPhone(cleaned);
     final hasWebsite = AppValidators.hasUrl(cleaned);
 
-    // Business card text usually spans multiple lines
+    if (hasPhone || hasEmail || hasWebsite) {
+      return true;
+    }
+
     final lines = cleaned
         .split('\n')
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .toList();
-    if (lines.length < 3) {
-      return false;
-    }
 
-    // A valid business card must contain at least one key contact anchor (phone, email, or website)
-    if (hasPhone || hasEmail || hasWebsite) {
+    // If 2 or more lines of readable text are extracted, allow parsing
+    if (lines.length >= 2) {
       return true;
     }
 
-    // Additional check: Does it have multiple designation/role/address keywords?
     final List<String> keywords = [
       'manager', 'director', 'developer', 'engineer', 'founder', 'ceo', 'cto',
-      'president', 'designer', 'owner', 'street', 'road', 'avenue', 'suite', 'floor'
+      'president', 'designer', 'owner', 'street', 'road', 'avenue', 'suite', 'floor',
+      'card', 'pvt', 'ltd', 'inc', 'corp', 'company', 'services', 'solutions', 'tech'
     ];
-    int keywordCount = 0;
     for (final kw in keywords) {
       if (lowerText.contains(kw)) {
-        keywordCount++;
+        return true;
       }
     }
 
-    return keywordCount >= 2;
+    return false;
   }
 
   /// Validates if the scanned QR code value matches business card or standard data payload requirements.

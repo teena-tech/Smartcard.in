@@ -151,18 +151,23 @@ class ContactViewModel extends ChangeNotifier {
     }
   }
 
-  /// Import contacts from Phone Book
+  /// Import contacts from Phone Book in batches of 50 for instant loading
   Future<void> importPhoneContacts() async {
     _isRefreshing = true;
     notifyListeners();
     try {
-      final newContacts = await ContactImportService.importPhoneContacts(_allContacts);
-      if (newContacts.isNotEmpty) {
-        await HiveDatabase.saveContacts(newContacts);
-        _allContacts.addAll(newContacts);
-        _allContacts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        _applySearchAndPagination();
-      }
+      await ContactImportService.importPhoneContacts(
+        _allContacts,
+        batchSize: 50,
+        onBatchLoaded: (batch) async {
+          if (batch.isNotEmpty) {
+            await HiveDatabase.saveContacts(batch);
+            _allContacts.addAll(batch);
+            _allContacts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            _applySearchAndPagination();
+          }
+        },
+      );
     } catch (e) {
       debugPrint('🚨 Error importing phone contacts: $e');
       rethrow;

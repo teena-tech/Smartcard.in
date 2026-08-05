@@ -696,73 +696,62 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
                                   ),
 
                                 // Top Left Theme Counter Badge
+                                // Top Left Header: Counter & Preview Badge
                                 Positioned(
                                   top: 14,
                                   left: 14,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.35),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      '${_currentIndex + 1} / ${_themes.length}',
-                                      style: GoogleFonts.inter(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.35),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '${_currentIndex + 1} / ${_themes.length}',
+                                          style: GoogleFonts.inter(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: _onPreviewPressed,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(alpha: 0.35),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 13),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Preview',
+                                                style: GoogleFonts.inter(
+                                                  color: Colors.white,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
 
-                                // Top Right Preview Badge
+                                // Top Right Header: Floating [✕] (Red) and [✓] (Green) Action Buttons
                                 Positioned(
                                   top: 14,
                                   right: 14,
-                                  child: GestureDetector(
-                                    onTap: _onPreviewPressed,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withValues(alpha: 0.35),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.remove_red_eye_outlined, color: Colors.white, size: 13),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Preview',
-                                            style: GoogleFonts.inter(
-                                              color: Colors.white,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                // Card Body Content: Avatar + Name + Professional Details + Contact Details
-                                Positioned.fill(
-                                  child: SingleChildScrollView(
-                                    physics: const BouncingScrollPhysics(),
-                                    child: Column(
-                                      children: [
-                                        const SizedBox(height: 60), // Spacing for floating buttons
-                                      ],
-                                    ),
-                                  ),
-                                ),
-
-                                // Floating [✕] (Red) and [✓] (Green) Action Buttons at Bottom Right
-                                Positioned(
-                                  bottom: 16,
-                                  right: 16,
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -770,43 +759,45 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
                                       GestureDetector(
                                         onTap: _resetThemeSelection,
                                         child: Container(
-                                          width: 48,
-                                          height: 48,
+                                          width: 38,
+                                          height: 38,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: AppColors.primaryRed,
+                                            color: const Color(0xFFEF4444),
+                                            border: Border.all(color: Colors.white, width: 2),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: AppColors.primaryRed.withValues(alpha: 0.4),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 3),
+                                                color: Colors.black.withValues(alpha: 0.3),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
                                               ),
                                             ],
                                           ),
-                                          child: const Icon(Icons.close, color: Colors.white, size: 24),
+                                          child: const Icon(Icons.close, color: Colors.white, size: 20),
                                         ),
                                       ),
 
-                                      const SizedBox(width: 14),
+                                      const SizedBox(width: 10),
 
                                       // [✓] Save / Apply Button (GREEN)
                                       GestureDetector(
                                         onTap: _saveSelectedTheme,
                                         child: Container(
-                                          width: 48,
-                                          height: 48,
+                                          width: 38,
+                                          height: 38,
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: const Color(0xFF16A34A),
+                                            color: const Color(0xFF22C55E),
+                                            border: Border.all(color: Colors.white, width: 2),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFF16A34A).withValues(alpha: 0.4),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 3),
+                                                color: Colors.black.withValues(alpha: 0.3),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
                                               ),
                                             ],
                                           ),
-                                          child: const Icon(Icons.check, color: Colors.white, size: 26),
+                                          child: const Icon(Icons.check, color: Colors.white, size: 22),
                                         ),
                                       ),
                                     ],

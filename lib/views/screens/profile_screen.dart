@@ -180,7 +180,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
   String _normaliseGender(String raw) {
     final lower = raw.toLowerCase();
     if (lower.contains('female')) return 'Female';
-    if (lower.contains('other'))  return 'Other';
+    if (lower.contains('other') || lower.contains('trans')) return 'Other';
     return 'Male';
   }
 
@@ -397,107 +397,124 @@ class _ProfileBodyState extends State<_ProfileBody> {
         ? profile!.displayName
         : '${_firstNameCtrl.text} ${_lastNameCtrl.text}'.trim();
 
-    return RefreshIndicator(
-      color: AppColors.primaryRed,
-      onRefresh: () async {
-        final uid = context.read<AuthViewModel>().currentUser?.id;
-        final pVm = context.read<ProfileViewModel>();
-        if (uid != null) {
-          await pVm.loadProfile(uid);
-          if (context.mounted) {
-            _populate(pVm.user);
-          }
-        }
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          children: [
-            // ── Red header ──────────────────────────────────────
-            _Header(
-              fullName:        fullName.isEmpty ? 'Your Name' : fullName,
-              initials:        profile?.initials ?? '?',
-              imagePath:       imagePath,
-              isUploading:     profileVm.isUploadingImage,
-              onCameraTap:     _showImageSourceSheet,
-            ),
+    IconData getGenderIcon(String gender) {
+      final g = gender.toLowerCase().trim();
+      if (g == 'female') return Icons.female_outlined;
+      if (g == 'male') return Icons.male_outlined;
+      return Icons.transgender;
+    }
 
-            // ── Content below header ─────────────────────────────
-            profileVm.isLoading && profile == null
-                ? const Padding(
-                    padding: EdgeInsets.only(top: 80),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primaryRed,
-                      ),
-                    ),
-                  )
-                : Transform.translate(
-                    offset: const Offset(0, -16),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-                      child: Column(
-                        children: [
-                          InfoCard(
-                            title: 'PERSONAL DETAILS',
-                            icon: Icons.person_outline,
-                            onEdit: _showPersonalDetailsDialog,
-                            rows: [
-                              RowData(Icons.person_outline,       'Full Name',    fullName.isEmpty ? '—' : fullName),
-                              RowData(Icons.male_outlined,         'Gender',       _gender),
-                              RowData(Icons.mail_outline,          'Email Address', _emailCtrl.text.isEmpty ? '—' : _emailCtrl.text),
-                              RowData(Icons.phone_outlined,        'Phone Number',  _phoneCtrl.text.isEmpty ? '—' : _phoneCtrl.text),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+    return Column(
+      children: [
+        _StickyTopBar(
+          initials: profile?.initials ?? '?',
+          imagePath: imagePath,
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            color: AppColors.primaryRed,
+            onRefresh: () async {
+              final uid = context.read<AuthViewModel>().currentUser?.id;
+              final pVm = context.read<ProfileViewModel>();
+              if (uid != null) {
+                await pVm.loadProfile(uid);
+                if (context.mounted) {
+                  _populate(pVm.user);
+                }
+              }
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  // ── Red header ──────────────────────────────────────
+                  _Header(
+                    fullName:        fullName.isEmpty ? 'Your Name' : fullName,
+                    initials:        profile?.initials ?? '?',
+                    imagePath:       imagePath,
+                    isUploading:     profileVm.isUploadingImage,
+                    onCameraTap:     _showImageSourceSheet,
+                  ),
 
-                          // ── Address card ────────────────────
-                          InfoCard(
-                            title: 'ADDRESS DETAILS',
-                            icon: Icons.location_on_outlined,
-                            onEdit: _showAddressDialog,
-                            rows: [
-                              if (_addressCtrl.text.isNotEmpty)
-                                RowData(Icons.location_on_outlined, 'Address',  _addressCtrl.text),
-                              if (_pincodeCtrl.text.isNotEmpty)
-                                RowData(Icons.pin_drop_outlined,    'Pin Code',  _pincodeCtrl.text),
-                              if (_districtCtrl.text.isNotEmpty)
-                                RowData(Icons.map_outlined,         'District',  _districtCtrl.text),
-                              if (_stateCtrl.text.isNotEmpty)
-                                RowData(Icons.map_outlined,         'State',     _stateCtrl.text),
-                              // Show placeholder if all empty
-                              if (_addressCtrl.text.isEmpty && _pincodeCtrl.text.isEmpty &&
-                                  _districtCtrl.text.isEmpty && _stateCtrl.text.isEmpty)
-                                const RowData(Icons.location_on_outlined, 'Address', '—'),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // ── Delete Account Button ────────────
-                          Center(
-                            child: ElevatedButton.icon(
-                              onPressed: () => _showDeleteAccountDialog(context),
-                              icon: const Icon(Icons.delete_forever, size: 18),
-                              label: Text('Delete Account', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red.shade600,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                elevation: 0,
-                              ),
+                  // ── Content below header ─────────────────────────────
+                  profileVm.isLoading && profile == null
+                      ? const Padding(
+                          padding: EdgeInsets.only(top: 80),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryRed,
                             ),
                           ),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
-                    ),
-                  ),
-          ],
+                        )
+                      : Transform.translate(
+                          offset: const Offset(0, -16),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+                            child: Column(
+                              children: [
+                                InfoCard(
+                                  title: 'PERSONAL DETAILS',
+                                  icon: Icons.person_outline,
+                                  onEdit: _showPersonalDetailsDialog,
+                                  rows: [
+                                    RowData(Icons.person_outline,       'Full Name',    fullName.isEmpty ? '—' : fullName),
+                                    RowData(getGenderIcon(_gender),      'Gender',       _gender),
+                                    RowData(Icons.mail_outline,          'Email Address', _emailCtrl.text.isEmpty ? '—' : _emailCtrl.text),
+                                    RowData(Icons.phone_outlined,        'Phone Number',  _phoneCtrl.text.isEmpty ? '—' : _phoneCtrl.text),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+
+                                // ── Address card ────────────────────
+                                InfoCard(
+                                  title: 'ADDRESS DETAILS',
+                                  icon: Icons.location_on_outlined,
+                                  onEdit: _showAddressDialog,
+                                  rows: [
+                                    if (_addressCtrl.text.isNotEmpty)
+                                      RowData(Icons.location_on_outlined, 'Address',  _addressCtrl.text),
+                                    if (_pincodeCtrl.text.isNotEmpty)
+                                      RowData(Icons.pin_drop_outlined,    'Pin Code',  _pincodeCtrl.text),
+                                    if (_districtCtrl.text.isNotEmpty)
+                                      RowData(Icons.map_outlined,         'District',  _districtCtrl.text),
+                                    if (_stateCtrl.text.isNotEmpty)
+                                      RowData(Icons.map_outlined,         'State',     _stateCtrl.text),
+                                    // Show placeholder if all empty
+                                    if (_addressCtrl.text.isEmpty && _pincodeCtrl.text.isEmpty &&
+                                        _districtCtrl.text.isEmpty && _stateCtrl.text.isEmpty)
+                                      const RowData(Icons.location_on_outlined, 'Address', '—'),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+
+                                // ── Delete Account Button ────────────
+                                Center(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _showDeleteAccountDialog(context),
+                                    icon: const Icon(Icons.delete_forever, size: 18),
+                                    label: Text('Delete Account', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red.shade600,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 40),
+                              ],
+                            ),
+                          ),
+                        ),
+                ],
+              ),
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1070,6 +1087,89 @@ class _ProfileBodyState extends State<_ProfileBody> {
 
 
 
+class _StickyTopBar extends StatelessWidget {
+  final String initials;
+  final String? imagePath;
+
+  const _StickyTopBar({
+    required this.initials,
+    required this.imagePath,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: AppColors.primaryRed,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.menu, color: Colors.white, size: 18),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+              ),
+              Text(
+                'My Profile',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: (imagePath != null && imagePath!.isNotEmpty)
+                    ? Image.network(
+                        UploadUrlResolver.resolve(imagePath!, type: 'profile'),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => Center(
+                          child: Text(
+                            initials.isEmpty ? 'U' : initials,
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          initials.isEmpty ? 'U' : initials,
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   final String fullName;
   final String initials;
@@ -1096,75 +1196,10 @@ class _Header extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
       ),
-      padding: const EdgeInsets.only(bottom: 40),
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            // Top bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 14.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white, size: 18),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  ),
-                  Text(
-                    'My Profile',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: (imagePath != null && imagePath!.isNotEmpty)
-                        ? Image.network(
-                            UploadUrlResolver.resolve(imagePath!, type: 'profile'),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Center(
-                              child: Text(
-                                initials.isEmpty ? 'U' : initials,
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          )
-                        : Center(
-                            child: Text(
-                              initials.isEmpty ? 'U' : initials,
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
+      padding: const EdgeInsets.only(top: 16, bottom: 40),
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
 
             // Circular Avatar
             GestureDetector(
@@ -1273,10 +1308,9 @@ class _Header extends StatelessWidget {
             const SizedBox(height: 22),
           ],
         ),
-      ),
-    );
+      );
+    }
   }
-}
 
 // ═══════════════════════════════════════════════════════════════
 // _InfoCard
