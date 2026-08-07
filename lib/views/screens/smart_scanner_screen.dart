@@ -14,11 +14,14 @@ import 'package:provider/provider.dart';
 import '../../bloc/scan_bloc.dart';
 import '../../core/utils/business_card_validator.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
+import '../../models/contact_model.dart';
 import '../widgets/card_tracker_overlay.dart';
+import '../widgets/image_cropper_widget.dart';
 import '../widgets/qr_contact_sheet.dart';
 import '../widgets/scanner_overlay.dart';
-import '../widgets/shimmer_loading.dart';
+import '../../features/scanner/services/image_processing_service.dart';
 import 'contact_preview_screen.dart';
+import 'qr_landing_screen.dart';
 
 /// Instant QR scanner + business card edge detection (auto + manual).
 class SmartScannerScreen extends StatefulWidget {
@@ -475,12 +478,40 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       imageQuality: 92,
     );
     if (picked != null && context.mounted) {
+      // Immediately show card processing UI with picked gallery image
       context.read<ScanBloc>().add(
         ProcessGalleryImage(
           imagePath: picked.path,
           manualEdgeAdjust: false,
         ),
       );
+
+      // 1. Auto-detect card quad boundary & perspective warp
+      String autoPath = picked.path;
+      try {
+        autoPath = await ImageProcessingService().autoDetectCardAndCrop(picked.path);
+      } catch (e) {
+        debugPrint("Auto detect crop error for gallery photo: $e");
+      }
+
+      // 2. Open interactive cropper so user can review and manually adjust card crop
+      if (context.mounted) {
+        final userCropped = await ImageCropperHelper.cropBusinessCardImage(
+          autoPath,
+          context: context,
+        );
+
+        final finalPath = userCropped?.path ?? autoPath;
+
+        if (context.mounted) {
+          context.read<ScanBloc>().add(
+            ProcessGalleryImage(
+              imagePath: finalPath,
+              manualEdgeAdjust: false,
+            ),
+          );
+        }
+      }
     } else if (context.mounted) {
       _handleCameraLifecycle();
     }
@@ -557,14 +588,46 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       await _qrController?.stop();
     } catch (_) {}
 
-    await Navigator.of(context, rootNavigator: true).push(
-      MaterialPageRoute(
-        builder: (_) => ContactPreviewScreen(
-          contact: state.contact,
-          imagePath: state.imagePath,
+    if (state.fromQr) {
+      final scannedContact = state.contact;
+      final contactModel = ContactModel(
+        id: scannedContact.id,
+        name: scannedContact.name,
+        designation: scannedContact.designation,
+        companyName: scannedContact.company,
+        profileImageInitial: scannedContact.name.isNotEmpty ? scannedContact.name[0].toLowerCase() : 'q',
+        companyInitial: scannedContact.company.isNotEmpty ? scannedContact.company[0].toLowerCase() : 'c',
+        phone: scannedContact.phone.isNotEmpty ? scannedContact.phone : null,
+        email: scannedContact.email.isNotEmpty ? scannedContact.email : null,
+        address: scannedContact.address.isNotEmpty ? scannedContact.address : null,
+        website: scannedContact.website.isNotEmpty ? scannedContact.website : null,
+        companyLogo: scannedContact.companyLogo,
+        backgroundImage: scannedContact.backgroundImage,
+        backgroundColor: scannedContact.backgroundColor,
+        textColor: scannedContact.textColor,
+        bgImageColor: scannedContact.bgImageColor,
+        opacity: scannedContact.opacity,
+        profileImageName: scannedContact.profileImage,
+      );
+
+      await Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => QrLandingScreen(
+            contact: contactModel,
+            scannedContact: scannedContact,
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      await Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (_) => ContactPreviewScreen(
+            contact: state.contact,
+            imagePath: state.imagePath,
+          ),
+        ),
+      );
+    }
     _resetQrScanner();
   }
 
@@ -872,43 +935,130 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
                 ),
               ),
 
-              if (processing)
-                Container(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  child: Center(
-                    child: ShimmerLoading(
-                      child: Container(
-                        padding: const EdgeInsets.all(32),
-                        margin: const EdgeInsets.symmetric(horizontal: 40),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E1E2E),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Colors.white10),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircularProgressIndicator(
-                              color: Color(0xFFFF5252),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              state.message,
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+              if (state is ScanProcessing)
+                CardProcessingOverlay(
+                  message: state.message,
+                  imagePath: state.imagePath,
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Custom Card Processing Overlay showing captured card image with laser scan sweep animation
+class CardProcessingOverlay extends StatelessWidget {
+  final String message;
+  final String? imagePath;
+
+  const CardProcessingOverlay({
+    super.key,
+    required this.message,
+    this.imagePath,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final cardWidth = size.width * 0.85;
+    final cardHeight = cardWidth / 1.586;
+    final hasFile = imagePath != null && imagePath!.isNotEmpty && File(imagePath!).existsSync();
+
+    return Container(
+      color: Colors.black.withValues(alpha: 0.85),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Card Frame with Laser Scan Animation over captured image
+            Container(
+              width: cardWidth,
+              height: cardHeight,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1B1B2F),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFFF5252), width: 2.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF5252).withValues(alpha: 0.35),
+                    blurRadius: 28,
+                    spreadRadius: 3,
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (hasFile)
+                    Image.file(
+                      File(imagePath!),
+                      fit: BoxFit.cover,
+                    )
+                  else
+                    Container(
+                      color: const Color(0xFF14142B),
+                      child: const Center(
+                        child: Icon(
+                          Icons.credit_card_rounded,
+                          size: 72,
+                          color: Colors.white24,
+                        ),
+                      ),
+                    ),
+
+                  // Animated Scanning Laser Line Sweep across the card image
+                  const ProcessingScanLine(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Processing Message & Loading Spinner Box
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E2E).withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFFF5252),
+                      strokeWidth: 2.5,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Flexible(
+                    child: Text(
+                      message,
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

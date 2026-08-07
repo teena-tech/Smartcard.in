@@ -137,12 +137,14 @@ class _LandingScreenState extends State<LandingScreen> {
 
     final slides = viewModel.slides;
     final currentSlide = slides.isNotEmpty ? slides[_currentPage] : null;
+    final String slideImagePath = (currentSlide?['image_path'] ?? '').toString();
+    final bool isEmbeddedWelcomeImage = slideImagePath.toLowerCase().contains('welcome');
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 1. Image Carousel Background (Cover full screen bounds)
+          // 1. Full-screen Carousel Image (fit: BoxFit.cover, alignment: Alignment.center)
           if (slides.isNotEmpty)
             Positioned.fill(
               child: PageView.builder(
@@ -159,96 +161,69 @@ class _LandingScreenState extends State<LandingScreen> {
                 },
               ),
             ),
-          
-          // Dark Gradient Overlay for text readability
-          Positioned.fill(
-            child: IgnorePointer(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.2), // Top subtle darkening
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7), // Bottom dark for text
-                    ],
-                    stops: const [0.0, 0.4, 1.0],
+
+          // 2. Subtle Gradient Overlay for non-embedded images
+          if (!isEmbeddedWelcomeImage)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.8),
+                      ],
+                      stops: const [0.5, 1.0],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          
-          // Top Bar (Logo and Menu)
-          const SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
+
+          // 3. Custom text if slide is remote/custom (non-graphic banner)
+          if (!isEmbeddedWelcomeImage && currentSlide != null)
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 100.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if ((currentSlide['title'] ?? '').toString().isNotEmpty) ...[
                       Text(
-                        'Smart Cards',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 20,
+                        currentSlide['title'] ?? '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
+                          height: 1.2,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                    ],
+                    if ((currentSlide['subtitle'] ?? '').toString().isNotEmpty) ...[
                       Text(
-                        'Digital Connections',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 10,
-                          fontStyle: FontStyle.italic,
+                        currentSlide['subtitle'] ?? '',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
                         ),
                       ),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Bottom Content
+          // 4. Bottom Swiper Dots & Action Buttons
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    child: Text(
-                      currentSlide?['title'] ?? 'Welcome',
-                      key: ValueKey<String>(currentSlide?['title'] ?? ''),
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 500),
-                    child: Text(
-                      currentSlide?['subtitle'] ?? '',
-                      key: ValueKey<String>(currentSlide?['subtitle'] ?? ''),
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  
                   // Page Indicator (3 dots for swiper)
                   if (slides.length > 1)
                     Row(
@@ -261,17 +236,15 @@ class _LandingScreenState extends State<LandingScreen> {
                           width: _currentPage == index ? 24 : 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: _currentPage == index ? AppColors.primaryRed : Colors.black26,
+                            color: _currentPage == index ? AppColors.primaryRed : Colors.grey.shade400,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                       ),
                     ),
-                  const SizedBox(height: 40),
-                  
+                  const SizedBox(height: 24),
+
                   // Buttons Row
-                  // If session is logged in, show GET STARTED button directly to dashboard.
-                  // Otherwise, show REGISTER FREE and LOGIN buttons.
                   if (isLoggedIn)
                     SizedBox(
                       width: double.infinity,
@@ -326,8 +299,9 @@ class _LandingScreenState extends State<LandingScreen> {
                               );
                             },
                             style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.black.withValues(alpha: 0.2),
                               side: const BorderSide(color: Colors.white, width: 2),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
@@ -336,7 +310,7 @@ class _LandingScreenState extends State<LandingScreen> {
                               "REGISTER FREE",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -356,7 +330,7 @@ class _LandingScreenState extends State<LandingScreen> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryRed,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(30),
                               ),
@@ -365,7 +339,7 @@ class _LandingScreenState extends State<LandingScreen> {
                               "LOGIN",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -373,7 +347,7 @@ class _LandingScreenState extends State<LandingScreen> {
                         ),
                       ],
                     ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),

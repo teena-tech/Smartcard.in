@@ -20,6 +20,7 @@ import '../../../core/utils/upload_url_resolver.dart';
 import '../../../models/card_model.dart';
 import '../../widgets/circular_profile_avatar.dart';
 import '../../widgets/common_drawer.dart';
+import '../../widgets/master_app_bar.dart';
 import '../home_screen.dart';
 
 class ManageCardEditAllScreen extends StatefulWidget {
@@ -854,49 +855,20 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
     return Scaffold(
       backgroundColor: widget.isTab ? Colors.transparent : colors.backgroundStart,
       drawer: widget.isTab ? null : const CommonDrawer(currentRoute: 'Manage Card'),
-      // Custom gradient header replacing AppBar for premium look
-      appBar: widget.isTab ? null : PreferredSize(
-        preferredSize: const Size.fromHeight(200),
-        child: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryRed, AppColors.secondaryRed],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      appBar: widget.isTab
+          ? null
+          : MasterAppBar(
+              titleText: 'Manage Card',
+              style: MasterHeaderStyle.gradient,
+              extraActions: viewModel.canDeleteSelectedCard
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.white),
+                        onPressed: _deleteCard,
+                      ),
+                    ]
+                  : null,
             ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu, color: Colors.white),
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Manage Card',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (viewModel.canDeleteSelectedCard)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.white),
-                      onPressed: _deleteCard,
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
       body: Form(
         key: _formKey,
         child: IgnorePointer(

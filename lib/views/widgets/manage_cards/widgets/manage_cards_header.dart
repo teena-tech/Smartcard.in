@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package:provider/provider.dart';
 import '../../../../viewmodels/card_viewmodel.dart';
+import '../../../../viewmodels/dashboard_viewmodel.dart';
 import '../../../../models/card_model.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../master_app_bar.dart';
 
 class StickyManageCardsTopBar extends StatelessWidget {
   final CardViewModel viewModel;
@@ -19,84 +21,17 @@ class StickyManageCardsTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials =
-        '${details.firstName.isNotEmpty ? details.firstName[0] : ""}${details.lastName.isNotEmpty ? details.lastName[0] : ""}'
-            .toUpperCase();
-    final profileImg = resolveImgUrl(
-      details.profileImageName,
-      'profile',
-      viewModel.userId,
-    );
-
-    return Container(
-      width: double.infinity,
-      color: AppColors.primaryRed,
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 12.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.menu, color: Colors.white, size: 18),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                ),
-              ),
-              Text(
-                'My Card',
-                style: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: profileImg.isNotEmpty
-                    ? Image.network(
-                        profileImg,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Center(
-                          child: Text(
-                            initials.isEmpty ? 'U' : initials,
-                            style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      )
-                    : Center(
-                        child: Text(
-                          initials.isEmpty ? 'U' : initials,
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return MasterAppBar(
+      titleText: 'My Card',
+      style: MasterHeaderStyle.gradient,
+      showBackButton: true,
+      onBackTap: () {
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          context.read<DashboardViewModel>().setIndex(0);
+        }
+      },
     );
   }
 }

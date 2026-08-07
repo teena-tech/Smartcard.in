@@ -5,7 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/theme_viewmodel.dart';
-import '../widgets/custom_bottom_nav.dart';
+import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_app_bar.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/card_viewmodel.dart';
@@ -104,13 +105,13 @@ class _HomeScreenState extends State<HomeScreen> {
           final profileVm = context.read<ProfileViewModel>();
           final currentCard = cardVm.currentCard;
           if (currentCard != null) {
-            final url = 'https://thesmartcards.in/profile/${currentCard.userId}';
-            await Share.share('Check out my smart card: $url');
+            final url = currentCard.qrData.isNotEmpty ? currentCard.qrData : 'https://thesmartcards.in/profile/${currentCard.userId}';
+            await Share.share(url);
             profileVm.incrementShareCount(currentCard.accountUserId.toString());
           } else if (cardVm.cards.isNotEmpty) {
             final card = cardVm.cards.first;
-            final url = 'https://thesmartcards.in/profile/${card.userId}';
-            await Share.share('Check out my smart card: $url');
+            final url = card.qrData.isNotEmpty ? card.qrData : 'https://thesmartcards.in/profile/${card.userId}';
+            await Share.share(url);
             profileVm.incrementShareCount(card.accountUserId.toString());
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -152,67 +153,25 @@ class _HomeScreenState extends State<HomeScreen> {
         // Dynamic AppBar based on selected tab
         appBar: (dashboardViewModel.currentIndex == 2 || dashboardViewModel.currentIndex == 3)
             ? null
-            : AppBar(
-          elevation: 0,
-          flexibleSpace: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primaryRed, AppColors.secondaryRed],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+            : MasterAppBar(
+                titleText: _getTitle(dashboardViewModel.currentIndex),
+                style: MasterHeaderStyle.gradient,
+                showBackButton: false,
+                onProfileTap: () => dashboardViewModel.setIndex(3),
+                extraActions: dashboardViewModel.currentIndex == 2
+                    ? [
+                        IconButton(
+                          icon: const Icon(Icons.search, color: Colors.white),
+                          onPressed: () {},
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+                          onPressed: _handleCreateNewCard,
+                        ),
+                        const SizedBox(width: 8),
+                      ]
+                    : null,
               ),
-            ),
-          ),
-          leading: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-          ),
-          title: Text(
-            _getTitle(dashboardViewModel.currentIndex),
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          centerTitle: true,
-          actions: dashboardViewModel.currentIndex == 2
-              ? [
-                  IconButton(
-                    icon: const Icon(Icons.search, color: Colors.white),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                    onPressed: _handleCreateNewCard,
-                  ),
-                  const SizedBox(width: 8),
-                ]
-              : [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16.0),
-                    child: InkWell(
-                      onTap: () => dashboardViewModel.setIndex(3),
-                      borderRadius: BorderRadius.circular(18),
-                      child: Consumer3<CardViewModel, ProfileViewModel, AuthViewModel>(
-                        builder: (context, cardVm, profVm, authVm, _) {
-                          final user = profVm.user ?? authVm.currentUser;
-                          final cardImage = cardVm.currentCard?.profileImageName;
-                          final imagePath = (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
-                          return CircularProfileAvatar(
-                            radius: 18,
-                            size: 36,
-                            imageUrl: imagePath != null && imagePath.isNotEmpty
-                                ? UploadUrlResolver.resolve(imagePath, type: 'profile')
-                                : null,
-                            fallbackText: 'U',
-                            backgroundColor: Colors.white.withValues(alpha: 0.2),
-                            foregroundColor: Colors.white,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-        ),
         body: IndexedStack(
           index: dashboardViewModel.currentIndex,
           children: pages,
@@ -225,16 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               )
             : null,
-            bottomNavigationBar: CustomBottomNav(
-                currentIndex: dashboardViewModel.currentIndex > 3 ? 0 : dashboardViewModel.currentIndex,
-                onTap: (index) {
-                  if (index == 2) {
-                    dashboardViewModel.setIndex(9); // MyCardsScreen
-                  } else {
-                    dashboardViewModel.setIndex(index);
-                  }
-                },
-              ),
+        bottomNavigationBar: const GlobalBottomNav(),
       ),
     );
   }
@@ -478,35 +428,7 @@ class _HomeBodyState extends State<_HomeBody> {
                                 ),
                               );
                             },
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                PremiumCardWidget(card: card),
-                                if (card.isSuspended)
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: Colors.black87,
-                                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                      elevation: 8,
-                                    ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const my_cards_list.MyCardsScreen(),
-                                        ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.play_circle_fill, color: Colors.green),
-                                    label: Text(
-                                      'Tap to Unsuspend',
-                                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                              ],
-                            ),
+                            child: PremiumCardWidget(card: card),
                           );
                         },
                       ),

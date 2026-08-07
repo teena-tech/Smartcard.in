@@ -11,6 +11,7 @@ import '../widgets/common_app_bar.dart';
 import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
 import 'home_screen.dart';
+import 'support_agent_screen.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/responsive.dart';
 
@@ -236,6 +237,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         ),
       ],
     ).then((value) {
+      if (!mounted) return;
       if (value == 'reply') {
         setState(() {
           _replyingToMessage = msg;
@@ -352,10 +354,64 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (supportViewModel.state == SupportState.error && messages.isEmpty) {
+                    final errText = supportViewModel.errorMessage ?? 'Unable to load support messages.';
+                    final isNoAgent = errText.toLowerCase().contains('no agent');
+
                     return Center(
-                      child: Text(
-                        supportViewModel.errorMessage ?? 'Unable to load support messages.',
-                        textAlign: TextAlign.center,
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isNoAgent ? Icons.support_agent : Icons.error_outline,
+                              size: 56,
+                              color: colors.muted,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              isNoAgent ? 'No Support Agent Assigned' : 'Unable to load messages',
+                              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              isNoAgent
+                                  ? 'Please select or request an agent from your district to start chatting.'
+                                  : errText,
+                              style: GoogleFonts.inter(fontSize: 14, color: colors.muted),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                if (isNoAgent) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const SupportAgentScreen()),
+                                  );
+                                } else {
+                                  final authViewModel = context.read<AuthViewModel>();
+                                  final userId = authViewModel.currentUser?.id;
+                                  if (userId != null) {
+                                    supportViewModel.fetchMessages(userId);
+                                  }
+                                }
+                              },
+                              icon: Icon(isNoAgent ? Icons.person_add_outlined : Icons.refresh, size: 18),
+                              label: Text(
+                                isNoAgent ? 'Select Support Agent' : 'Retry',
+                                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryRed,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   }
@@ -474,10 +530,10 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         children: [
           // Bot avatar
           if (!isMe) ...[
-            CircleAvatar(
+            const CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.primaryRed,
-              child: const Icon(Icons.support_agent, color: Colors.white, size: 16),
+              child: Icon(Icons.support_agent, color: Colors.white, size: 16),
             ),
             const SizedBox(width: 6),
           ],
@@ -514,7 +570,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                   border: isMe ? Border.all(color: const Color(0xFFFECACA), width: 1) : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -567,7 +623,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 margin: const EdgeInsets.only(bottom: 6),
                                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: isMe ? const Color(0xFFFCA5A5).withOpacity(0.3) : Colors.black.withOpacity(0.08),
+                                  color: isMe ? const Color(0xFFFCA5A5).withValues(alpha: 0.3) : Colors.black.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border(
                                     left: BorderSide(color: isMe ? const Color(0xFF991B1B) : AppColors.primaryRed, width: 3),
@@ -686,7 +742,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
               decoration: BoxDecoration(
                 color: colors.backgroundStart,
                 borderRadius: BorderRadius.circular(12),
-                border: Border(
+                border: const Border(
                   left: BorderSide(color: AppColors.primaryRed, width: 4),
                 ),
               ),

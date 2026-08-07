@@ -8,16 +8,30 @@ class ScannerApiService {
 
   final Dio _dio = DioClient().dio;
 
-  /// List scanned contacts
-  Future<Map<String, dynamic>> getContacts() async {
-    try {
-      final response = await _dio.get(ApiConfig.qrContacts);
-      return response.data as Map<String, dynamic>;
-    } catch (e) {
-      throw Exception(
-        DioClient.getErrorMessage(e, 'Failed to fetch contacts.'),
-      );
+  /// List scanned contacts with pagination and transient retry
+  Future<Map<String, dynamic>> getContacts({int page = 1, int limit = 50}) async {
+    int attempts = 0;
+    const maxAttempts = 3;
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        final response = await _dio.get(
+          ApiConfig.qrContacts,
+          queryParameters: {'page': page, 'limit': limit},
+        );
+        return response.data as Map<String, dynamic>;
+      } catch (e) {
+        if (e is DioException && (e.response?.statusCode ?? 500) < 500 && e.response?.statusCode != null) {
+          // Do not retry 4xx errors
+          throw Exception(DioClient.getErrorMessage(e, 'Failed to fetch contacts.'));
+        }
+        if (attempts >= maxAttempts) {
+          throw Exception(DioClient.getErrorMessage(e, 'Failed to fetch contacts.'));
+        }
+        await Future.delayed(Duration(milliseconds: 300 * attempts));
+      }
     }
+    throw Exception('Failed to fetch contacts.');
   }
 
   /// Preview a scanned QR
@@ -58,15 +72,38 @@ class ScannerApiService {
     }
   }
 
-  /// Delete a saved scanned contact
-  Future<Map<String, dynamic>> deleteContact(int contactId) async {
+  /// Delete a saved scanned contact permanently by ID, phone, email, or name.
+  /// The contactId param is the Flutter local id (may be a UUID string or a
+  /// numeric string from the server). We resolve the numeric DB id for the
+  /// URL path and always send phone/email/name in the body so the backend can
+  /// match even when the path id is 0 (locally-created contacts).
+  Future<Map<String, dynamic>> deleteContact(
+    String contactId, {
+    String? phone,
+    String? email,
+    String? name,
+  }) async {
     try {
-      final response = await _dio.delete(ApiConfig.qrDelete(contactId));
-      return response.data as Map<String, dynamic>;
-    } catch (e) {
-      throw Exception(
-        DioClient.getErrorMessage(e, 'Failed to delete contact.'),
+      // Use the numeric DB id when available; fall back to 0 so the backend
+      // falls through to matching by phone / email / name in the DELETE body.
+      final numericId = int.tryParse(contactId) ?? 0;
+      final response = await _dio.delete(
+        ApiConfig.qrDelete(numericId),
+        data: {
+          // Always include these — the backend uses them as fallback identifiers
+          if (phone != null && phone.isNotEmpty) 'phone': phone,
+          if (email != null && email.isNotEmpty) 'email': email,
+          if (name != null && name.isNotEmpty) 'name': name,
+        },
       );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      final serverMsg = e.response?.data?['message']?.toString();
+      throw Exception(serverMsg?.isNotEmpty == true
+          ? serverMsg
+          : DioClient.getErrorMessage(e, 'Failed to delete contact.'));
+    } catch (e) {
+      throw Exception(DioClient.getErrorMessage(e, 'Failed to delete contact.'));
     }
   }
 }

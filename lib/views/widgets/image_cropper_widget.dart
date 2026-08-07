@@ -118,6 +118,26 @@ class ImageCropperHelper {
       maxHeight: 900,
     );
   }
+
+  static Future<CroppedFile?> cropBusinessCardImage(
+    String imagePath, {
+    BuildContext? context,
+  }) async {
+    return await ImageCropper().cropImage(
+      sourcePath: imagePath,
+      uiSettings: _buildUiSettings(
+        context: context,
+        title: 'Crop Business Card',
+        aspectRatioPreset: CropAspectRatioPreset.original,
+        lockAspectRatio: false,
+        cropStyle: CropStyle.rectangle,
+      ),
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 92,
+      maxWidth: 1600,
+      maxHeight: 1200,
+    );
+  }
 }
 
 class ImagePickerAndCropperWidget extends StatefulWidget {

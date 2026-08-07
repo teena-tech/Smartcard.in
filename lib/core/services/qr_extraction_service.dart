@@ -36,11 +36,37 @@ class QrExtractionService {
     }
 
     if (_isUrl(trimmed)) {
-      if (!_isSmartCardDomain(trimmed)) {
-        throw Exception('Only SmartCards QR codes are supported.');
+      if (_isSmartCardDomain(trimmed)) {
+        final fromApi = await _fetchFromApi(trimmed);
+        if (fromApi != null) return fromApi;
       }
-      final fromApi = await _fetchFromApi(trimmed);
-      if (fromApi != null) return fromApi;
+
+      // Fallback: parse URL or QR content gracefully if API preview fails or returns 404
+      final parsedFallback = ContactParser.parseQrCode(trimmed);
+      if (parsedFallback.phone.isNotEmpty || parsedFallback.email.isNotEmpty || (parsedFallback.name.isNotEmpty && parsedFallback.name != 'QR Contact')) {
+        return parsedFallback;
+      }
+
+      // If URL contains a path or profile link, extract name from URL path segment
+      final uri = Uri.tryParse(trimmed);
+      if (uri != null && uri.pathSegments.isNotEmpty) {
+        final lastSeg = uri.pathSegments.last.replaceAll(RegExp(r'[\-_]'), ' ').trim();
+        if (lastSeg.isNotEmpty && lastSeg.toLowerCase() != 'profile') {
+          final titleName = lastSeg.split(' ').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ').trim();
+          return ScannedContactModel(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            name: titleName.isNotEmpty ? titleName : 'SmartCard Contact',
+            company: 'Unknown Company',
+            designation: 'Professional',
+            phone: '',
+            email: '',
+            website: trimmed,
+            address: '',
+            socialLinks: [trimmed],
+            createdAt: DateTime.now(),
+          );
+        }
+      }
 
       throw Exception('Card not available in database.');
     }

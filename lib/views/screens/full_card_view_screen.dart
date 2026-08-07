@@ -6,6 +6,7 @@ import '../../../core/services/contact_saver_service.dart';
 import '../../../core/utils/upload_url_resolver.dart';
 import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_app_bar.dart';
 
 class FullCardViewScreen extends StatefulWidget {
   final ContactModel contact;
@@ -92,20 +93,9 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
       drawer: const CommonDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Text(
-          'Business Profile',
-          style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        centerTitle: true,
+      appBar: const MasterAppBar(
+        titleText: 'Business Profile',
+        style: MasterHeaderStyle.transparent,
       ),
       bottomNavigationBar: const GlobalBottomNav(),
       body: Stack(
@@ -284,53 +274,6 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                     ],
                   ),
                   const SizedBox(height: 32),
-
-                  // Location map block
-                  _buildSectionHeader('Location Map'),
-                  Container(
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Map graphic or overlay placeholder
-                        Opacity(
-                          opacity: 0.2,
-                          child: Icon(Icons.map_outlined, size: 84, color: Colors.white.withValues(alpha: 0.2)),
-                        ),
-                        Positioned(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.location_searching, color: Colors.redAccent, size: 16),
-                                const SizedBox(width: 8),
-                                Text(
-                                  widget.contact.address?.isNotEmpty == true 
-                                      ? widget.contact.address! 
-                                      : 'Corporate Office Map Address',
-                                  style: GoogleFonts.inter(color: Colors.white, fontSize: 12),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 48),
                 ],
               ),
             ),

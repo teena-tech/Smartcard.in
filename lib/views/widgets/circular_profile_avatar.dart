@@ -85,12 +85,12 @@ class _CircularProfileAvatarState extends State<CircularProfileAvatar>
                 height: avatarSize + 6,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: SweepGradient(
+                  gradient: const SweepGradient(
                     colors: [
                       AppColors.primaryRed,
-                      const Color(0xFFFF6B6B),
-                      const Color(0xFF3B82F6),
-                      const Color(0xFF10B981),
+                      Color(0xFFFF6B6B),
+                      Color(0xFF3B82F6),
+                      Color(0xFF10B981),
                       AppColors.primaryRed,
                     ],
                   ),
@@ -162,15 +162,7 @@ class _CircularProfileAvatarState extends State<CircularProfileAvatar>
         (widget.imagePath != null && widget.imagePath!.isNotEmpty);
 
     if (!hasImage) {
-      return Center(
-        child: Text(
-          widget.fallbackText.isEmpty ? 'U' : widget.fallbackText,
-          style: TextStyle(
-            color: widget.foregroundColor ?? Colors.black87,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      );
+      return _fallbackContent();
     }
 
     // Handle network images
@@ -207,15 +199,14 @@ class _CircularProfileAvatarState extends State<CircularProfileAvatar>
   }
 
   Widget _fallbackContent() {
+    final avatarSize = widget.size ?? widget.radius * 2;
     return Container(
       color: widget.backgroundColor ?? Colors.grey.shade200,
       child: Center(
-        child: Text(
-          widget.fallbackText.isEmpty ? 'U' : widget.fallbackText,
-          style: TextStyle(
-            color: widget.foregroundColor ?? Colors.black54,
-            fontWeight: FontWeight.w700,
-          ),
+        child: Icon(
+          Icons.person_rounded,
+          color: widget.foregroundColor ?? AppColors.primaryRed,
+          size: avatarSize * 0.65,
         ),
       ),
     );

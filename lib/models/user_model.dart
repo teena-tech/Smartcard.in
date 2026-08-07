@@ -69,7 +69,7 @@ class UserModel {
       contactScans:       int.tryParse(json['contact_scans']?.toString() ?? ''),
       shareCount:         int.tryParse(json['share_count']?.toString() ?? json['shares']?.toString() ?? ''),
       memberId:           json['member_id']?.toString()   ?? json['user_code']?.toString(),
-      unreadSupportCount: json['unread_support_count'] as int?,
+      unreadSupportCount: int.tryParse(json['unread_support_count']?.toString() ?? ''),
       address:            json['address']?.toString(),
       profileImage:       json['profile_image']?.toString() ?? json['image']?.toString(),
       gender:             json['gender']?.toString(),

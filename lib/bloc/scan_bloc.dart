@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../core/services/edge_detection_service.dart';
 import '../core/services/scan_processing_service.dart';
 import '../models/scanned_contact_model.dart';
 
@@ -111,10 +112,11 @@ class ScanReady extends ScanState {}
 
 class ScanProcessing extends ScanState {
   final String message;
-  const ScanProcessing({this.message = 'Processing card...'});
+  final String? imagePath;
+  const ScanProcessing({this.message = 'Processing card...', this.imagePath});
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, imagePath];
 }
 
 class ScanSuccess extends ScanState {
@@ -207,7 +209,7 @@ class ScanBloc extends Bloc<ScanEvent, ScanState> {
     _busy = true;
     _startTimeout(emit);
 
-    emit(const ScanProcessing(message: 'Auto-detecting card edges...'));
+    emit(ScanProcessing(message: 'Auto-detecting card edges...', imagePath: event.imagePath));
 
     try {
       final result = await _processor.processImage(
@@ -242,7 +244,7 @@ class ScanBloc extends Bloc<ScanEvent, ScanState> {
     _busy = true;
     _startTimeout(emit);
 
-    emit(const ScanProcessing(message: 'Detecting card from gallery...'));
+    emit(ScanProcessing(message: 'Detecting card from gallery...', imagePath: event.imagePath));
 
     try {
       final result = await _processor.processImage(
@@ -274,10 +276,16 @@ class ScanBloc extends Bloc<ScanEvent, ScanState> {
     _busy = true;
     _startTimeout(emit);
 
-    emit(const ScanProcessing(message: 'Opening edge camera...'));
+    emit(const ScanProcessing(message: 'Opening document scanner...'));
 
     try {
-      final result = await _processor.processFromEdgeCamera();
+      final path = await EdgeDetectionService.scanFromCamera();
+      if (path == null) throw Exception('Card scan cancelled');
+
+      // Update processing state with the cropped card image path immediately!
+      emit(ScanProcessing(message: 'Processing business card OCR...', imagePath: path));
+
+      final result = await _processor.processImage(imagePath: path, fromGallery: false);
       _cancelTimeout();
       emit(
         ScanSuccess(

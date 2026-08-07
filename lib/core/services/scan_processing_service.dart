@@ -8,6 +8,7 @@ import '../utils/business_card_validator.dart';
 import '../utils/contact_parser.dart';
 import 'edge_detection_service.dart';
 import 'qr_extraction_service.dart';
+import '../../features/scanner/services/image_processing_service.dart';
 
 class ScanProcessingResult {
   final ScannedContactModel contact;
@@ -88,16 +89,22 @@ class ScanProcessingService {
       textBBox = Rect.fromLTRB(left, top, right, bottom);
     }
 
-    final cropped = await EdgeDetectionService.processImage(
-      imagePath,
-      manualAdjust: manualEdgeAdjust,
-      fromGallery: fromGallery,
-      textBoundingBox: textBBox,
-      frameWidth: frameWidth,
-      frameHeight: frameHeight,
-      screenWidth: screenWidth,
-      screenHeight: screenHeight,
-    );
+    String? cropped;
+    try {
+      cropped = await ImageProcessingService().autoDetectCardAndCrop(imagePath);
+    } catch (e) {
+      debugPrint('ImageProcessingService quad crop fallback: $e');
+      cropped = await EdgeDetectionService.processImage(
+        imagePath,
+        manualAdjust: manualEdgeAdjust,
+        fromGallery: fromGallery,
+        textBoundingBox: textBBox,
+        frameWidth: frameWidth,
+        frameHeight: frameHeight,
+        screenWidth: screenWidth,
+        screenHeight: screenHeight,
+      );
+    }
 
     if (cropped == null) {
       throw Exception('Edge detection cancelled');

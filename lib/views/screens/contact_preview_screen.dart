@@ -11,6 +11,7 @@ import '../../core/services/contact_saver_service.dart';
 import '../../viewmodels/contact_viewmodel.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
 import '../../core/utils/upload_url_resolver.dart';
+import '../widgets/master_app_bar.dart';
 
 class ContactPreviewScreen extends StatefulWidget {
   final ScannedContactModel contact;
@@ -42,8 +43,7 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
   late TextEditingController _pinCodeController;
   late TextEditingController _socialsController;
 
-  bool _saveToDevice = true;
-  bool _uploadToCloud = true;
+  final bool _saveToDevice = true;
   bool _isSaving = false;
   String? _capturedProfilePath;
 
@@ -97,6 +97,41 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProfileImageWidget(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return Container(
+        color: const Color(0xFF2A2A4A),
+        child: const Icon(Icons.person_add_alt_1, size: 44, color: Colors.white70),
+      );
+    }
+    final resolved = UploadUrlResolver.resolve(raw, type: 'profile');
+    if (resolved.startsWith('http://') || resolved.startsWith('https://')) {
+      return Image.network(
+        resolved,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: const Color(0xFF2A2A4A),
+          child: const Icon(Icons.person, size: 48, color: Colors.white60),
+        ),
+      );
+    }
+    final file = File(resolved);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Container(
+          color: const Color(0xFF2A2A4A),
+          child: const Icon(Icons.person, size: 48, color: Colors.white60),
+        ),
+      );
+    }
+    return Container(
+      color: const Color(0xFF2A2A4A),
+      child: const Icon(Icons.person, size: 48, color: Colors.white60),
     );
   }
 
@@ -160,6 +195,11 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_isSaving) return;
 
+    final contactViewModel = context.read<ContactViewModel>();
+    final dashboardViewModel = context.read<DashboardViewModel>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context, rootNavigator: true);
+
     setState(() => _isSaving = true);
 
     final socials = _socialsController.text
@@ -181,19 +221,19 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
       address: _addressController.text.trim(),
       pinCode: _pinCodeController.text.trim().isNotEmpty ? _pinCodeController.text.trim() : '',
       socialLinks: socials,
-      profileImage: _capturedProfilePath ?? widget.contact.profileImage,
-      imagePath: widget.imagePath,
+      profileImage: _capturedProfilePath ?? widget.contact.profileImage ?? widget.imagePath,
+      imagePath: widget.imagePath ?? widget.contact.imagePath,
       syncStatus: 'pending',
     );
 
     try {
-      await HiveDatabase.saveContact(updatedContact);
-      await context.read<ContactViewModel>().addScannedContact(updatedContact);
+      // addScannedContact internally calls HiveDatabase.saveContact — no need to call it separately
+      await contactViewModel.addScannedContact(updatedContact);
     } catch (e) {
       debugPrint('❌ Local save failed: $e');
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        scaffoldMessenger.showSnackBar(SnackBar(
           content: Text('Save failed: ${e.toString().replaceFirst("Exception: ", "")}'),
           backgroundColor: Colors.redAccent,
         ));
@@ -201,41 +241,52 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
       return;
     }
 
-    // Local save succeeded — redirect immediately
+    // Cloud sync — update status in Hive once confirmed
+    bool isAlreadySaved = false;
+    String toastMessage = 'Contact saved successfully!';
+    try {
+      final syncResult = await BackendSyncService().uploadContactDetails(updatedContact);
+      if (syncResult['already_saved'] == true) {
+        isAlreadySaved = true;
+        toastMessage = syncResult['message']?.toString() ?? 'Contact already exists — updated with latest details!';
+        await HiveDatabase.updateSyncStatus(updatedContact.id, 'synced');
+      } else if (syncResult['success'] == true) {
+        await HiveDatabase.updateSyncStatus(updatedContact.id, 'synced');
+      }
+    } catch (e) {
+      debugPrint('🚨 Cloud upload check error: $e');
+    }
+
+    // Refresh viewmodel list to show updated content
+    await contactViewModel.loadContactsFromBackend();
+
     if (!mounted) return;
 
     setState(() => _isSaving = false);
 
-    // Show snackbar before pop so it's visible on the scan page
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    // Show toast with proper indication
+    scaffoldMessenger.showSnackBar(SnackBar(
       content: Text(
-        'Contact saved successfully!',
+        toastMessage,
         style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold),
       ),
-      backgroundColor: Colors.green,
-      duration: const Duration(seconds: 3),
+      backgroundColor: isAlreadySaved ? Colors.deepOrange : Colors.green,
+      duration: const Duration(seconds: 4),
     ));
 
     // Set scan tab FIRST, then pop on next frame
-    context.read<DashboardViewModel>().setIndex(1);
+    dashboardViewModel.setIndex(1);
     await Future.microtask(() {});
-    if (mounted) Navigator.of(context, rootNavigator: true).pop();
+    if (mounted) navigator.pop();
 
-    // Background: device/cloud sync (non-blocking)
+    // Background: device save
     final saveToDevice = _saveToDevice;
-    final uploadToCloud = _uploadToCloud;
-    unawaited(Future(() async {
-      if (saveToDevice) {
+    if (saveToDevice) {
+      unawaited(Future(() async {
         try { await ContactSaverService.saveToDevice(updatedContact); }
         catch (e) { debugPrint('🚨 Device save failed: $e'); }
-      }
-      if (uploadToCloud) {
-        try {
-          final ok = await BackendSyncService().uploadContact(updatedContact);
-          if (ok) await HiveDatabase.saveContact(updatedContact.copyWith(syncStatus: 'synced'));
-        } catch (e) { debugPrint('🚨 Cloud sync failed: $e'); }
-      }
-    }));
+      }));
+    }
   }
 
   @override
@@ -246,21 +297,17 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'Verify Contact Details',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-          onPressed: _isSaving ? null : () {
-            context.read<DashboardViewModel>().setIndex(1);
-            Navigator.of(context, rootNavigator: true).pop();
-          },
-        ),
-        actions: [
+      appBar: MasterAppBar(
+        titleText: 'Verify Contact Details',
+        style: MasterHeaderStyle.transparent,
+        showProfile: false,
+        onBackTap: _isSaving
+            ? null
+            : () {
+                context.read<DashboardViewModel>().setIndex(1);
+                Navigator.of(context, rootNavigator: true).pop();
+              },
+        extraActions: [
           IconButton(
             icon: const Icon(Icons.check, size: 28, color: Colors.white),
             onPressed: _isSaving ? null : _handleSave,
@@ -288,68 +335,7 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Owner Profile Photo Header
-                  Center(
-                    child: GestureDetector(
-                      onTap: _showImagePickerModal,
-                      child: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFFF5252), width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ClipOval(
-                              child: _capturedProfilePath != null
-                                  ? Image.file(
-                                      File(_capturedProfilePath!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : (widget.contact.profileImage != null && widget.contact.profileImage!.isNotEmpty)
-                                      ? Image.network(
-                                          UploadUrlResolver.resolve(widget.contact.profileImage, type: 'profile'),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => Container(
-                                            color: const Color(0xFF2A2A4A),
-                                            child: const Icon(Icons.person, size: 48, color: Colors.white60),
-                                          ),
-                                        )
-                                      : Container(
-                                          color: const Color(0xFF2A2A4A),
-                                          child: const Icon(Icons.person_add_alt_1, size: 44, color: Colors.white70),
-                                        ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFF5252),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.camera_alt, size: 18, color: Colors.black),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                   const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Tap to capture/change profile photo',
-                      style: GoogleFonts.inter(fontSize: 11, color: Colors.white54),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
 
                   // Extracted Form
                   Container(

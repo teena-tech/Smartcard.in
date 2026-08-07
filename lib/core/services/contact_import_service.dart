@@ -25,7 +25,10 @@ class ContactImportService {
     final List<ScannedContactModel> allNewContacts = [];
     final List<ScannedContactModel> currentBatch = [];
 
-    final existingPhones = existingContacts.map((e) => _cleanPhone(e.phone)).where((p) => p.isNotEmpty).toSet();
+    final existingPhones = existingContacts.map((e) {
+      final p = _cleanPhone(e.phone);
+      return p.length >= 10 ? p.substring(p.length - 10) : p;
+    }).where((p) => p.isNotEmpty).toSet();
     final existingEmails = existingContacts.map((e) => e.email.toLowerCase()).where((e) => e.isNotEmpty).toSet();
 
     for (final contact in phoneContacts) {
@@ -36,10 +39,11 @@ class ContactImportService {
       final email = contact.emails.isNotEmpty ? contact.emails.first.address : '';
       
       final cleanedPhone = _cleanPhone(phone);
+      final tailPhone = cleanedPhone.length >= 10 ? cleanedPhone.substring(cleanedPhone.length - 10) : cleanedPhone;
       final cleanedEmail = email.toLowerCase();
 
       // Duplicate Prevention
-      if ((cleanedPhone.isNotEmpty && existingPhones.contains(cleanedPhone)) ||
+      if ((tailPhone.isNotEmpty && existingPhones.contains(tailPhone)) ||
           (cleanedEmail.isNotEmpty && existingEmails.contains(cleanedEmail))) {
         continue;
       }

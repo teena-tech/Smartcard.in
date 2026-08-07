@@ -19,6 +19,12 @@ subprojects {
     afterEvaluate {
         if (plugins.hasPlugin("com.android.library") || plugins.hasPlugin("com.android.application")) {
             extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.apply {
+                defaultConfig {
+                    ndk {
+                        abiFilters.clear()
+                        abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+                    }
+                }
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17
                     targetCompatibility = JavaVersion.VERSION_17

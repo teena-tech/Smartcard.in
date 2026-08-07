@@ -8,6 +8,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../../core/utils/responsive.dart';
+import '../widgets/master_app_bar.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -615,23 +616,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final colors = context.watch<ThemeViewModel>().colors;
     return Scaffold(
       backgroundColor: Colors.white, // Pure white theme canvas background
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 2,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_ios, color: AppColors.primaryRed, size: 24),
-        ),
-        title: Text(
-          'REGISTER',
-          style: GoogleFonts.inter(
-            color: const Color(0xFF20263A),
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            letterSpacing: 0.5,
-          ),
-        ),
-        centerTitle: true,
+      appBar: const MasterAppBar(
+        titleText: 'REGISTER',
+        style: MasterHeaderStyle.gradient,
+        showProfile: false,
       ),
       body: Container(
         width: double.infinity,

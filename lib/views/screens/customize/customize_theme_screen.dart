@@ -15,6 +15,7 @@ import '../../../viewmodels/theme_viewmodel.dart';
 import '../../../viewmodels/subscription_viewmodel.dart';
 import '../../widgets/circular_profile_avatar.dart';
 import '../../widgets/global_bottom_nav.dart';
+import '../../widgets/master_app_bar.dart';
 import '../subscription_screen.dart';
 import 'customize_menu_screen.dart';
 
@@ -547,37 +548,11 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
       child: Scaffold(
         backgroundColor: const Color(0xFFFFF0F0),
         bottomNavigationBar: const GlobalBottomNav(),
-        appBar: AppBar(
-          backgroundColor: AppColors.primaryRed,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: _onBackPress,
-          ),
-
-        title: Text(
-          'Customize',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+        appBar: MasterAppBar(
+          titleText: 'Customize',
+          style: MasterHeaderStyle.gradient,
+          onBackTap: _onBackPress,
         ),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 14.0),
-            child: CircularProfileAvatar(
-              radius: 16,
-              size: 32,
-              imageUrl: imageUrl,
-              fallbackText: initials.isNotEmpty ? initials : 'TN',
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
 
       body: SafeArea(
         child: Stack(

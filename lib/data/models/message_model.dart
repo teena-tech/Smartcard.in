@@ -23,20 +23,27 @@ class MessageModel {
     required this.dislikeCount,
   });
 
+  static int _parseInt(dynamic val, [int fallback = 0]) {
+    if (val is int) return val;
+    if (val is double) return val.toInt();
+    if (val != null) return int.tryParse(val.toString()) ?? fallback;
+    return fallback;
+  }
+
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      summary: json['summary'] ?? '',
-      details: json['details'] ?? json['message_text'] ?? json['text'] ?? json['message'] ?? '',
-      source: json['source'] ?? json['sender'] ?? json['sender_type'] ?? 'user',
+      id: _parseInt(json['id']),
+      title: json['title']?.toString() ?? '',
+      summary: json['summary']?.toString() ?? '',
+      details: json['details']?.toString() ?? json['message_text']?.toString() ?? json['text']?.toString() ?? json['message']?.toString() ?? '',
+      source: json['source']?.toString() ?? json['sender']?.toString() ?? json['sender_type']?.toString() ?? 'user',
       createdAt: (json['created_at'] ?? json['createdAt'] ?? json['created'] ?? json['time'] ?? json['date'] ?? '').toString().isNotEmpty
           ? (json['created_at'] ?? json['createdAt'] ?? json['created'] ?? json['time'] ?? json['date']).toString()
           : DateTime.now().toIso8601String(),
-      readAt: (json['user_action'] is Map) ? json['user_action']['read_at'] : null,
-      reaction: (json['user_action'] is Map) ? (json['user_action']['reaction'] ?? 'none') : 'none',
-      likeCount: (json['stats'] is Map) ? (json['stats']['like_count'] ?? 0) : 0,
-      dislikeCount: (json['stats'] is Map) ? (json['stats']['dislike_count'] ?? 0) : 0,
+      readAt: (json['user_action'] is Map) ? json['user_action']['read_at']?.toString() : null,
+      reaction: (json['user_action'] is Map) ? (json['user_action']['reaction']?.toString() ?? 'none') : 'none',
+      likeCount: (json['stats'] is Map) ? _parseInt(json['stats']['like_count']) : 0,
+      dislikeCount: (json['stats'] is Map) ? _parseInt(json['stats']['dislike_count']) : 0,
     );
   }
 

@@ -61,16 +61,47 @@ class CommonDrawer extends StatelessWidget {
     final authViewModel = context.watch<AuthViewModel>();
     final profileViewModel = context.watch<ProfileViewModel>();
 
-    // Ensure profile is loaded
+    // Ensure profile & cards are loaded
     if (profileViewModel.user == null && !profileViewModel.isLoading && authViewModel.currentUser != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.read<ProfileViewModel>().loadProfile(authViewModel.currentUser!.id!);
       });
     }
-    final user = profileViewModel.user ?? authViewModel.currentUser;
+
     final cardViewModel = context.watch<CardViewModel>();
-    final cardImage = cardViewModel.currentCard?.profileImageName;
-    final imagePath = (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
+    if (cardViewModel.cards.isEmpty && authViewModel.currentUser != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<CardViewModel>().fetchCards(authViewModel.currentUser!.id.toString());
+      });
+    }
+
+    final user = profileViewModel.user ?? authViewModel.currentUser;
+
+    // Mandatory Primary Card Profile Image Waterfall Resolution:
+    // 1. Primary Card Profile Image
+    // 2. Active/Selected Card Profile Image
+    // 3. First Available Card Profile Image
+    // 4. User Account Profile Image
+    String? imagePath;
+    final primaryCard = cardViewModel.primaryCard;
+    if (primaryCard?.profileImageName != null && primaryCard!.profileImageName!.trim().isNotEmpty) {
+      imagePath = primaryCard.profileImageName!.trim();
+    } else if (cardViewModel.currentCard?.profileImageName != null && cardViewModel.currentCard!.profileImageName!.trim().isNotEmpty) {
+      imagePath = cardViewModel.currentCard!.profileImageName!.trim();
+    } else {
+      for (final card in cardViewModel.cards) {
+        if (card.profileImageName != null && card.profileImageName!.trim().isNotEmpty) {
+          imagePath = card.profileImageName!.trim();
+          break;
+        }
+      }
+    }
+
+    if (imagePath == null || imagePath.isEmpty) {
+      if (user?.profileImage != null && user!.profileImage!.trim().isNotEmpty) {
+        imagePath = user.profileImage!.trim();
+      }
+    }
 
     return Drawer(
       backgroundColor: colors.backgroundStart,
@@ -151,7 +182,7 @@ class CommonDrawer extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12),
               children: [
                 _DrawerItem(
-Icons.home_outlined,
+                  Icons.home_outlined,
                   'Dashboard',
                   colors,
                   () => _navigateToTab(context, 0),
@@ -172,7 +203,7 @@ Icons.home_outlined,
                   isSelected: currentRoute == 'Share Card' || currentTabIndex == 9,
                 ),
                 _DrawerItem(
-Icons.edit_document,
+                  Icons.edit_document,
                   'Manage Card',
                   colors,
                   () {
@@ -181,35 +212,35 @@ Icons.edit_document,
                   isSelected: currentRoute == 'Manage Card' || currentTabIndex == 10,
                 ),
                 _DrawerItem(
-Icons.contact_phone_outlined,
+                  Icons.contact_phone_outlined,
                   'Contacts',
                   colors,
                   () => _navigateToTab(context, 4),
                   isSelected: currentRoute == 'Contacts' || currentTabIndex == 4,
                 ),
                 _DrawerItem(
-Icons.chat_bubble_outline,
+                  Icons.chat_bubble_outline,
                   'Messages',
                   colors,
                   () => _navigateToTab(context, 5),
                   isSelected: currentRoute == 'Messages' || currentTabIndex == 5,
                 ),
                 _DrawerItem(
-Icons.headset_mic_outlined,
+                  Icons.headset_mic_outlined,
                   'Support',
                   colors,
                   () => _navigateToTab(context, 6),
                   isSelected: currentRoute == 'Support' || currentTabIndex == 6,
                 ),
                 _DrawerItem(
-Icons.settings_outlined,
+                  Icons.settings_outlined,
                   'Settings',
                   colors,
                   () => _navigateToTab(context, 7),
                   isSelected: currentRoute == 'Settings' || currentTabIndex == 7,
                 ),
                 _DrawerItem(
-Icons.info_outline,
+                  Icons.info_outline,
                   'About',
                   colors,
                   () => _navigateToTab(context, 8),
@@ -246,17 +277,17 @@ Icons.info_outline,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           _ThemeButton(
-'Light',
+                            'Light',
                             themeViewModel.themeMode == AppThemeMode.light,
                             AppThemeMode.light,
                           ),
                           _ThemeButton(
-'Dark',
+                            'Dark',
                             themeViewModel.themeMode == AppThemeMode.dark,
                             AppThemeMode.dark,
                           ),
                           _ThemeButton(
-'Black',
+                            'Black',
                             themeViewModel.themeMode == AppThemeMode.black,
                             AppThemeMode.black,
                           ),

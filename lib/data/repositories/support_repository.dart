@@ -7,7 +7,7 @@ import '../models/message_model.dart';
 class SupportRepository {
   final DioClient _dioClient = DioClient();
 
-  SupportRepository([dynamic _ = null]);
+  SupportRepository([dynamic _]);
 
   Future<List<MessageModel>> getChatMessages(String userId, {int? limit, int? afterId, int? beforeId}) async {
     final Map<String, dynamic> query = {};
@@ -37,7 +37,10 @@ class SupportRepository {
     final response = await _dioClient.dio.get(
       ApiConfig.supportUnreadCount(userId),
     );
-    return response.data['count'] ?? 0;
+    final rawCount = response.data['count'];
+    if (rawCount is int) return rawCount;
+    if (rawCount != null) return int.tryParse(rawCount.toString()) ?? 0;
+    return 0;
   }
 
   Future<MessageModel> sendChatMessage(String userId, {required String text, File? attachment}) async {

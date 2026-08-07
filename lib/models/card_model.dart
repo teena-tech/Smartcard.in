@@ -76,13 +76,20 @@ class CardModel {
 
 
   factory CardModel.fromJson(Map<String, dynamic> json, int index, int fallbackUserId, String fallbackName, String fallbackPhone, String? fallbackEmail) {
-    final workProfileId = json['work_profile_id'] as int? ?? json['card_id'] as int? ?? json['user_id'] as int? ?? json['id'] as int? ?? 0;
-    final cardId = json['card_id'] as int? ?? workProfileId;
-    final accountUserId = json['account_user_id'] as int? ?? json['accountUserId'] as int? ?? json['owner_user_id'] as int? ?? fallbackUserId;
+    int parseInt(dynamic val, [int fallback = 0]) {
+      if (val is int) return val;
+      if (val is double) return val.toInt();
+      if (val != null) return int.tryParse(val.toString()) ?? fallback;
+      return fallback;
+    }
+
+    final workProfileId = parseInt(json['work_profile_id'], parseInt(json['card_id'], parseInt(json['user_id'], parseInt(json['id'], 0))));
+    final cardId = parseInt(json['card_id'], workProfileId);
+    final accountUserId = parseInt(json['account_user_id'], parseInt(json['accountUserId'], parseInt(json['owner_user_id'], fallbackUserId)));
     
     final companyName = json['company_name']?.toString() ?? '';
     final name = json['name']?.toString() ?? '';
-    final cardNo = json['card_no'] as int? ?? (index + 1);
+    final cardNo = parseInt(json['card_no'], index + 1);
 
     // Tab label logic
     String tabLabel = companyName.trim().isNotEmpty 

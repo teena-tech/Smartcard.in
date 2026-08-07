@@ -6,17 +6,16 @@ class ContactRepository extends BaseRepository {
   final ScannerApiService _service = ScannerApiService.instance;
 
   /// Fetches the list of contacts for the current user.
-  Future<List<dynamic>> getContacts() async {
-    final Map<String, dynamic> response = await _service.getContacts();
-    // Assuming the API returns a list under 'contacts' or 'items' or 'data'.
+  Future<List<dynamic>> getContacts({int page = 1, int limit = 50}) async {
+    final Map<String, dynamic> response = await _service.getContacts(page: page, limit: limit);
+    if (response['data'] is List) {
+      return response['data'] as List;
+    }
     if (response['contacts'] is List) {
       return response['contacts'] as List;
     }
     if (response['items'] is List) {
       return response['items'] as List;
-    }
-    if (response['data'] is List) {
-      return response['data'] as List;
     }
     return [];
   }
@@ -26,8 +25,18 @@ class ContactRepository extends BaseRepository {
     await _service.saveContact(data);
   }
 
-  /// Deletes a contact by its ID.
-  Future<void> deleteContact(String contactId) async {
-    await _service.deleteContact(int.parse(contactId));
+  /// Deletes a contact permanently by its ID, phone, email, or name.
+  Future<void> deleteContact(
+    String contactId, {
+    String? phone,
+    String? email,
+    String? name,
+  }) async {
+    await _service.deleteContact(
+      contactId,
+      phone: phone,
+      email: email,
+      name: name,
+    );
   }
 }

@@ -143,12 +143,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Widget _buildFilteredList(ContactViewModel vm, dynamic colors) {
-    List contacts = vm.contacts;
-    if (_activeFilter == 'Phone') {
-      contacts = contacts.where((c) => c.source == 'phone').toList();
-    } else if (_activeFilter == 'SmartCard') {
-      contacts = contacts.where((c) => c.source != 'phone').toList();
-    }
+    final contacts = vm.contacts;
 
     if (contacts.isEmpty) {
       return Center(
@@ -203,18 +198,17 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   Widget _buildStatistics(ContactViewModel vm, dynamic colors) {
-    final smartcard = vm.contacts.where((c) => c.source != 'phone').length;
-    final phone = vm.contacts.where((c) => c.source == 'phone').length;
-    final isFiltered = _activeFilter != 'All';
+    final smartcard = vm.smartCardContactsCount;
+    final phone = vm.phoneContactsCount;
 
     Widget phoneChip = _StatChip(
       label: 'Phone Contacts',
       value: phone.toString(),
       color: colors.text,
       bgColor: colors.panel,
-      isSelected: _activeFilter == 'Phone',
+      isSelected: vm.activeFilter == 'Phone',
       onTap: () {
-        setState(() => _activeFilter = 'Phone');
+        vm.setActiveFilter('Phone');
       },
     );
 
@@ -223,9 +217,9 @@ class _ContactsScreenState extends State<ContactsScreen> {
       value: smartcard.toString(),
       color: colors.accent,
       bgColor: colors.panel,
-      isSelected: _activeFilter == 'SmartCard',
+      isSelected: vm.activeFilter == 'SmartCard',
       onTap: () {
-        setState(() => _activeFilter = 'SmartCard');
+        vm.setActiveFilter('SmartCard');
       },
     );
 

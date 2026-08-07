@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../../../viewmodels/profile_viewmodel.dart';
 import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_app_bar.dart';
 
 class QrLandingScreen extends StatefulWidget {
   final ContactModel contact;
@@ -25,12 +27,40 @@ class QrLandingScreen extends StatefulWidget {
 }
 
 class _QrLandingScreenState extends State<QrLandingScreen> {
+  Timer? _autoRedirectTimer;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProfileViewModel>().incrementCardViews(widget.contact.id);
     });
+
+    // Automatically redirect to card details after 3 seconds
+    _autoRedirectTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        _navigateToDetails();
+      }
+    });
+  }
+
+  void _navigateToDetails() {
+    _autoRedirectTimer?.cancel();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullCardViewScreen(
+          contact: widget.contact,
+          scannedContact: widget.scannedContact,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _autoRedirectTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -40,15 +70,8 @@ class _QrLandingScreenState extends State<QrLandingScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
       drawer: const CommonDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
+      appBar: const MasterAppBar(
+        style: MasterHeaderStyle.transparent,
       ),
       bottomNavigationBar: const GlobalBottomNav(),
       body: Stack(
@@ -85,7 +108,7 @@ class _QrLandingScreenState extends State<QrLandingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Spacer(),
-                  // Company Logo Block (with premium borders)
+                  // Profile / Company Avatar
                   Center(
                     child: Container(
                       width: 120,
@@ -143,7 +166,7 @@ class _QrLandingScreenState extends State<QrLandingScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Company Name
+                  // Name / Company Title
                   Center(
                     child: Text(
                       contact.companyName.isNotEmpty ? contact.companyName : 'SmartCard Business Inc.',
@@ -168,69 +191,9 @@ class _QrLandingScreenState extends State<QrLandingScreen> {
                     ),
                   ),
                   const Spacer(),
-                  // QR Scanner / AR Scan Buttons (First View Only triggers scanner)
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Starting AR scan experience...')),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
-                          ),
-                          icon: const Icon(Icons.view_in_ar_outlined),
-                          label: Text(
-                            'AR SCAN EXPERIENCE',
-                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context); // Go back to scan again
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.white24),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          icon: const Icon(Icons.qr_code_scanner),
-                          label: Text(
-                            'QR SCANNER',
-                            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                   // Preview Option (opens full card details URL/screen directly)
                   TextButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FullCardViewScreen(
-                            contact: contact,
-                            scannedContact: scannedContact,
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: _navigateToDetails,
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.redAccent,
                     ),

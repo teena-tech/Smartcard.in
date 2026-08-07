@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_app_bar.dart';
 
 class ShareScreen extends StatelessWidget {
   const ShareScreen({super.key});
@@ -17,24 +18,9 @@ class ShareScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       drawer: const CommonDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: Icon(Icons.menu, color: colors.text, size: 24),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Text(
-          'Share Card',
-          style: GoogleFonts.inter(
-            color: colors.text,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
+      appBar: const MasterAppBar(
+        titleText: 'Share Card',
+        style: MasterHeaderStyle.transparent,
       ),
       bottomNavigationBar: const GlobalBottomNav(),
       body: Container(

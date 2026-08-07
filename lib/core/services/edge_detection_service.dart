@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../features/scanner/services/document_scanner_service.dart';
+import '../../features/scanner/services/image_processing_service.dart';
 
 /// Auto + optional manual business-card edge detection and perspective crop.
 class EdgeDetectionService {
@@ -91,16 +93,29 @@ class EdgeDetectionService {
     return sourcePath;
   }
 
-  /// Camera capture for OCR card scanner using ImageSource.camera.
+  /// Camera capture for OCR card scanner using native Document Scanner with manual/auto crop fallback.
   static Future<String?> scanFromCamera() async {
     try {
+      // 1. Primary: Try native ML Kit Document Scanner (Auto 4-corner edge detection + manual corner cropper + perspective quad warp)
+      final nativeCroppedPath = await DocumentScannerService().scanCardWithNativeWarp();
+      if (nativeCroppedPath != null && nativeCroppedPath.isNotEmpty) {
+        return nativeCroppedPath;
+      }
+    } catch (e) {
+      debugPrint("DocumentScannerService error: $e");
+    }
+
+    try {
+      // 2. Fallback: Take photo via camera and run 4-corner perspective quad crop
       final image = await ImagePicker().pickImage(
         source: ImageSource.camera,
-        imageQuality: 92,
+        imageQuality: 94,
       );
-      return image?.path;
+      if (image == null) return null;
+
+      return await ImageProcessingService().autoDetectCardAndCrop(image.path);
     } catch (e) {
-      debugPrint("Camera capture error: $e");
+      debugPrint("Camera capture fallback error: $e");
       return null;
     }
   }

@@ -17,6 +17,7 @@ import '../../models/card_model.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/upload_url_resolver.dart';
 import '../widgets/common_drawer.dart';
+import '../widgets/master_app_bar.dart';
 
 /// Simple QR card viewer — manual swipe only, zero auto-scroll by design.
 ///
@@ -70,7 +71,27 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
 
   // ─── Actions ────────────────────────────────────────────────────────────────
 
+  void _showSuspendedSnackBar(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
   void _copyLink(CardModel card) {
+    if (card.isSuspended) {
+      _showSuspendedSnackBar('Card is suspended. Unsuspend in Manage Cards to copy link.');
+      return;
+    }
     final url = card.qrData;
     Clipboard.setData(ClipboardData(text: url));
     ScaffoldMessenger.of(context)
@@ -78,13 +99,21 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   }
 
   void _shareLink(CardModel card) {
+    if (card.isSuspended) {
+      _showSuspendedSnackBar('Card is suspended. Unsuspend in Manage Cards to share.');
+      return;
+    }
     final url = card.qrData;
     // ignore: deprecated_member_use
-    Share.share('Check out my smart card: $url');
+    Share.share(url);
     context.read<ProfileViewModel>().incrementShareCount(card.accountUserId.toString());
   }
 
   Future<void> _downloadPng(int index, CardModel card) async {
+    if (card.isSuspended) {
+      _showSuspendedSnackBar('Card is suspended. Unsuspend in Manage Cards to download PNG.');
+      return;
+    }
     try {
       final boundary = _qrKeys[index]?.currentContext
           ?.findRenderObject() as RenderRepaintBoundary?;
@@ -143,6 +172,10 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
   }
 
   Future<void> _downloadSvg(CardModel card) async {
+    if (card.isSuspended) {
+      _showSuspendedSnackBar('Card is suspended. Unsuspend in Manage Cards to download SVG.');
+      return;
+    }
     try {
       final url = card.qrData;
       final result = QrValidator.validate(
@@ -242,13 +275,10 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
               const SizedBox(height: 16),
               // ── Swipeable card area ──────────────────────────────────────
               SizedBox(
-                height: 620,
+                height: 650,
                 child: PageView.builder(
                   controller: _pageController,
-                  // NeverScrollableScrollPhysics would lock it; PageScrollPhysics
-                  // gives native snap — user can swipe, but nothing else can.
                   physics: const PageScrollPhysics(),
-                  // Infinite virtual list: user can swipe endlessly in both directions.
                   itemCount: cards.length > 1 ? _kMultiplier : 1,
                   onPageChanged: (virtual) =>
                       setState(() => _page = virtual % cards.length),
@@ -312,13 +342,9 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
       return Scaffold(
         backgroundColor: Colors.transparent,
         drawer: const CommonDrawer(currentRoute: 'My Cards'),
-        appBar: AppBar(
-          title: Text('SHARE CARD',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-          backgroundColor: AppColors.primaryRed,
-          foregroundColor: Colors.white,
-          centerTitle: true,
-          elevation: 0,
+        appBar: const MasterAppBar(
+          titleText: 'SHARE CARD',
+          style: MasterHeaderStyle.gradient,
         ),
         body: decoratedChild,
       );
@@ -351,6 +377,8 @@ class _CardQrPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isSuspended = card.isSuspended;
+
     return ResponsiveCenter(
       maxWidth: 600,
       child: Padding(
@@ -358,6 +386,34 @@ class _CardQrPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Suspended Badge Header
+            if (isSuspended) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.circle, color: Colors.redAccent, size: 10),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Suspended',
+                      style: GoogleFonts.inter(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             // 1. Company Logo (Top-most, outside the card frame)
             if (card.companyLogo != null &&
                 card.companyLogo!.isNotEmpty) ...[
@@ -387,7 +443,7 @@ class _CardQrPage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // 3. QR Code inside a white card frame (Bottom)
+            // 3. QR Code inside a white card frame (Blurred & Locked if Suspended)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               decoration: BoxDecoration(
@@ -401,87 +457,151 @@ class _CardQrPage extends StatelessWidget {
                   ),
                 ],
               ),
-              child: RepaintBoundary(
-                key: qrKey,
-                child: Container(
-                  color: Colors.white,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      QrImageView(
-                        data: card.qrData,
-                        version: QrVersions.auto,
-                        size: 200,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: Color(0xFF20263A),
-                        ),
-                        dataModuleStyle: const QrDataModuleStyle(
-                          dataModuleShape: QrDataModuleShape.square,
-                          color: Color(0xFF20263A),
-                        ),
-                        backgroundColor: Colors.white,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  RepaintBoundary(
+                    key: qrKey,
+                    child: ImageFiltered(
+                      imageFilter: ui.ImageFilter.blur(
+                        sigmaX: isSuspended ? 14 : 0,
+                        sigmaY: isSuspended ? 14 : 0,
                       ),
-                      const SizedBox(height: 4),
-                    ],
+                      child: Container(
+                        color: Colors.white,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            QrImageView(
+                              data: card.qrData,
+                              version: QrVersions.auto,
+                              size: 200,
+                              eyeStyle: const QrEyeStyle(
+                                eyeShape: QrEyeShape.square,
+                                color: Color(0xFF20263A),
+                              ),
+                              dataModuleStyle: const QrDataModuleStyle(
+                                dataModuleShape: QrDataModuleShape.square,
+                                color: Color(0xFF20263A),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  if (isSuspended)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.lock_rounded, color: Colors.redAccent, size: 32),
+                          const SizedBox(height: 6),
+                          Text(
+                            'CARD SUSPENDED',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          Text(
+                            'QR Unscannable',
+                            style: GoogleFonts.inter(
+                              color: Colors.white54,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // 4. Dedicated section displaying full url (styled like React's glass card wrapper)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
-              decoration: BoxDecoration(
-                color: colors.panel.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: colors.border),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      card.qrData,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: colors.text,
+            // 4. Dedicated section displaying full url (Disabled styling if suspended)
+            Opacity(
+              opacity: isSuspended ? 0.5 : 1.0,
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
+                decoration: BoxDecoration(
+                  color: colors.panel.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colors.border),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        card.qrData,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: colors.text,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: onCopy,
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                    color: AppColors.primaryRed,
-                    tooltip: 'Copy Link',
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(),
-                    style: IconButton.styleFrom(
-                      backgroundColor: colors.border.withValues(alpha: 0.3),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: onCopy,
+                      icon: Icon(isSuspended ? Icons.block : Icons.copy_rounded, size: 18),
+                      color: isSuspended ? Colors.grey : AppColors.primaryRed,
+                      tooltip: isSuspended ? 'Suspended' : 'Copy Link',
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(),
+                      style: IconButton.styleFrom(
+                        backgroundColor: colors.border.withValues(alpha: 0.3),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
             const SizedBox(height: 24),
 
-            // Action buttons
+            // Action buttons (Disabled styling if suspended)
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 16,
               runSpacing: 16,
               children: [
-                _ActionBtn(icon: Icons.share,           label: 'Share', onTap: onShare,       colors: colors),
-                _ActionBtn(icon: Icons.download_rounded, label: 'PNG',  onTap: onDownloadPng, colors: colors),
-                _ActionBtn(icon: Icons.download_rounded, label: 'SVG',  onTap: onDownloadSvg, colors: colors),
+                _ActionBtn(
+                  icon: isSuspended ? Icons.block : Icons.share,
+                  label: 'Share',
+                  onTap: onShare,
+                  colors: colors,
+                  disabled: isSuspended,
+                ),
+                _ActionBtn(
+                  icon: isSuspended ? Icons.block : Icons.download_rounded,
+                  label: 'PNG',
+                  onTap: onDownloadPng,
+                  colors: colors,
+                  disabled: isSuspended,
+                ),
+                _ActionBtn(
+                  icon: isSuspended ? Icons.block : Icons.download_rounded,
+                  label: 'SVG',
+                  onTap: onDownloadSvg,
+                  colors: colors,
+                  disabled: isSuspended,
+                ),
               ],
             ),
           ],
@@ -496,38 +616,46 @@ class _ActionBtn extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final AppColors colors;
+  final bool disabled;
 
   const _ActionBtn({
     required this.icon,
     required this.label,
     required this.onTap,
     required this.colors,
+    this.disabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: colors.panel,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.border),
+    return Opacity(
+      opacity: disabled ? 0.45 : 1.0,
+      child: Column(
+        children: [
+          InkWell(
+            onTap: disabled ? null : onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.panel,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colors.border),
+              ),
+              child: Icon(icon, color: disabled ? Colors.grey : colors.text, size: 24),
             ),
-            child: Icon(icon, color: colors.text, size: 24),
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(label,
+          const SizedBox(height: 6),
+          Text(
+            label,
             style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.black)),
-      ],
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: disabled ? Colors.grey : Colors.black,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

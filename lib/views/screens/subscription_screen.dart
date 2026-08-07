@@ -11,8 +11,9 @@ import '../../core/constants/app_colors.dart';
 import '../widgets/common_drawer.dart';
 import '../../core/utils/responsive.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
-import '../widgets/custom_bottom_nav.dart';
+import '../widgets/global_bottom_nav.dart';
 import '../widgets/circular_profile_avatar.dart';
+import '../widgets/master_app_bar.dart';
 import '../../core/utils/upload_url_resolver.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -718,52 +719,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     return Scaffold(
       backgroundColor: colors.backgroundStart,
       drawer: const CommonDrawer(),
-      appBar: AppBar(
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryRed, AppColors.secondaryRed],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-          ),
-        ),
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ),
-        title: Text(
-          'Subscription',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Center(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.pushNamed(context, '/profile');
-                },
-                child: CircularProfileAvatar(
-                  radius: 18,
-                  size: 36,
-                  imageUrl: profileImage != null && profileImage.isNotEmpty
-                      ? UploadUrlResolver.resolve(profileImage, type: 'profile')
-                      : null,
-                  fallbackText: user?.initials ?? 'U',
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
+      appBar: MasterAppBar(
+        titleText: 'Subscription',
+        style: MasterHeaderStyle.gradient,
+        onProfileTap: () => Navigator.pushNamed(context, '/profile'),
       ),
       body: Container(
         width: double.infinity,
@@ -1171,14 +1130,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
       ),
       ),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 0,
-        onTap: (index) {
-          final dashVm = context.read<DashboardViewModel>();
-          Navigator.pop(context);
-          dashVm.setIndex(index == 2 ? 9 : index);
-        },
-      ),
+      bottomNavigationBar: const GlobalBottomNav(),
     );
   }
 

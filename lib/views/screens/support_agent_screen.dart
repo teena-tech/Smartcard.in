@@ -57,9 +57,9 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
     }
     
     // Add agents from AgentViewModel if not already in the list
-    final existingIds = districtAgentsList.map((e) => e['id']).toSet();
+    final existingIds = districtAgentsList.map((e) => e['id']?.toString()).toSet();
     for (final a in agentVm.agents) {
-      if (!existingIds.contains(a.id)) {
+      if (!existingIds.contains(a.id.toString())) {
         districtAgentsList.add({
           'id': a.id,
           'name': a.name,

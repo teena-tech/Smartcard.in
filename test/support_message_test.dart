@@ -46,5 +46,23 @@ void main() {
       final unreadMsg = MessageModel.fromJson(unreadJson);
       expect(unreadMsg.isRead, isFalse);
     });
+
+    test('MessageModel should correctly handle String integer IDs and counts', () {
+      final json = {
+        'id': '1',
+        'title': 'Support Update',
+        'summary': 'Hello, support team',
+        'message_text': 'I need assistance with card setup.',
+        'sender_type': 'user',
+        'created_at': '2026-07-30 11:30:00',
+        'stats': {'like_count': '10', 'dislike_count': '2'},
+      };
+
+      final msg = MessageModel.fromJson(json);
+
+      expect(msg.id, equals(1));
+      expect(msg.likeCount, equals(10));
+      expect(msg.dislikeCount, equals(2));
+    });
   });
 }

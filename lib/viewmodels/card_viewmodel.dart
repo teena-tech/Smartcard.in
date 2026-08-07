@@ -41,6 +41,11 @@ class CardViewModel extends ChangeNotifier {
     return _cards[_currentIndex];
   }
 
+  CardModel? get primaryCard {
+    if (_cards.isEmpty) return null;
+    return _cards.firstWhere((c) => c.isPrimary, orElse: () => _cards.first);
+  }
+
   CardProfileDetails? get selectedCardDetails => _selectedCardDetails;
 
   Future<void> fetchCards(
@@ -570,6 +575,35 @@ class CardViewModel extends ChangeNotifier {
         _selectedCardDetails!.isSuspended = newSuspendedState;
       }
       
+      _successMessage = newSuspendedState ? 'Card suspended successfully!' : 'Card reactivated successfully!';
+    } catch (e) {
+      _errorMessage = 'Failed to toggle suspension: $e';
+    } finally {
+      _isBusy = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> toggleSuspensionForCardIndex(int index) async {
+    if (index < 0 || index >= _cards.length) return;
+    final targetCard = _cards[index];
+    _isBusy = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      final newSuspendedState = !targetCard.isSuspended;
+      await _userRepository.updateCardProfileDetails(
+        userId,
+        {'is_suspended': newSuspendedState ? 1 : 0},
+        workProfileId: targetCard.workProfileId,
+      );
+
+      final updatedCard = targetCard.copyWith(isSuspended: newSuspendedState);
+      _cards[index] = updatedCard;
+      if (_currentIndex == index && _selectedCardDetails != null) {
+        _selectedCardDetails!.isSuspended = newSuspendedState;
+      }
+
       _successMessage = newSuspendedState ? 'Card suspended successfully!' : 'Card reactivated successfully!';
     } catch (e) {
       _errorMessage = 'Failed to toggle suspension: $e';

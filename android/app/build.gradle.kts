@@ -32,9 +32,9 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // Exclude x86 to avoid rive_common native build issues on Windows
+        // Target physical mobile device architectures only (prevents x86 CMake NDK errors on Windows)
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 
@@ -43,11 +43,15 @@ android {
         val keystoreProperties = Properties()
         if (keystorePropertiesFile.exists()) {
             keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-            create("release") {
-                keyAlias = keystoreProperties["keyAlias"] as String
-                keyPassword = keystoreProperties["keyPassword"] as String
-                storeFile = keystoreProperties["storeFile"]?.let { file(it) }
-                storePassword = keystoreProperties["storePassword"] as String
+            val storePath = keystoreProperties["storeFile"] as String?
+            val keyStoreFile = storePath?.let { file(it) }
+            if (keyStoreFile != null && keyStoreFile.exists()) {
+                create("release") {
+                    keyAlias = keystoreProperties["keyAlias"] as String
+                    keyPassword = keystoreProperties["keyPassword"] as String
+                    storeFile = keyStoreFile
+                    storePassword = keystoreProperties["storePassword"] as String
+                }
             }
         }
     }

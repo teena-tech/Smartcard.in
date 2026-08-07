@@ -5,6 +5,7 @@ import '../../viewmodels/theme_viewmodel.dart';
 import 'contacts_screen.dart';
 import 'smart_scanner_screen.dart';
 import '../../core/utils/responsive.dart';
+import '../widgets/master_app_bar.dart';
 
 class ContactMenuScreen extends StatelessWidget {
   const ContactMenuScreen({super.key});
@@ -24,22 +25,10 @@ class ContactMenuScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.transparent, // Background from ThemeWrapper
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: colors.text, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Contact',
-          style: GoogleFonts.inter(
-            color: colors.text,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        centerTitle: true,
+      appBar: const MasterAppBar(
+        titleText: 'Contact',
+        style: MasterHeaderStyle.transparent,
+        showProfile: false,
       ),
       body: ResponsiveCenter(
         child: SingleChildScrollView(

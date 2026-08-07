@@ -77,6 +77,7 @@ class UploadUrlResolver {
     }
 
     if (resolved.isNotEmpty &&
+        (resolved.startsWith('http://') || resolved.startsWith('https://')) &&
         (type == 'logo' ||
             type == 'profile' ||
             type == 'gallery' ||

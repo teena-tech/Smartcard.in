@@ -11,6 +11,8 @@ import 'customize/customize_menu_screen.dart';
 import 'home_screen.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
+import '../widgets/master_app_bar.dart';
+import '../widgets/global_bottom_nav.dart';
 
 class SmartCardListScreen extends StatefulWidget {
   final bool isTab;
@@ -302,13 +304,40 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                 elevation: 8,
                               ),
-                              icon: const Icon(Icons.lock_open_rounded, color: Colors.orange),
+                              icon: const Icon(Icons.play_circle_fill, color: Colors.green),
                               label: Text(
                                 'UNSUSPEND CARD',
                                 style: GoogleFonts.inter(fontWeight: FontWeight.bold),
                               ),
                               onPressed: () {
-                                _handleCreateNewCard();
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: Text('Unsuspend Card', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                                    content: Text(
+                                      'Are you sure you want to unsuspend this card? It will become active again.',
+                                      style: GoogleFonts.inter(),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () async {
+                                          Navigator.pop(ctx);
+                                          await cardViewModel.toggleSuspensionForCardIndex(index);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.green,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                        ),
+                                        child: const Text('Unsuspend'),
+                                      ),
+                                    ],
+                                  ),
+                                );
                               },
                             )
                           else if (!canEditCard)
@@ -377,37 +406,22 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.red,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-                (route) => false,
-              );
-            }
-          },
-        ),
-        title: Text(
-          'MY DIGITAL CARDS',
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
+      appBar: MasterAppBar(
+        titleText: 'MY DIGITAL CARDS',
+        style: MasterHeaderStyle.gradient,
+        onBackTap: () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+              (route) => false,
+            );
+          }
+        },
       ),
+      bottomNavigationBar: const GlobalBottomNav(),
       body: body,
     );
   }
