@@ -224,7 +224,7 @@ class _LandingScreenState extends State<LandingScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // Page Indicator (3 dots for swiper)
+                  // Page Indicator (dots for swiper loop)
                   if (slides.length > 1)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,

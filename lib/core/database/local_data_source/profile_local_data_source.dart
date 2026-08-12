@@ -1,21 +1,28 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/user_model.dart';
 
 class ProfileLocalDataSource {
-  static const String _boxName = 'user_profile_box';
-  static Box<Map<dynamic, dynamic>>? _box;
+  static const String _userPrefix = 'user_profile_';
 
   static Future<void> init() async {
-    _box ??= await Hive.openBox<Map<dynamic, dynamic>>(_boxName);
+    // No-op for SharedPreferences initialization
   }
 
   Future<UserModel?> getUser(String userId) async {
-    final userJson = _box?.get(userId);
-    if (userJson == null) return null;
-    return UserModel.fromJson(Map<String, dynamic>.from(userJson));
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('$_userPrefix$userId');
+    if (jsonString == null || jsonString.isEmpty) return null;
+    try {
+      final userJson = jsonDecode(jsonString) as Map<String, dynamic>;
+      return UserModel.fromJson(userJson);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> saveUser(UserModel user) async {
-    await _box?.put(user.id, user.toJson());
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('$_userPrefix${user.id}', jsonEncode(user.toJson()));
   }
 }

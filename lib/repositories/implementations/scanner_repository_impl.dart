@@ -3,7 +3,7 @@ import '../../models/scanned_contact_model.dart';
 import '../../core/network/api_paths.dart';
 import '../../core/network/connectivity_service.dart';
 import '../../core/services/dio_client.dart';
-import '../../core/database/hive_database.dart';
+import '../../core/database/sqlite_database.dart';
 import '../../repositories/interfaces/scanner_repository.dart';
 
 class ScannerRepositoryImpl implements IScannerRepository {
@@ -23,20 +23,20 @@ class ScannerRepositoryImpl implements IScannerRepository {
     final raw = response.data['data'] ?? response.data;
     final contact = ScannedContactModel.fromJson(Map<String, dynamic>.from(raw as Map));
 
-    await HiveDatabase.saveContact(contact.copyWith(syncStatus: 'pending'));
-    _emitLocalContacts();
+    await SqliteDatabase.saveContact(contact.copyWith(syncStatus: 'pending'));
+    await _emitLocalContacts();
     return contact;
   }
 
   @override
   Future<List<ScannedContactModel>> getAllLocalScannedContacts() async {
-    final local = HiveDatabase.getAllContacts();
-    _emitLocalContacts();
+    final local = await SqliteDatabase.getAllContactsAsync();
+    await _emitLocalContacts();
     return local;
   }
 
-  void _emitLocalContacts() {
-    final current = HiveDatabase.getAllContacts();
+  Future<void> _emitLocalContacts() async {
+    final current = await SqliteDatabase.getAllContactsAsync();
     _controller.add(current);
   }
 }

@@ -7,6 +7,7 @@ import '../../../core/utils/upload_url_resolver.dart';
 import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
 import '../widgets/master_app_bar.dart';
+import '../widgets/rotating_profile_avatar_ring.dart';
 
 class FullCardViewScreen extends StatefulWidget {
   final ContactModel contact;
@@ -131,55 +132,35 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Profile Photo Block
+                  // Profile Photo Block with Rotating Ring
                   Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 110,
-                          height: 110,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Colors.redAccent, Colors.purpleAccent],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.redAccent.withValues(alpha: 0.15),
-                                blurRadius: 18,
-                                spreadRadius: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundColor: const Color(0xFF1F1F35),
-                          backgroundImage: (widget.scannedContact.imagePath != null && widget.scannedContact.imagePath!.trim().isNotEmpty)
-                              ? NetworkImage(
-                                  UploadUrlResolver.resolve(widget.scannedContact.imagePath!.trim(), type: 'profile'),
-                                )
-                              : (widget.contact.profileImageName != null && widget.contact.profileImageName!.trim().isNotEmpty)
-                                  ? NetworkImage(
-                                      UploadUrlResolver.resolve(widget.contact.profileImageName!.trim(), type: 'profile'),
-                                    )
-                                  : null,
-                          child: ((widget.scannedContact.imagePath != null && widget.scannedContact.imagePath!.trim().isNotEmpty) ||
-                                  (widget.contact.profileImageName != null && widget.contact.profileImageName!.trim().isNotEmpty))
-                              ? null
-                              : Text(
-                                  nameInitials,
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                    child: RotatingProfileAvatarRing(
+                      size: 100,
+                      borderWidth: 4.0,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: const Color(0xFF1F1F35),
+                        backgroundImage: (widget.scannedContact.imagePath != null && widget.scannedContact.imagePath!.trim().isNotEmpty)
+                            ? NetworkImage(
+                                UploadUrlResolver.resolve(widget.scannedContact.imagePath!.trim(), type: 'profile'),
+                              )
+                            : (widget.contact.profileImageName != null && widget.contact.profileImageName!.trim().isNotEmpty)
+                                ? NetworkImage(
+                                    UploadUrlResolver.resolve(widget.contact.profileImageName!.trim(), type: 'profile'),
+                                  )
+                                : null,
+                        child: ((widget.scannedContact.imagePath != null && widget.scannedContact.imagePath!.trim().isNotEmpty) ||
+                                (widget.contact.profileImageName != null && widget.contact.profileImageName!.trim().isNotEmpty))
+                            ? null
+                            : Text(
+                                nameInitials,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                        ),
-                      ],
+                              ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),

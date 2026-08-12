@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.7+8
 
 environment:
   sdk: '>=3.10.4 <4.0.0'
@@ -34,8 +34,8 @@ dependencies:
   url_launcher: ^6.3.0
   camera: ^0.11.0
   flutter_contacts: ^1.1.9
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
+  sqflite: ^2.3.3+1
+  sqflite_common_ffi: ^2.3.3
   connectivity_plus: ^6.0.3
   flutter_bloc: ^8.1.6
   equatable: ^2.0.5
@@ -79,5 +79,5 @@ flutter:
     - assets/rive/
     - assets/icon/
     - assets/lottie/
-    # - assets/loading/  # removed (folder not present)
+    - assets/lottie/profile_user_card.json
     - assets/gif/

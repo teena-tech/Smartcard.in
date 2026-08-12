@@ -8,6 +8,7 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/card_viewmodel.dart';
 import '../../models/user_model.dart';
 import 'circular_profile_avatar.dart';
+import 'rotating_profile_avatar_ring.dart';
 import 'smart_cards_logo.dart';
 import '../../core/utils/upload_url_resolver.dart';
 
@@ -175,15 +176,14 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
     final imagePath = (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 1.5),
-        ),
+      borderRadius: BorderRadius.circular(20),
+      child: RotatingProfileAvatarRing(
+        size: 34,
+        borderWidth: 2.5,
         child: CircularProfileAvatar(
           radius: 17,
           size: 34,
+          animateRing: false,
           imageUrl: imagePath != null && imagePath.isNotEmpty
               ? UploadUrlResolver.resolve(imagePath, type: 'profile')
               : null,
@@ -203,14 +203,13 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 1.5),
-            ),
+          RotatingProfileAvatarRing(
+            size: 32,
+            borderWidth: 2.0,
             child: CircularProfileAvatar(
-              radius: 17,
-              size: 34,
+              radius: 16,
+              size: 32,
+              animateRing: false,
               imageUrl: imagePath != null && imagePath.isNotEmpty
                   ? UploadUrlResolver.resolve(imagePath, type: 'profile')
                   : null,

@@ -11,7 +11,7 @@ import '../services/camera_service.dart';
 import '../widgets/scanner_overlay.dart';
 import '../widgets/capture_animation.dart';
 import '../widgets/processing_animation.dart';
-import 'contact_review_screen.dart';
+import '../../../views/screens/contact_preview_screen.dart';
 
 class BusinessCardScannerScreen extends StatefulWidget {
   const BusinessCardScannerScreen({super.key});
@@ -62,8 +62,6 @@ class _BusinessCardScannerScreenState extends State<BusinessCardScannerScreen> {
 
     _isAnalyzing = true;
     try {
-      // Heuristic frame detection check via controller metrics
-      final screenSize = MediaQuery.of(context).size;
       // Trigger card detector frame evaluation
       // If camera controller has frame streams or snapshot sample
       _controller.updateDetectedCard(null); // Keeps state reactive & guidance messages smooth
@@ -99,7 +97,7 @@ class _BusinessCardScannerScreenState extends State<BusinessCardScannerScreen> {
       if (parsedContact != null && mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => ContactReviewScreen(
+            builder: (_) => ContactPreviewScreen(
               contact: parsedContact,
               imagePath: _controller.lastCapturedImagePath ?? capturedFile!.path,
             ),

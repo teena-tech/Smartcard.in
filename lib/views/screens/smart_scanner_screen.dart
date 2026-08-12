@@ -14,14 +14,12 @@ import 'package:provider/provider.dart';
 import '../../bloc/scan_bloc.dart';
 import '../../core/utils/business_card_validator.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
-import '../../models/contact_model.dart';
 import '../widgets/card_tracker_overlay.dart';
 import '../widgets/image_cropper_widget.dart';
 import '../widgets/qr_contact_sheet.dart';
 import '../widgets/scanner_overlay.dart';
 import '../../features/scanner/services/image_processing_service.dart';
 import 'contact_preview_screen.dart';
-import 'qr_landing_screen.dart';
 
 /// Instant QR scanner + business card edge detection (auto + manual).
 class SmartScannerScreen extends StatefulWidget {
@@ -588,46 +586,14 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       await _qrController?.stop();
     } catch (_) {}
 
-    if (state.fromQr) {
-      final scannedContact = state.contact;
-      final contactModel = ContactModel(
-        id: scannedContact.id,
-        name: scannedContact.name,
-        designation: scannedContact.designation,
-        companyName: scannedContact.company,
-        profileImageInitial: scannedContact.name.isNotEmpty ? scannedContact.name[0].toLowerCase() : 'q',
-        companyInitial: scannedContact.company.isNotEmpty ? scannedContact.company[0].toLowerCase() : 'c',
-        phone: scannedContact.phone.isNotEmpty ? scannedContact.phone : null,
-        email: scannedContact.email.isNotEmpty ? scannedContact.email : null,
-        address: scannedContact.address.isNotEmpty ? scannedContact.address : null,
-        website: scannedContact.website.isNotEmpty ? scannedContact.website : null,
-        companyLogo: scannedContact.companyLogo,
-        backgroundImage: scannedContact.backgroundImage,
-        backgroundColor: scannedContact.backgroundColor,
-        textColor: scannedContact.textColor,
-        bgImageColor: scannedContact.bgImageColor,
-        opacity: scannedContact.opacity,
-        profileImageName: scannedContact.profileImage,
-      );
-
-      await Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          builder: (_) => QrLandingScreen(
-            contact: contactModel,
-            scannedContact: scannedContact,
-          ),
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ContactPreviewScreen(
+          contact: state.contact,
+          imagePath: state.imagePath,
         ),
-      );
-    } else {
-      await Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          builder: (_) => ContactPreviewScreen(
-            contact: state.contact,
-            imagePath: state.imagePath,
-          ),
-        ),
-      );
-    }
+      ),
+    );
     _resetQrScanner();
   }
 

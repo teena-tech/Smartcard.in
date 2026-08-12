@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,13 +10,16 @@ import '../../models/scanned_contact_model.dart';
 import '../../viewmodels/theme_viewmodel.dart';
 import '../../viewmodels/contact_viewmodel.dart';
 import 'home_screen.dart';
+import '../../core/services/native_contact_service.dart';
 import '../widgets/common_app_bar.dart';
 import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
 import '../widgets/delete_confirm_dialog.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/upload_url_resolver.dart';
+import '../widgets/rotating_profile_avatar_ring.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ContactDetailScreen extends StatefulWidget {
   final ScannedContactModel contact;
@@ -27,11 +32,45 @@ class ContactDetailScreen extends StatefulWidget {
 
 class _ContactDetailScreenState extends State<ContactDetailScreen> {
   late ScannedContactModel _contact;
+  String? _liveDevicePhoto;
 
   @override
   void initState() {
     super.initState();
     _contact = widget.contact;
+    _fetchLiveDevicePhoto();
+  }
+
+  Future<void> _fetchLiveDevicePhoto() async {
+    final photo = _contact.profileImage;
+    if (photo == null || photo.trim().isEmpty) {
+      if (_contact.id.startsWith('phone_') || _contact.source == 'phone') {
+        try {
+          final status = await Permission.contacts.status;
+          if (!status.isGranted && !status.isLimited) return;
+
+          final rawId = _contact.id.replaceFirst('phone_', '');
+          final devContact = await FlutterContacts.getContact(
+            rawId,
+            withPhoto: true,
+            withThumbnail: true,
+          );
+          if (devContact != null) {
+            final bytes = devContact.photo ?? devContact.thumbnail ?? devContact.photoOrThumbnail;
+            if (bytes != null && bytes.isNotEmpty) {
+              final base64Str = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+              if (mounted) {
+                setState(() {
+                  _liveDevicePhoto = base64Str;
+                });
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('Live photo fetch error: $e');
+        }
+      }
+    }
   }
 
   List<String> _extractItems(List<String?> rawInputs) {
@@ -47,6 +86,131 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       }
     }
     return result.toList();
+  }
+
+  void _showFullImageDialog(BuildContext context, String? imageSource, String name, String initial) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Top Bar with Contact Name & Close Button
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E1E3F),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name.isNotEmpty ? name : 'Profile Photo Verification',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white, size: 22),
+                    onPressed: () => Navigator.pop(ctx),
+                    tooltip: 'Close',
+                  ),
+                ],
+              ),
+            ),
+            // Main Full Screen Preview Image Container
+            Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.65,
+                maxWidth: 420,
+              ),
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InteractiveViewer(
+                minScale: 0.8,
+                maxScale: 3.5,
+                child: _buildFullImageWidget(imageSource, initial),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullImageWidget(String? avatarSource, String initial) {
+    if (avatarSource == null || avatarSource.trim().isEmpty) {
+      return Container(
+        height: 280,
+        color: const Color(0xFFFEE2E2),
+        child: Center(
+          child: Text(
+            initial.toUpperCase(),
+            style: GoogleFonts.inter(
+              color: const Color(0xFFE53935),
+              fontSize: 72,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
+    if (avatarSource.startsWith('data:image')) {
+      try {
+        final base64Bytes = base64Decode(avatarSource.split(',').last);
+        return Image.memory(
+          base64Bytes,
+          fit: BoxFit.contain,
+          errorBuilder: (c, e, s) => _buildFullImageWidget(null, initial),
+        );
+      } catch (_) {
+        return _buildFullImageWidget(null, initial);
+      }
+    }
+    if (avatarSource.startsWith('http://') || avatarSource.startsWith('https://')) {
+      return Image.network(
+        avatarSource,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            height: 280,
+            color: Colors.grey.shade900,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.red),
+            ),
+          );
+        },
+        errorBuilder: (c, e, s) => _buildFullImageWidget(null, initial),
+      );
+    }
+    final file = File(avatarSource);
+    if (file.existsSync()) {
+      return Image.file(
+        file,
+        fit: BoxFit.contain,
+        errorBuilder: (c, e, s) => _buildFullImageWidget(null, initial),
+      );
+    }
+    return _buildFullImageWidget(null, initial);
   }
 
   void _showOptionsPopup(
@@ -218,6 +382,258 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
   }
 
+  void _handleShareContact(BuildContext context) {
+    final c = _contact;
+    final List<String> parts = [];
+
+    parts.add('📇 Contact Details: ${c.name}');
+    if (c.designation.isNotEmpty) parts.add('💼 Designation: ${c.designation}');
+    if (c.company.isNotEmpty) parts.add('🏢 Company: ${c.company}');
+    if (c.phone.isNotEmpty) parts.add('📞 Phone: ${c.phone}');
+    if (c.email.isNotEmpty) parts.add('✉️ Email: ${c.email}');
+    if (c.website.isNotEmpty) parts.add('🌐 Website: ${c.website}');
+    if (c.address.isNotEmpty) parts.add('📍 Address: ${c.address}');
+
+    if (c.cardUrl != null && c.cardUrl!.isNotEmpty) {
+      final cardLink = c.cardUrl!.startsWith('http') ? c.cardUrl! : 'https://thesmartcards.com/c/${c.cardUrl!}';
+      parts.add('💳 Digital Smart Card: $cardLink');
+    }
+
+    final shareText = parts.join('\n');
+    // ignore: deprecated_member_use
+    Share.share(shareText, subject: 'Contact Card: ${c.name}');
+  }
+
+  String _formatFullSmartCardUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.trim().isEmpty) return 'https://thesmartcards.com';
+    final trimmed = rawUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('?sc=') || trimmed.startsWith('sc=')) {
+      final q = trimmed.startsWith('?') ? trimmed : '?$trimmed';
+      return 'https://thesmartcards.com$q';
+    }
+    if (trimmed.startsWith('/c/') || trimmed.startsWith('/')) {
+      return 'https://thesmartcards.com$trimmed';
+    }
+    return 'https://thesmartcards.com/c/$trimmed';
+  }
+
+  List<Map<String, dynamic>> _getContactCards(ScannedContactModel contact) {
+    if (contact.matchedCards != null && contact.matchedCards!.isNotEmpty) {
+      return contact.matchedCards!;
+    }
+    final count = contact.totalCardsCount ?? 1;
+    final List<Map<String, dynamic>> list = [];
+    for (int i = 0; i < count; i++) {
+      list.add({
+        'company': i == 0 ? (contact.company.isNotEmpty ? contact.company : '') : '',
+        'designation': i == 0
+            ? (contact.primaryDesignation?.isNotEmpty == true ? contact.primaryDesignation! : contact.designation)
+            : '',
+        'cardUrl': contact.cardUrl,
+        'profileImage': contact.matchedProfileImage ?? contact.profileImage,
+      });
+    }
+    return list;
+  }
+
+  Widget _buildSmartCardSection(ScannedContactModel displayContact, dynamic colors) {
+    if (!displayContact.isMatched) return const SizedBox.shrink();
+
+    final cards = _getContactCards(displayContact);
+    final totalCount = displayContact.totalCardsCount ?? cards.length;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.card.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified, color: Colors.blueAccent, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'SmartCards',
+                  style: GoogleFonts.inter(
+                    color: colors.text,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colors.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colors.accent.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  totalCount > 1 ? '$totalCount Cards Held' : '1 Card Held',
+                  style: GoogleFonts.inter(
+                    color: colors.accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...cards.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final cardData = entry.value;
+            final companyName = cardData['company']?.toString().isNotEmpty == true
+                ? cardData['company'].toString()
+                : (idx == 0 && displayContact.company.isNotEmpty ? displayContact.company : '');
+            final designationName = cardData['designation']?.toString().isNotEmpty == true
+                ? cardData['designation'].toString()
+                : (idx == 0
+                    ? (displayContact.primaryDesignation?.isNotEmpty == true
+                        ? displayContact.primaryDesignation!
+                        : displayContact.designation)
+                    : '');
+            final rawUrl = cardData['cardUrl']?.toString() ?? displayContact.cardUrl;
+            final fullUrl = _formatFullSmartCardUrl(rawUrl);
+            final imgSource = cardData['profileImage']?.toString() ?? displayContact.matchedProfileImage ?? displayContact.profileImage;
+
+            return Container(
+              margin: EdgeInsets.only(bottom: idx == cards.length - 1 ? 0 : 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.panel.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: colors.border.withValues(alpha: 0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colors.accent.withValues(alpha: 0.15),
+                          border: Border.all(color: colors.accent.withValues(alpha: 0.3)),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: imgSource != null && imgSource.isNotEmpty
+                            ? Image.network(
+                                UploadUrlResolver.resolve(imgSource, type: 'profile'),
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) => Center(
+                                  child: Text(
+                                    displayContact.name.isNotEmpty ? displayContact.name[0].toUpperCase() : 'S',
+                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: colors.accent),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Text(
+                                  displayContact.name.isNotEmpty ? displayContact.name[0].toUpperCase() : 'S',
+                                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: colors.accent),
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (companyName.isNotEmpty)
+                              Text(
+                                companyName,
+                                style: GoogleFonts.inter(
+                                  color: colors.text,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            if (designationName.isNotEmpty)
+                              Text(
+                                designationName,
+                                style: GoogleFonts.inter(
+                                  color: colors.accent,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            if (companyName.isEmpty && designationName.isEmpty)
+                              Text(
+                                'Smart Card #${idx + 1}',
+                                style: GoogleFonts.inter(
+                                  color: colors.text,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (fullUrl.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.open_in_browser, size: 18),
+                        label: Text(
+                          'View Card',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.accent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () async {
+                          final uri = Uri.parse(fullUrl);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.watch<ThemeViewModel>().colors;
@@ -238,7 +654,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
     final String? rawImage = (currentContact.profileImage != null && currentContact.profileImage!.isNotEmpty)
         ? currentContact.profileImage!
-        : ((currentContact.imagePath != null && currentContact.imagePath!.isNotEmpty) ? currentContact.imagePath! : null);
+        : (_liveDevicePhoto ?? ((currentContact.imagePath != null && currentContact.imagePath!.isNotEmpty) ? currentContact.imagePath! : null));
 
     final String? avatarSource = rawImage != null ? UploadUrlResolver.resolve(rawImage, type: 'profile') : null;
 
@@ -291,7 +707,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     }
 
     return Scaffold(
-      backgroundColor: colors.backgroundStart,
+      backgroundColor: Colors.transparent,
       drawer: const CommonDrawer(
         backTitle: 'Back to Contacts',
       ),
@@ -299,6 +715,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
         titleText: 'Contact Details',
         showBackButton: true,
         onBackTap: () => Navigator.pop(context),
+        extraActions: [
+          IconButton(
+            icon: const Icon(Icons.share, color: Colors.white),
+            tooltip: 'Share Contact',
+            onPressed: () => _handleShareContact(context),
+          ),
+        ],
         onProfileTap: () {
           Navigator.pushAndRemoveUntil(
             context,
@@ -309,23 +732,30 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       ),
       bottomNavigationBar: const GlobalBottomNav(),
 
-      body: ResponsiveCenter(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: ResponsiveCenter(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 12),
-              // Circular Avatar Container
-              Container(
-                width: 104,
-                height: 104,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.red.withValues(alpha: 0.12),
+              // Circular Avatar Container with Rotating Ring & Full Image Verification Popup on Tap
+              GestureDetector(
+                onTap: () => _showFullImageDialog(context, avatarSource, displayContact.name, profileInitial),
+                child: RotatingProfileAvatarRing(
+                  size: 104,
+                  borderWidth: 3.5,
+                  child: avatarWidget,
                 ),
-                alignment: Alignment.center,
-                child: avatarWidget,
               ),
 
               const SizedBox(height: 20),
@@ -367,42 +797,59 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
               const SizedBox(height: 28),
 
-              // Action Buttons (Call, WhatsApp, Text, Email)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _ActionButton(
-                    icon: const Icon(Icons.phone, color: Colors.red, size: 24),
-                    label: 'Call',
-                    color: const Color(0xFFFFE5E5),
-                    iconColor: Colors.red,
-                    onTap: () => _handleCall(context),
-                  ),
-                  _ActionButton(
-                    icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 24),
-                    label: 'WhatsApp',
-                    color: const Color(0xFFE8F5E9),
-                    iconColor: const Color(0xFF25D366),
-                    onTap: () => _handleWhatsApp(context),
-                  ),
-                  _ActionButton(
-                    icon: const Icon(Icons.message, color: Color(0xFF0284C7), size: 24),
-                    label: 'Text',
-                    color: const Color(0xFFE0F2FE),
-                    iconColor: const Color(0xFF0284C7),
-                    onTap: () => _handleSms(context),
-                  ),
-                  _ActionButton(
-                    icon: const Icon(Icons.email, color: Color(0xFFD97706), size: 24),
-                    label: 'Email',
-                    color: const Color(0xFFFEF3C7),
-                    iconColor: const Color(0xFFD97706),
-                    onTap: () => _handleEmail(context),
-                  ),
-                ],
+              // Action Buttons (Call, WhatsApp, Text, Email, Share)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _ActionButton(
+                      icon: const Icon(Icons.phone, color: Colors.red, size: 22),
+                      label: 'Call',
+                      color: const Color(0xFFFFE5E5),
+                      iconColor: Colors.red,
+                      onTap: () => _handleCall(context),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionButton(
+                      icon: const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 22),
+                      label: 'WhatsApp',
+                      color: const Color(0xFFE8F5E9),
+                      iconColor: const Color(0xFF25D366),
+                      onTap: () => _handleWhatsApp(context),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionButton(
+                      icon: const Icon(Icons.message, color: Color(0xFF0284C7), size: 22),
+                      label: 'Text',
+                      color: const Color(0xFFE0F2FE),
+                      iconColor: const Color(0xFF0284C7),
+                      onTap: () => _handleSms(context),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionButton(
+                      icon: const Icon(Icons.email, color: Color(0xFFD97706), size: 22),
+                      label: 'Email',
+                      color: const Color(0xFFFEF3C7),
+                      iconColor: const Color(0xFFD97706),
+                      onTap: () => _handleEmail(context),
+                    ),
+                    const SizedBox(width: 12),
+                    _ActionButton(
+                      icon: const Icon(Icons.share, color: Color(0xFF7C3AED), size: 22),
+                      label: 'Share',
+                      color: const Color(0xFFF3E8FF),
+                      iconColor: const Color(0xFF7C3AED),
+                      onTap: () => _handleShareContact(context),
+                    ),
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // ── SmartCard Verified Profile & Digital Card Preview Card ───────
+              _buildSmartCardSection(displayContact, colors),
 
               // Phone Field Card
               if (displayContact.phone.trim().isNotEmpty)
@@ -550,29 +997,59 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
               const SizedBox(height: 28),
 
-              // Delete Action Button (Full Width)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.delete_outline, size: 20),
-                  label: Text(
-                    'Delete Contact',
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
+              // Edit & Delete Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        label: Text(
+                          'Edit',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF1E1E3F),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () => _showEditDialog(context),
+                      ),
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        label: Text(
+                          'Delete',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () => _confirmDelete(context),
+                      ),
                     ),
-                    elevation: 0,
                   ),
-                  onPressed: () => _confirmDelete(context),
-                ),
+                ],
               ),
 
               const SizedBox(height: 32),
@@ -580,157 +1057,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
-  void _showEditDialog(BuildContext context) {
-    final nameController = TextEditingController(text: _contact.name);
-    final phoneController = TextEditingController(text: _contact.phone);
-    final altPhoneController = TextEditingController(text: _contact.alternativePhone ?? '');
-    final whatsAppController = TextEditingController(text: _contact.whatsApp ?? '');
-    final landlineController = TextEditingController(text: _contact.landline ?? '');
-    final emailController = TextEditingController(text: _contact.email);
-    final companyController = TextEditingController(text: _contact.company);
-    final designationController = TextEditingController(text: _contact.designation);
-    final websiteController = TextEditingController(text: _contact.website);
-    final addressController = TextEditingController(text: _contact.address);
-    final pinCodeController = TextEditingController(text: _contact.pinCode ?? '');
-    final districtController = TextEditingController(text: _contact.district ?? '');
-    final stateController = TextEditingController(text: _contact.stateName ?? '');
-    final genderController = TextEditingController(text: _contact.gender ?? '');
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF1E1E3F),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            top: 24,
-            left: 24,
-            right: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Edit Contact Details',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white70),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildEditTextField(label: 'Full Name', controller: nameController, icon: Icons.person),
-                _buildEditTextField(label: 'Phone Number', controller: phoneController, icon: Icons.phone, keyboardType: TextInputType.phone),
-                _buildEditTextField(label: 'Alternative Phone', controller: altPhoneController, icon: Icons.phone_android, keyboardType: TextInputType.phone),
-                _buildEditTextField(label: 'WhatsApp Number', controller: whatsAppController, icon: Icons.chat, keyboardType: TextInputType.phone),
-                _buildEditTextField(label: 'Landline', controller: landlineController, icon: Icons.phone_in_talk, keyboardType: TextInputType.phone),
-                _buildEditTextField(label: 'Email Address', controller: emailController, icon: Icons.email, keyboardType: TextInputType.emailAddress),
-                _buildEditTextField(label: 'Company Name', controller: companyController, icon: Icons.business),
-                _buildEditTextField(label: 'Designation / Title', controller: designationController, icon: Icons.work),
-                _buildEditTextField(label: 'Website', controller: websiteController, icon: Icons.language),
-                _buildEditTextField(label: 'Address', controller: addressController, icon: Icons.location_on),
-                _buildEditTextField(label: 'District', controller: districtController, icon: Icons.map),
-                _buildEditTextField(label: 'State', controller: stateController, icon: Icons.map),
-                _buildEditTextField(label: 'Pincode', controller: pinCodeController, icon: Icons.pin_drop, keyboardType: TextInputType.number),
-                _buildEditTextField(label: 'Gender', controller: genderController, icon: Icons.person_outline),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE11D48),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                    ),
-                    onPressed: () async {
-                      final updated = _contact.copyWith(
-                        name: nameController.text.trim(),
-                        phone: phoneController.text.trim(),
-                        alternativePhone: altPhoneController.text.trim().isNotEmpty ? altPhoneController.text.trim() : null,
-                        whatsApp: whatsAppController.text.trim().isNotEmpty ? whatsAppController.text.trim() : null,
-                        landline: landlineController.text.trim().isNotEmpty ? landlineController.text.trim() : null,
-                        email: emailController.text.trim(),
-                        company: companyController.text.trim(),
-                        designation: designationController.text.trim(),
-                        website: websiteController.text.trim(),
-                        address: addressController.text.trim(),
-                        pinCode: pinCodeController.text.trim().isNotEmpty ? pinCodeController.text.trim() : null,
-                        district: districtController.text.trim().isNotEmpty ? districtController.text.trim() : null,
-                        stateName: stateController.text.trim().isNotEmpty ? stateController.text.trim() : null,
-                        gender: genderController.text.trim().isNotEmpty ? genderController.text.trim() : null,
-                      );
-                      await context.read<ContactViewModel>().addScannedContact(updated);
-                      if (mounted) {
-                        setState(() {
-                          _contact = updated;
-                        });
-                      }
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Contact updated successfully!'),
-                            backgroundColor: Colors.green,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    },
-                    child: Text(
-                      'Save Changes',
-                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEditTextField({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: GoogleFonts.inter(color: Colors.white70, fontSize: 13),
-          prefixIcon: Icon(icon, color: Colors.white54, size: 20),
-          filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.08),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-      ),
-    );
+  void _showEditDialog(BuildContext context) async {
+    final updated = await NativeContactService.openNativeContactEdit(context, _contact);
+    if (updated != null && mounted) {
+      setState(() {
+        _contact = updated;
+      });
+    }
   }
 
   void _confirmDelete(BuildContext context) async {
@@ -875,12 +1212,22 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   Widget _buildAvatarInitial(String initial) {
-    return Text(
-      initial,
-      style: GoogleFonts.inter(
-        color: Colors.red,
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
+    return Container(
+      width: 104,
+      height: 104,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFFFFEBEE),
+      ),
+      child: Center(
+        child: Text(
+          initial.toUpperCase(),
+          style: GoogleFonts.inter(
+            color: const Color(0xFFE53935),
+            fontSize: 38,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }

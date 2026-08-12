@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'core/constants/app_theme.dart';
 import 'providers/app_providers.dart';
 import 'views/screens/splash_screen.dart';
-import 'core/database/hive_database.dart';
+import 'core/database/sqlite_database.dart';
 import 'core/database/local_data_source/profile_local_data_source.dart';
 import 'core/database/local_data_source/sync_queue_data_source.dart';
 import 'core/services/backend_sync_service.dart';
@@ -14,7 +14,6 @@ import 'views/widgets/global_loading_overlay.dart';
 import 'viewmodels/customization_controller.dart';
 import 'views/screens/profile_screen.dart';
 import 'views/screens/login_screen.dart';
-import 'views/screens/customize/customize_theme_screen.dart';
 
 
 import 'core/services/dio_client.dart';
@@ -35,11 +34,15 @@ void main() async {
   // Ensure Flutter engine bindings are fully initialized before native code execution
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
+  // Load environment variables safely
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint('⚠️ Warning loading .env file: $e');
+  }
 
   // Initialize dynamic local storage
-  await HiveDatabase.init();
+  await SqliteDatabase.init();
   await ProfileLocalDataSource.init();
   await SyncQueueDataSource.init();
 

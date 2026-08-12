@@ -13,6 +13,8 @@ class CustomTextField extends StatefulWidget {
   final TextCapitalization textCapitalization;
 
   final bool autofocus;
+  final bool readOnly;
+  final bool enabled;
   final ValueChanged<String>? onChanged;
 
   const CustomTextField({
@@ -24,6 +26,8 @@ class CustomTextField extends StatefulWidget {
     this.keyboardType = TextInputType.text,
     this.textCapitalization = TextCapitalization.none,
     this.autofocus = false,
+    this.readOnly = false,
+    this.enabled = true,
     this.onChanged,
   });
 
@@ -59,6 +63,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
         const SizedBox(height: 8),
         TextFormField(
           controller: widget.controller,
+          readOnly: widget.readOnly,
+          enabled: widget.enabled,
           obscureText: _obscureText,
           keyboardType: widget.keyboardType,
           textCapitalization: widget.textCapitalization,

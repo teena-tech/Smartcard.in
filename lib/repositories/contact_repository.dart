@@ -39,4 +39,10 @@ class ContactRepository extends BaseRepository {
       name: name,
     );
   }
+
+  /// Batch match phone numbers with system SmartCards
+  Future<List<dynamic>> matchPhoneContacts(List<String> phoneNumbers) async {
+    return await _service.matchPhoneContacts(phoneNumbers);
+  }
 }
+

@@ -3,10 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import '../../../core/services/qr_extraction_service.dart';
-import '../../../models/contact_model.dart';
 import '../../../models/scanned_contact_model.dart';
 import '../../../viewmodels/contact_viewmodel.dart';
-import '../../../views/screens/qr_landing_screen.dart';
+import '../../../views/screens/contact_preview_screen.dart';
 import '../models/scan_type.dart';
 import '../models/scanner_state.dart';
 import '../models/qr_result.dart';
@@ -59,39 +58,16 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       // Step 1: Database match & API profile extraction
       final ScannedContactModel scannedContact = await QrExtractionService.extract(rawValue);
 
-      // Convert to ContactModel for landing view
-      final contactModel = ContactModel(
-        id: scannedContact.id,
-        name: scannedContact.name,
-        designation: scannedContact.designation,
-        companyName: scannedContact.company,
-        profileImageInitial: scannedContact.name.isNotEmpty ? scannedContact.name[0].toLowerCase() : 'q',
-        companyInitial: scannedContact.company.isNotEmpty ? scannedContact.company[0].toLowerCase() : 'c',
-        phone: scannedContact.phone.isNotEmpty ? scannedContact.phone : null,
-        email: scannedContact.email.isNotEmpty ? scannedContact.email : null,
-        address: scannedContact.address.isNotEmpty ? scannedContact.address : null,
-        website: scannedContact.website.isNotEmpty ? scannedContact.website : null,
-        companyLogo: scannedContact.companyLogo,
-        backgroundImage: scannedContact.backgroundImage,
-        backgroundColor: scannedContact.backgroundColor,
-        textColor: scannedContact.textColor,
-        bgImageColor: scannedContact.bgImageColor,
-        opacity: scannedContact.opacity,
-        profileImageName: scannedContact.profileImage,
-      );
-
       // Step 2: Save to ViewModel / Hive database
       if (mounted) {
         await context.read<ContactViewModel>().addScannedContact(scannedContact);
       }
-
-      // Step 3: Open QrLandingScreen with profile details & company branding
+      // Step 3: Open ContactPreviewScreen with full contact edit UI
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => QrLandingScreen(
-              contact: contactModel,
-              scannedContact: scannedContact,
+            builder: (_) => ContactPreviewScreen(
+              contact: scannedContact,
             ),
           ),
         );

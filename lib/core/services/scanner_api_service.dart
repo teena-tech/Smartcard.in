@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'dio_client.dart';
 import 'api_config.dart';
@@ -106,4 +107,23 @@ class ScannerApiService {
       throw Exception(DioClient.getErrorMessage(e, 'Failed to delete contact.'));
     }
   }
+
+  /// Batch match phone numbers against system database
+  Future<List<dynamic>> matchPhoneContacts(List<String> phoneNumbers) async {
+    if (phoneNumbers.isEmpty) return [];
+    try {
+      final response = await _dio.post(
+        ApiConfig.matchPhones,
+        data: {'phoneNumbers': phoneNumbers},
+      );
+      if (response.data != null && response.data['matchedContacts'] is List) {
+        return response.data['matchedContacts'] as List;
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error in matchPhoneContacts: $e');
+      return [];
+    }
+  }
 }
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
@@ -130,7 +131,19 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
                     height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 26),
+                const SizedBox(height: 16),
+                Center(
+                  child: Lottie.asset(
+                    'assets/lottie/profile_user_card.json',
+                    height: 180,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint('⚠️ Lottie profile_user_card.json load error: $error');
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
                 _OptionCard(
                   style: optionCardStyle,
                   iconBackground: optionIconBackground,

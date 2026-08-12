@@ -92,9 +92,7 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
 
     Future.delayed(const Duration(milliseconds: 1500), () {
       if (!context.mounted) return;
-      Navigator.pop(context); // Close the success animation dialog
-      Navigator.pushAndRemoveUntil(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const HomeScreen()),
         (route) => false,
       );

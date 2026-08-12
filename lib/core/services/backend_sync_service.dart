@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dio_client.dart';
-import '../database/hive_database.dart';
+import '../database/sqlite_database.dart';
 import '../../models/scanned_contact_model.dart';
 import 'api_config.dart';
 
@@ -23,9 +23,6 @@ class BackendSyncService {
       List<ConnectivityResult> results,
     ) {
       if (results.isNotEmpty && results.first != ConnectivityResult.none) {
-        debugPrint(
-          '🌐 Internet restored. Checking offline contacts sync queue...',
-        );
         syncPendingContacts();
       }
     });
@@ -35,7 +32,7 @@ class BackendSyncService {
   Future<void> syncPendingContacts() async {
     if (_isSyncing) return;
 
-    final pending = HiveDatabase.getPendingContacts();
+    final pending = await SqliteDatabase.getPendingContactsAsync();
     if (pending.isEmpty) {
       debugPrint('📬 Offline sync queue is empty. Nothing to sync.');
       return;
@@ -50,7 +47,7 @@ class BackendSyncService {
       try {
         final success = await uploadContact(contact);
         if (success) {
-          await HiveDatabase.updateSyncStatus(contact.id, 'synced');
+          await SqliteDatabase.updateSyncStatus(contact.id, 'synced');
         }
       } catch (e) {
         debugPrint('🚨 Failed to sync contact ${contact.name}: $e');

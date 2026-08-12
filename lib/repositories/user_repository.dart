@@ -747,14 +747,35 @@ class UserRepository {
   /// Deletes the user account
   Future<bool> deleteUserAccount(String userId) async {
     try {
-      final response = await _dioClient.dio.delete(
-        ApiConfig.deleteUserAccount(userId),
-      );
+      Response response;
+      try {
+        response = await _dioClient.dio.delete(
+          ApiConfig.deleteUserAccount(userId),
+        );
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404 || e.response?.statusCode == 403) {
+          response = await _dioClient.dio.delete('/api/v1/users/me');
+        } else {
+          rethrow;
+        }
+      }
+
       if (response.statusCode == 200 || response.statusCode == 204) {
+        final data = response.data;
+        if (data is Map && data['success'] == false) {
+          return false;
+        }
         return true;
       }
       return false;
     } on DioException catch (e) {
+      final resData = e.response?.data;
+      if (resData is Map) {
+        final msg = resData['error']?.toString() ?? resData['message']?.toString();
+        if (msg != null && msg.trim().isNotEmpty) {
+          throw msg;
+        }
+      }
       throw DioClient.getErrorMessage(e, 'Failed to delete account');
     }
   }

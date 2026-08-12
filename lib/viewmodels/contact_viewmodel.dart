@@ -1,8 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../core/database/hive_database.dart';
+import '../../core/database/sqlite_database.dart';
 import '../../models/scanned_contact_model.dart';
 import '../../core/services/contact_import_service.dart';
+import '../../core/services/contact_saver_service.dart';
 import '../../core/services/export_service.dart';
 import '../repositories/contact_repository.dart';
 
@@ -14,8 +15,10 @@ class ContactViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
   bool _isRefreshing = false;
+  bool _isMatchingPhones = false;
+  DateTime? _lastMatchTimestamp;
   String _searchQuery = '';
-  String _activeFilter = 'SmartCard'; // 'All', 'Phone', 'SmartCard'
+  String _activeFilter = 'Scanned'; // Default to 'Scanned' so only user's scanned cards show initially
 
   // Tracks contact IDs currently being deleted — blocks reconcile from re-adding them
   final Set<String> _deletingIds = {};
@@ -25,7 +28,7 @@ class ContactViewModel extends ChangeNotifier {
   static const int _pageSize = 50;
 
   ContactViewModel() {
-    _loadHiveContacts();
+    _loadSqliteContacts();
     loadContactsFromBackend();
   }
 
@@ -33,12 +36,15 @@ class ContactViewModel extends ChangeNotifier {
   List<ScannedContactModel> get allContacts => _allContacts;
   bool get isLoading => _isLoading;
   bool get isRefreshing => _isRefreshing;
+  bool get isMatchingPhones => _isMatchingPhones;
   String get searchQuery => _searchQuery;
   String get activeFilter => _activeFilter;
 
   int get totalContactsCount => _allContacts.length;
-  int get phoneContactsCount => _allContacts.where((c) => c.source == 'phone').length;
-  int get smartCardContactsCount => _allContacts.where((c) => c.source != 'phone').length;
+  int get phoneContactsCount => _allContacts.where((c) => c.source == 'phone' || c.id.startsWith('phone_')).length;
+  int get matchedContactsCount => _allContacts.where((c) => c.isMatched || (c.matchedUserId != null && c.matchedUserId!.isNotEmpty) || (c.matchedCards != null && c.matchedCards!.isNotEmpty)).length;
+  int get smartCardContactsCount => matchedContactsCount;
+  int get scannedContactsCount => _allContacts.where((c) => c.source != 'phone' && !c.id.startsWith('phone_')).length;
 
   void setActiveFilter(String filter) {
     if (_activeFilter != filter) {
@@ -77,13 +83,13 @@ class ContactViewModel extends ChangeNotifier {
   // LOAD
   // ---------------------------------------------
 
-  void _loadHiveContacts() {
+  void _loadSqliteContacts() async {
     try {
-      _allContacts = HiveDatabase.getAllContacts();
+      _allContacts = await SqliteDatabase.getAllContactsAsync();
       _allContacts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       _applyFilters();
     } catch (e) {
-      debugPrint('Error loading Hive contacts: $e');
+      debugPrint('Error loading SQLite contacts: $e');
     }
   }
 
@@ -127,9 +133,9 @@ class ContactViewModel extends ChangeNotifier {
         });
       }).toList();
 
-      await HiveDatabase.reconcileSmartCardContacts(safeServerContacts);
+      await SqliteDatabase.reconcileSmartCardContacts(safeServerContacts);
 
-      _allContacts = HiveDatabase.getAllContacts();
+      _allContacts = await SqliteDatabase.getAllContactsAsync();
       _allContacts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       _applyFilters();
     } catch (e) {
@@ -172,14 +178,110 @@ class ContactViewModel extends ChangeNotifier {
     }
 
     if (_activeFilter == 'Phone') {
-      filtered = filtered.where((c) => c.source == 'phone').toList();
-    } else if (_activeFilter == 'SmartCard') {
-      filtered = filtered.where((c) => c.source != 'phone').toList();
+      filtered = filtered.where((c) => c.source == 'phone' || c.id.startsWith('phone_')).toList();
+    } else if (_activeFilter == 'Matched') {
+      filtered = filtered.where((c) => c.isMatched || (c.matchedUserId != null && c.matchedUserId!.isNotEmpty) || (c.matchedCards != null && c.matchedCards!.isNotEmpty)).toList();
+    } else if (_activeFilter == 'Scanned') {
+      filtered = filtered.where((c) => c.source != 'phone' && !c.id.startsWith('phone_')).toList();
     }
 
     final end = (_currentPage * _pageSize).clamp(0, filtered.length);
     _filteredContacts = filtered.sublist(0, end);
     notifyListeners();
+  }
+
+  // ---------------------------------------------
+  // PHONE MATCHING WITH BACKEND (Batched & Persisted)
+  // ---------------------------------------------
+
+  Future<void> matchPhoneContactsWithServer({bool force = false}) async {
+    if (_isMatchingPhones) return;
+
+    final now = DateTime.now();
+    if (!force && _lastMatchTimestamp != null && now.difference(_lastMatchTimestamp!).inMinutes < 15) {
+      debugPrint('Skipping phone matching API: throttled within 15 mins.');
+      return;
+    }
+
+    _isMatchingPhones = true;
+    notifyListeners();
+
+    try {
+      final phoneNumbers = _allContacts
+          .map((c) => c.phone.trim())
+          .where((p) => p.isNotEmpty)
+          .toSet()
+          .toList();
+
+      if (phoneNumbers.isEmpty) return;
+
+      // Batch phone numbers in chunks of 200 for fast & safe payload delivery
+      const chunkSize = 200;
+      final rawMatches = <dynamic>[];
+
+      for (var i = 0; i < phoneNumbers.length; i += chunkSize) {
+        final chunk = phoneNumbers.sublist(
+          i,
+          (i + chunkSize > phoneNumbers.length) ? phoneNumbers.length : i + chunkSize,
+        );
+        try {
+          final batchMatches = await _repository.matchPhoneContacts(chunk);
+          if (batchMatches.isNotEmpty) {
+            rawMatches.addAll(batchMatches);
+          }
+        } catch (err) {
+          debugPrint('Error matching batch $i to ${i + chunk.length}: $err');
+        }
+      }
+
+      if (rawMatches.isEmpty) {
+        _lastMatchTimestamp = DateTime.now();
+        return;
+      }
+
+      bool updatedAny = false;
+
+      for (final item in rawMatches) {
+        if (item is Map<String, dynamic>) {
+          final matchedPhone = item['matchedPhone']?.toString() ?? '';
+          final matchedTenDigit = item['matchedTenDigit']?.toString() ?? '';
+
+          if (matchedPhone.isEmpty && matchedTenDigit.isEmpty) continue;
+
+          final contactsToUpdate = _allContacts.where((c) {
+            final p = _phone(c.phone);
+            return (matchedTenDigit.isNotEmpty && p.endsWith(matchedTenDigit)) ||
+                   (matchedPhone.isNotEmpty && _phoneMatch(c.phone, matchedPhone));
+          }).toList();
+
+          for (final contact in contactsToUpdate) {
+            final updated = contact.copyWith(
+              isMatched: true,
+              matchedUserId: item['userId']?.toString(),
+              totalCardsCount: item['cardCount'] is int
+                  ? item['cardCount'] as int
+                  : int.tryParse(item['cardCount']?.toString() ?? ''),
+              primaryDesignation: item['designation']?.toString(),
+              cardUrl: item['cardUrl']?.toString(),
+              matchedProfileImage: item['profileImage']?.toString(),
+            );
+            await SqliteDatabase.saveContact(updated);
+            updatedAny = true;
+          }
+        }
+      }
+
+      _lastMatchTimestamp = DateTime.now();
+
+      if (updatedAny) {
+        _loadSqliteContacts();
+      }
+    } catch (e) {
+      debugPrint('Error matching phone contacts with server: $e');
+    } finally {
+      _isMatchingPhones = false;
+      notifyListeners();
+    }
   }
 
   // ---------------------------------------------
@@ -210,31 +312,22 @@ class ContactViewModel extends ChangeNotifier {
   // ---------------------------------------------
 
   Future<void> addScannedContact(ScannedContactModel scanned) async {
-    await HiveDatabase.saveContact(scanned);
+    // 1. Save strictly to local SQLite database
+    await SqliteDatabase.saveContact(scanned);
     _mergeContacts([scanned]);
     _applyFilters();
 
-    if (scanned.source != 'phone') {
-      try {
-        await _repository.saveContact({
-          'id': scanned.id,
-          'name': scanned.name,
-          'phone': scanned.phone,
-          'email': scanned.email,
-          'company_name': scanned.company,
-          'company': scanned.company,
-          'designation': scanned.designation,
-          'website': scanned.website,
-          'address': scanned.address,
-        });
-      } catch (e) {
-        debugPrint('Failed to sync contact to backend: $e');
-      }
+    // 2. Automatically save/update directly in device native address book (Phone Contacts)
+    try {
+      await ContactSaverService.saveToDevice(scanned);
+      debugPrint('📱 Scanned contact saved to device phonebook: ${scanned.name}');
+    } catch (e) {
+      debugPrint('⚠️ Error saving contact to device phonebook: $e');
     }
   }
 
   // ---------------------------------------------
-  // DELETE (permanent: UI first -> Hive -> MySQL)
+  // DELETE (simultaneous: UI -> SQLite & Device Phonebook)
   // ---------------------------------------------
 
   Future<void> deleteContact(String id, {ScannedContactModel? target}) async {
@@ -259,42 +352,24 @@ class ContactViewModel extends ChangeNotifier {
     final email = contact.email;
     final name = contact.name;
 
-    // ── STEP 0: Write tombstone IMMEDIATELY ────────────────────────────────────
-    // This persists across app restarts and blocks reconcileSmartCardContacts
-    // from re-adding this contact even if the backend delete is still in flight.
+    // ── STEP 0: Write tombstone ─────────────────────────────────────────────────
     _deletingIds.add(id);
-    await HiveDatabase.addPendingDeletion(id, phone: phone, email: email);
+    await SqliteDatabase.addPendingDeletion(id, phone: phone, email: email);
 
     // ── STEP 1: Instant UI removal ─────────────────────────────────────────────
     _allContacts.removeWhere((c) => _contactMatches(c, id, phone, email, name));
     _applyFilters();
 
-    // ── STEP 2: Remove from local Hive ────────────────────────────────────────
-    await HiveDatabase.deleteContact(id, phone: phone, email: email, name: name);
+    // ── STEP 2: Remove from local SQLite database ──────────────────────────────
+    await SqliteDatabase.deleteContact(id, phone: phone, email: email, name: name);
 
-    // ── STEP 3: Delete from backend (SmartCard contacts only) ─────────────────
-    // The tombstone added in STEP 0 ensures that even a concurrent
-    // loadContactsFromBackend won't re-add this contact from the server.
-    if (contact.source != 'phone') {
-      try {
-        await _repository.deleteContact(id, phone: phone, email: email, name: name);
-        // Backend confirmed delete — safe to remove tombstone
-        await HiveDatabase.removePendingDeletion(id);
-        debugPrint('✅ Contact $id permanently deleted from server and Hive.');
-      } catch (e) {
-        final err = e.toString().toLowerCase();
-        if (err.contains('not found') || err.contains('404')) {
-          // Already gone from server — tombstone can be removed too
-          await HiveDatabase.removePendingDeletion(id);
-          debugPrint('✅ Contact $id was already gone from server.');
-        } else {
-          // Offline / network failure — tombstone stays to block re-add on next load
-          debugPrint('⚠️ Backend delete failed (tombstone kept for retry): $e');
-        }
-      }
-    } else {
-      // Phone contacts don't sync to server — remove tombstone immediately
-      await HiveDatabase.removePendingDeletion(id);
+    // ── STEP 3: Delete simultaneously from Native Device Address Book ──────────
+    try {
+      await ContactImportService.deleteDeviceContact(id, phone: phone);
+      await SqliteDatabase.removePendingDeletion(id);
+      debugPrint('✅ Contact $id permanently deleted from device address book and SQLite.');
+    } catch (e) {
+      debugPrint('⚠️ Error deleting from device address book: $e');
     }
 
     // Done — remove from in-memory guard
@@ -306,19 +381,19 @@ class ContactViewModel extends ChangeNotifier {
   // ---------------------------------------------
 
   Future<void> _flushPendingDeletions() async {
-    final tombstones = HiveDatabase.getPendingDeletionTombstones();
+    final tombstones = await SqliteDatabase.getPendingDeletionTombstonesAsync();
     for (final tomb in tombstones) {
       final id = tomb['id'] ?? '';
       final phone = tomb['phone'] ?? '';
       final email = tomb['email'] ?? '';
       try {
         await _repository.deleteContact(id, phone: phone.isNotEmpty ? phone : null, email: email.isNotEmpty ? email : null);
-        await HiveDatabase.removePendingDeletion(id);
+        await SqliteDatabase.removePendingDeletion(id);
         debugPrint('✅ Flushed pending deletion for contact $id (phone=$phone)');
       } catch (e) {
         final err = e.toString().toLowerCase();
         if (err.contains('404') || err.contains('not found')) {
-          await HiveDatabase.removePendingDeletion(id);
+          await SqliteDatabase.removePendingDeletion(id);
           debugPrint('✅ Pending deletion $id already gone from server, tombstone cleared.');
         } else {
           debugPrint('⚠️ Pending deletion flush failed for $id: $e (will retry next time)');
@@ -336,7 +411,7 @@ class ContactViewModel extends ChangeNotifier {
     if (idx == -1) return;
     final updated = _allContacts[idx].copyWith(isFavorite: !_allContacts[idx].isFavorite);
     _allContacts[idx] = updated;
-    await HiveDatabase.saveContact(updated);
+    await SqliteDatabase.saveContact(updated);
     _applyFilters();
   }
 
@@ -344,7 +419,7 @@ class ContactViewModel extends ChangeNotifier {
   // PHONE BOOK IMPORT
   // ---------------------------------------------
 
-  Future<void> importPhoneContacts() async {
+  Future<void> importPhoneContacts({bool force = false}) async {
     _isRefreshing = true;
     notifyListeners();
     try {
@@ -353,17 +428,19 @@ class ContactViewModel extends ChangeNotifier {
         batchSize: 50,
         onBatchLoaded: (batch) async {
           if (batch.isNotEmpty) {
-            await HiveDatabase.saveContacts(batch);
+            await SqliteDatabase.saveContacts(batch);
             _mergeContacts(batch);
             _applyFilters();
+            notifyListeners();
           }
         },
       );
+      await matchPhoneContactsWithServer(force: force);
     } catch (e) {
       debugPrint('Error importing phone contacts: $e');
-      rethrow;
     } finally {
       _isRefreshing = false;
+      _loadSqliteContacts();
       notifyListeners();
     }
   }
@@ -410,7 +487,7 @@ class ContactViewModel extends ChangeNotifier {
           debugPrint('Sync failed for ${contact.name}: $e');
         }
       }
-      if (synced.isNotEmpty) await HiveDatabase.saveContacts(synced);
+      if (synced.isNotEmpty) await SqliteDatabase.saveContacts(synced);
       _applyFilters();
     } catch (e) {
       debugPrint('Error during background sync: $e');

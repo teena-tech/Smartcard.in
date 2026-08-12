@@ -46,6 +46,14 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearUser() {
+    _user = null;
+    _state = ProfileState.initial;
+    _errorMessage = null;
+    _successMessage = null;
+    notifyListeners();
+  }
+
   // ── Load profile ───────────────────────────────────────────
   Future<void> loadProfile(String userId) async {
     _setState(ProfileState.loading);

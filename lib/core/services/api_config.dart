@@ -77,6 +77,7 @@ class ApiConfig {
   // QR / Contact
   static const String qrContacts = '/api/v1/users/me/contacts';
   static const String qrPreview = '/api/v1/users/me/contacts/preview';
+  static const String matchPhones = '/api/v1/users/me/contacts/match-phones';
   static String qrDelete(int contactId) => '/api/v1/users/me/contacts/$contactId';
 
   // Subscription

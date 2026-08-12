@@ -5,15 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/utils/upload_url_resolver.dart';
 import '../../../models/app_theme_item.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
 import '../../../viewmodels/card_viewmodel.dart';
 import '../../../viewmodels/customize_viewmodel.dart';
-import '../../../viewmodels/profile_viewmodel.dart';
 import '../../../viewmodels/theme_viewmodel.dart';
 import '../../../viewmodels/subscription_viewmodel.dart';
-import '../../widgets/circular_profile_avatar.dart';
 import '../../widgets/global_bottom_nav.dart';
 import '../../widgets/master_app_bar.dart';
 import '../subscription_screen.dart';
@@ -95,13 +92,24 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
       items.add(AppThemeItem.defaultTheme);
       seenIds.add(AppThemeItem.defaultTheme.id);
 
-      // Load ONLY Templates from backend API (/api/v1/themes/templates)
-      // Background images are a SEPARATE feature for background pattern selection
+      // Load ONLY Active & Available Templates from backend API (/api/v1/themes/templates)
       for (int i = 0; i < customizeVm.templates.length; i++) {
         final t = customizeVm.templates[i];
         if (t is Map<String, dynamic>) {
+          // Check if template is active in backend database
+          final rawIsActive = t['is_active'];
+          final isActive = rawIsActive == true || rawIsActive == 1 || rawIsActive == '1';
+          if (!isActive) continue;
+
           final item = AppThemeItem.fromMap(t, index: items.length);
-          if (!seenIds.contains(item.id)) {
+          final imgUrl = item.frontImage.isNotEmpty ? item.frontImage : item.thumbnail;
+          // Filter out dummy/placeholder images or empty links
+          final isDummy = imgUrl.isEmpty || 
+              imgUrl == 'assets/images/smartlogo.png' || 
+              imgUrl.contains('dummy') || 
+              imgUrl.contains('placeholder');
+
+          if (!seenIds.contains(item.id) && !isDummy) {
             seenIds.add(item.id);
             items.add(item);
           }
@@ -110,7 +118,6 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
 
       final dbTemplateId = customizeVm.themeData?['template_id']?.toString() ?? '';
       final dbTemplateKey = customizeVm.themeData?['template_key']?.toString() ?? '';
-      final dbBgImage = customizeVm.themeData?['bg_image']?.toString() ?? '';
       
       int activeIdx = -1;
       if (dbTemplateId.isNotEmpty || dbTemplateKey.isNotEmpty) {
@@ -121,9 +128,7 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
           (dbTemplateId.isNotEmpty && t.id.replaceAll(RegExp(r'\D'), '') == dbTemplateId)
         );
       }
-      if (activeIdx < 0 && dbBgImage.isNotEmpty) {
-        activeIdx = items.indexWhere((t) => t.frontImage == dbBgImage || t.frontImage.endsWith(dbBgImage));
-      }
+      // Active template is strictly identified by template_id / template_key
       if (activeIdx < 0 && cardVm.currentCard?.isPrimary == true) {
         final themeVm = context.read<ThemeViewModel>();
         final selectedId = themeVm.selectedThemeId;
@@ -281,25 +286,8 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
             workProfileId: workProfileId,
           );
 
-          if (theme.frontImage.isNotEmpty) {
-            String savedBg = theme.frontImage;
-            if (savedBg.contains('shared-uploads/')) {
-              final index = savedBg.indexOf('shared-uploads/');
-              savedBg = savedBg.substring(index);
-            } else if (savedBg.contains('assets/')) {
-              // keep asset path as-is
-            } else {
-              savedBg = savedBg.split('/').last;
-            }
-
-            await customizeVm.saveBackgroundSelection(
-              userId,
-              {
-                'bg_image': savedBg,
-              },
-              workProfileId: workProfileId,
-            );
-          }
+          // Theme template thumbnail is only a design reference preview.
+          // Do not overwrite user's actual bg_image when choosing a theme template.
         }
 
         // Refresh cards list to persist theme update for secondary card
@@ -326,12 +314,12 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
       final templateKey = theme.templateKey ?? 
           (parsedId != null ? 'template_$parsedId' : theme.id);
 
-      // 3. Update CardViewModel active card
+      // 3. Update CardViewModel active card (preserve current background image)
       cardVm.updateActiveCardTheme(
-        backgroundImage: (theme.isDefault || theme.id == 'default_theme_01') ? null : theme.frontImage,
-        backgroundColor: null,
-        textColor: null,
-        bgImageColor: null,
+        backgroundImage: cardVm.currentCard?.backgroundImage,
+        backgroundColor: cardVm.currentCard?.backgroundColor,
+        textColor: cardVm.currentCard?.textColor,
+        bgImageColor: cardVm.currentCard?.bgImageColor,
         templateId: (theme.isDefault || theme.id == 'default_theme_01') ? null : (parsedId?.toString() ?? theme.id),
         templateKey: (theme.isDefault || theme.id == 'default_theme_01') ? null : templateKey,
       );
@@ -425,115 +413,11 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
     );
   }
 
-  Widget _buildSectionBox(String title, List<Widget> children) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.all(12),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: GoogleFonts.inter(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.white70, size: 14),
-          const SizedBox(width: 8),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: GoogleFonts.inter(color: Colors.white, fontSize: 12),
-                children: [
-                  TextSpan(
-                    text: '$label: ',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(text: value),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final themeVm = context.watch<ThemeViewModel>();
-    final cardVm = context.watch<CardViewModel>();
-    final authVm = context.watch<AuthViewModel>();
-
     final subVm = context.watch<SubscriptionViewModel>();
     final isPremiumUser = subVm.subscription?.isActive == true || subVm.subscription?.membership == 'PREMIUM';
-
-    final profileVm = context.watch<ProfileViewModel>();
-    final user = profileVm.user ?? authVm.currentUser;
-    final cardImage = cardVm.currentCard?.profileImageName;
-    final imagePath = (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
-    final imageUrl = (imagePath != null && imagePath.isNotEmpty)
-        ? UploadUrlResolver.resolve(imagePath, type: 'profile')
-        : null;
-
-    final cardDetails = cardVm.selectedCardDetails;
-    final companyName = cardDetails?.companyName.trim().isNotEmpty == true
-        ? cardDetails!.companyName.trim()
-        : (cardVm.currentCard?.companyName.isNotEmpty == true
-            ? cardVm.currentCard!.companyName
-            : 'Antzmedia');
-
-    final designation = cardDetails?.designation.trim().isNotEmpty == true
-        ? cardDetails!.designation.trim()
-        : 'Flutter';
-
-    final email = (user?.email != null && user!.email!.isNotEmpty)
-        ? user.email!
-        : 'teenatech8086@gmail.com';
-
-    final phone = (user?.phone != null && user!.phone!.isNotEmpty)
-        ? user.phone!
-        : '8086750402';
-
-
-    final initials = user == null
-        ? 'TN'
-        : [user.firstName, user.lastName]
-            .whereType<String>()
-            .map((part) => part.trim())
-            .where((part) => part.isNotEmpty)
-            .map((part) => part[0].toUpperCase())
-            .take(2)
-            .join();
 
     final activeTheme = _themes.isNotEmpty && _currentIndex < _themes.length
         ? _themes[_currentIndex]
@@ -723,62 +607,62 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
                                   ),
                                 ),
 
-                                // Top Right Header: Floating [✕] (Red) and [✓] (Green) Action Buttons
-                                Positioned(
-                                  top: 14,
-                                  right: 14,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // [✕] Close / Reset Button (RED)
-                                      GestureDetector(
-                                        onTap: _resetThemeSelection,
-                                        child: Container(
-                                          width: 38,
-                                          height: 38,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: const Color(0xFFEF4444),
-                                            border: Border.all(color: Colors.white, width: 2),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(alpha: 0.3),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Icon(Icons.close, color: Colors.white, size: 20),
-                                        ),
-                                      ),
+                                 // Top Right Header: Floating [✕] (Red) and [✓] (Green) Action Buttons (Shown ONLY when selection has changed)
+                                 if (_currentIndex != _initialIndex)
+                                   Positioned(
+                                     top: 14,
+                                     right: 14,
+                                     child: Row(
+                                       mainAxisSize: MainAxisSize.min,
+                                       children: [
+                                         // [✕] Close / Reset Button (RED)
+                                         GestureDetector(
+                                           onTap: _resetThemeSelection,
+                                           child: Container(
+                                             width: 38,
+                                             height: 38,
+                                             decoration: BoxDecoration(
+                                               shape: BoxShape.circle,
+                                               color: const Color(0xFFEF4444),
+                                               border: Border.all(color: Colors.white, width: 2),
+                                               boxShadow: [
+                                                 BoxShadow(
+                                                   color: Colors.black.withValues(alpha: 0.3),
+                                                   blurRadius: 6,
+                                                   offset: const Offset(0, 2),
+                                                 ),
+                                               ],
+                                             ),
+                                             child: const Icon(Icons.close, color: Colors.white, size: 20),
+                                           ),
+                                         ),
 
-                                      const SizedBox(width: 10),
+                                         const SizedBox(width: 10),
 
-                                      // [✓] Save / Apply Button (GREEN)
-                                      GestureDetector(
-                                        onTap: _saveSelectedTheme,
-                                        child: Container(
-                                          width: 38,
-                                          height: 38,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: const Color(0xFF22C55E),
-                                            border: Border.all(color: Colors.white, width: 2),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black.withValues(alpha: 0.3),
-                                                blurRadius: 6,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: const Icon(Icons.check, color: Colors.white, size: 22),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
+                                         // [✓] Save / Apply Button (GREEN)
+                                         GestureDetector(
+                                           onTap: _saveSelectedTheme,
+                                           child: Container(
+                                             width: 38,
+                                             height: 38,
+                                             decoration: BoxDecoration(
+                                               shape: BoxShape.circle,
+                                               color: const Color(0xFF22C55E),
+                                               border: Border.all(color: Colors.white, width: 2),
+                                               boxShadow: [
+                                                 BoxShadow(
+                                                   color: Colors.black.withValues(alpha: 0.3),
+                                                   blurRadius: 6,
+                                                   offset: const Offset(0, 2),
+                                                 ),
+                                               ],
+                                             ),
+                                             child: const Icon(Icons.check, color: Colors.white, size: 22),
+                                           ),
+                                         ),
+                                       ],
+                                     ),
+                                   ),
                               ],
                             ),
                           ),
@@ -926,25 +810,5 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
    ),
   );
   }
-}
-
-
-
-
-
-class _CrossLinesPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF8B0000)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(const Offset(0, 0), Offset(size.width, size.height), paint);
-    canvas.drawLine(Offset(0, size.height), Offset(size.width, 0), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 

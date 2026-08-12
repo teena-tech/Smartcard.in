@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../core/services/backend_sync_service.dart';
-import '../core/database/hive_database.dart';
+import '../core/database/sqlite_database.dart';
 
 // ==========================================
 // EVENTS
@@ -57,7 +57,7 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
     on<TriggerSync>((event, emit) async {
       emit(SyncInProgress());
       try {
-        final pending = HiveDatabase.getPendingContacts();
+        final pending = await SqliteDatabase.getPendingContactsAsync();
         if (pending.isEmpty) {
           emit(const SyncSuccess(syncedCount: 0));
           return;
@@ -67,7 +67,7 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
         for (var contact in pending) {
           final success = await _syncService.uploadContact(contact);
           if (success) {
-            await HiveDatabase.updateSyncStatus(contact.id, 'synced');
+            await SqliteDatabase.updateSyncStatus(contact.id, 'synced');
             successCount++;
           }
         }
@@ -79,7 +79,7 @@ class SyncBloc extends Bloc<SyncEvent, SyncState> {
     });
 
     on<NetworkRestored>((event, emit) async {
-      final pending = HiveDatabase.getPendingContacts();
+      final pending = await SqliteDatabase.getPendingContactsAsync();
       if (pending.isNotEmpty) {
         add(TriggerSync());
       }

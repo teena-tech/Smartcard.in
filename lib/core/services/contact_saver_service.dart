@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:image/image.dart' as img;
 import '../../models/scanned_contact_model.dart';
 
 class ContactSaverService {
@@ -21,12 +23,27 @@ class ContactSaverService {
     }
   }
 
-  /// Saves a [ScannedContactModel] directly into the device's native address book.
+  /// Checks contacts permission status WITHOUT requesting — use for background saves.
+  static Future<bool> checkContactsPermission() async {
+    if (kIsWeb) return false;
+    try {
+      final status = await Permission.contacts.status;
+      if (status.isGranted || status.isLimited) return true;
+      // Fallback: check via flutter_contacts (no dialog shown)
+      return await FlutterContacts.requestPermission(readonly: false);
+    } catch (e) {
+      debugPrint('🚨 Error checking contacts permission: $e');
+      return false;
+    }
+  }
+
+  /// Saves a [ScannedContactModel] directly into the device’s native address book.
   /// Prevents duplicates based on matching phone number or email address.
   static Future<bool> saveToDevice(ScannedContactModel scanned) async {
     if (kIsWeb) return true;
     try {
-      final permission = await requestContactsPermission();
+      // Only CHECK permission — never show dialog in background saves
+      final permission = await checkContactsPermission();
       if (!permission) {
         debugPrint('🚫 Contacts permission not granted.');
         return false;
@@ -99,11 +116,36 @@ class ContactSaverService {
         ));
       }
 
-      // Add profile photo if present
-      if (scanned.imagePath != null && scanned.imagePath!.isNotEmpty) {
-        final file = File(scanned.imagePath!);
-        if (await file.exists()) {
-          contact.photo = await file.readAsBytes();
+      // Add profile photo if present (safely compressed to thumbnail to prevent Android IPC crashes)
+      final photoSource = (scanned.profileImage != null && scanned.profileImage!.trim().isNotEmpty)
+          ? scanned.profileImage!.trim()
+          : '';
+
+      if (photoSource.isNotEmpty) {
+        try {
+          Uint8List? rawBytes;
+          if (photoSource.startsWith('data:image')) {
+            final base64Str = photoSource.split(',').last;
+            rawBytes = base64Decode(base64Str);
+          } else if (!photoSource.startsWith('http://') && !photoSource.startsWith('https://')) {
+            final file = File(photoSource);
+            if (await file.exists()) {
+              final length = await file.length();
+              // Only load profile avatar photos under 300KB (skip full 4MB+ camera photos to prevent OOM crashes)
+              if (length > 0 && length < 300000) {
+                rawBytes = await file.readAsBytes();
+              }
+            }
+          }
+
+          if (rawBytes != null && rawBytes.isNotEmpty) {
+            final compressed = _compressPhotoForNativeIpc(rawBytes);
+            if (compressed != null && compressed.isNotEmpty) {
+              contact.photo = compressed;
+            }
+          }
+        } catch (photoErr) {
+          debugPrint('⚠️ Error loading photo for contact insert: $photoErr');
         }
       }
 
@@ -113,7 +155,7 @@ class ContactSaverService {
       return true;
     } catch (e) {
       debugPrint('🚨 Failed to save contact to device contacts: $e');
-      rethrow;
+      return false;
     }
   }
 
@@ -196,5 +238,22 @@ class ContactSaverService {
     
     buffer.writeln('END:VCARD');
     return buffer.toString();
+  }
+
+  /// Safely resizes and compresses raw photo bytes to a small thumbnail (<30KB)
+  /// to prevent Android TransactionTooLargeException Binder IPC native crashes.
+  static Uint8List? _compressPhotoForNativeIpc(Uint8List rawBytes) {
+    try {
+      if (rawBytes.length <= 30000) return rawBytes; // Under 30KB is already safe
+      if (rawBytes.length > 300000) return null; // Skip large camera images to prevent OOM crashes
+      final decoded = img.decodeImage(rawBytes);
+      if (decoded == null) return null;
+      final resized = img.copyResize(decoded, width: 120, height: 120);
+      final compressed = Uint8List.fromList(img.encodeJpg(resized, quality: 70));
+      if (compressed.length <= 60000) return compressed;
+    } catch (e) {
+      debugPrint('⚠️ Error compressing photo for native IPC: $e');
+    }
+    return null;
   }
 }

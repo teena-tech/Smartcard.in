@@ -378,36 +378,143 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Email
-            _buildContactField(
-              controller: emails[0],
-              label: 'Professional Email',
-              hint: 'example@email.com',
-              icon: Icons.email_rounded,
-              iconColor: Colors.white,
-              iconBg: AppColors.primaryRed,
-              keyboardType: TextInputType.emailAddress,
-              colors: colors,
+            // Emails
+            Text(
+              'Professional Email Addresses',
+              style: GoogleFonts.inter(color: const Color(0xFF4A4E5C), fontSize: 14, fontWeight: FontWeight.w600),
             ),
-            // Phone
-            _buildContactField(
-              controller: phones[0],
-              label: 'Contact Number',
-              hint: 'Enter 10-digit number',
-              icon: Icons.phone_rounded,
-              iconColor: Colors.white,
-              iconBg: AppColors.primaryRed,
-              keyboardType: TextInputType.phone,
-              maxLength: 10,
-              validator: (v) => v!.trim().isNotEmpty && v.trim().length != 10
-                  ? 'Must be 10 digits'
-                  : null,
-              colors: colors,
+            const SizedBox(height: 8),
+            ...emails.asMap().entries.map((e) {
+              final idx = e.key;
+              final ctrl = e.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildContactField(
+                        controller: ctrl,
+                        label: idx == 0 ? 'Primary Email' : 'Email ${idx + 1}',
+                        hint: 'example@email.com',
+                        icon: Icons.email_rounded,
+                        iconColor: Colors.white,
+                        iconBg: AppColors.primaryRed,
+                        keyboardType: TextInputType.emailAddress,
+                        colors: colors,
+                      ),
+                    ),
+                    if (emails.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 28.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
+                          onPressed: () => setState(() => emails.removeAt(idx)),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryRed, size: 18),
+                label: Text('+ Add Email Address', style: GoogleFonts.inter(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: () => setState(() => emails.add(TextEditingController())),
+              ),
             ),
-            // WhatsApp
-            _buildWhatsAppField(
-              controller: whatsapps[0],
-              colors: colors,
+            const SizedBox(height: 14),
+
+            // Contact Numbers
+            Text(
+              'Contact Numbers',
+              style: GoogleFonts.inter(color: const Color(0xFF4A4E5C), fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            ...phones.asMap().entries.map((e) {
+              final idx = e.key;
+              final ctrl = e.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildContactField(
+                        controller: ctrl,
+                        label: idx == 0 ? 'Primary Contact Number' : 'Contact Number ${idx + 1}',
+                        hint: 'Enter 10-digit number',
+                        icon: Icons.phone_rounded,
+                        iconColor: Colors.white,
+                        iconBg: AppColors.primaryRed,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        validator: (v) => v!.trim().isNotEmpty && v.trim().length != 10 ? 'Must be 10 digits' : null,
+                        colors: colors,
+                      ),
+                    ),
+                    if (phones.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 28.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
+                          onPressed: () => setState(() => phones.removeAt(idx)),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryRed, size: 18),
+                label: Text('+ Add Contact Number', style: GoogleFonts.inter(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: () => setState(() => phones.add(TextEditingController())),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // WhatsApp Numbers
+            Text(
+              'WhatsApp Numbers',
+              style: GoogleFonts.inter(color: const Color(0xFF4A4E5C), fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            ...whatsapps.asMap().entries.map((e) {
+              final idx = e.key;
+              final ctrl = e.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildWhatsAppField(
+                        controller: ctrl,
+                        colors: colors,
+                      ),
+                    ),
+                    if (whatsapps.length > 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 28.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
+                          onPressed: () => setState(() => whatsapps.removeAt(idx)),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryRed, size: 18),
+                label: Text('+ Add WhatsApp Number', style: GoogleFonts.inter(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: () => setState(() => whatsapps.add(TextEditingController())),
+              ),
             ),
           ],
         );

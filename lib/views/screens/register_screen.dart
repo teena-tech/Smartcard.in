@@ -39,7 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _pincodeController = TextEditingController();
   final _districtController = TextEditingController();
   final _stateController = TextEditingController();
-  final _countryController = TextEditingController();
+  final _countryController = TextEditingController(text: 'India');
   final _addressController = TextEditingController();
 
   String? _selectedCity;
@@ -423,9 +423,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             CustomTextField(
               label: 'Country',
-              hintText: 'Country',
+              hintText: 'India',
               controller: _countryController,
-              textCapitalization: TextCapitalization.words,
+              readOnly: true,
+              enabled: false,
             ),
             const SizedBox(height: 24),
             Row(
@@ -613,7 +614,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
     return Scaffold(
       backgroundColor: Colors.white, // Pure white theme canvas background
       appBar: const MasterAppBar(

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/core/services/contact_import_service.dart';
 
 void main() {
   group('Full Contacts Page & ViewModel Comprehensive Unit Tests', () {

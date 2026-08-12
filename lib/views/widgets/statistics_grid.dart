@@ -87,22 +87,16 @@ class _StatisticsGridState extends State<StatisticsGrid> with SingleTickerProvid
     final bool isUserLoggedIn = authViewModel.isAuthenticated;
     final bool isDataLoaded = profileViewModel.user != null;
 
-    int displayViews = _persistedViews;
-    int displayShared = _persistedShared;
-    int displayScanned = _persistedScanned;
+    int displayViews = isUserLoggedIn && isDataLoaded ? widget.totalViews : _persistedViews;
+    int displayShared = isUserLoggedIn && isDataLoaded ? widget.sharedCards : _persistedShared;
+    int displayScanned = (widget.scannedCards > 0 || isUserLoggedIn) ? widget.scannedCards : _persistedScanned;
 
-    if (isUserLoggedIn && isDataLoaded) {
-      displayViews = widget.totalViews;
-      displayShared = widget.sharedCards;
-      displayScanned = widget.scannedCards;
-
-      if (_isPrefsLoaded &&
-          (displayViews != _persistedViews ||
-              displayShared != _persistedShared ||
-              displayScanned != _persistedScanned ||
-              widget.totalCards != _persistedCards)) {
-        _saveStats(displayViews, displayShared, displayScanned, widget.totalCards);
-      }
+    if (_isPrefsLoaded &&
+        (displayViews != _persistedViews ||
+            displayShared != _persistedShared ||
+            displayScanned != _persistedScanned ||
+            widget.totalCards != _persistedCards)) {
+      _saveStats(displayViews, displayShared, displayScanned, widget.totalCards);
     }
 
     debugPrint('📊 [StatsGrid] isUserLoggedIn=$isUserLoggedIn, isDataLoaded=$isDataLoaded, '

@@ -236,15 +236,18 @@ class _HomeBodyState extends State<_HomeBody> {
       final authViewModel = context.read<AuthViewModel>();
       if (authViewModel.isAuthenticated) {
         final user = authViewModel.currentUser;
+        final userId = user?.id;
+        if (userId == null || userId.isEmpty) return;
+
         AppLoadingService.instance.run(() => Future.wait([
           context.read<CardViewModel>().fetchCards(
-            user!.id!,
-            fallbackName: user.displayName,
-            fallbackPhone: user.phone ?? '',
-            fallbackEmail: user.email,
+            userId,
+            fallbackName: user?.displayName,
+            fallbackPhone: user?.phone ?? '',
+            fallbackEmail: user?.email,
           ),
-          context.read<ProfileViewModel>().loadProfile(user.id!),
-          context.read<SubscriptionViewModel>().fetchSubscription(user.id!),
+          context.read<ProfileViewModel>().loadProfile(userId),
+          context.read<SubscriptionViewModel>().fetchSubscription(userId),
           context.read<ContactViewModel>().loadContactsFromBackend(),
           context.read<MessageViewModel>().loadMessages(),
         ]));
@@ -269,13 +272,15 @@ class _HomeBodyState extends State<_HomeBody> {
     final authViewModel = context.read<AuthViewModel>();
     if (authViewModel.isAuthenticated) {
       final user = authViewModel.currentUser;
+      final userId = user?.id;
+      if (userId == null || userId.isEmpty) return;
       context.read<CardViewModel>().fetchCards(
-        user!.id!,
-        fallbackName: user.displayName,
-        fallbackPhone: user.phone ?? '',
-        fallbackEmail: user.email,
+        userId,
+        fallbackName: user?.displayName,
+        fallbackPhone: user?.phone ?? '',
+        fallbackEmail: user?.email,
       );
-      context.read<ProfileViewModel>().loadProfile(user.id!);
+      context.read<ProfileViewModel>().loadProfile(userId);
       context.read<ContactViewModel>().loadContactsFromBackend();
       context.read<MessageViewModel>().loadMessages();
     }
@@ -474,7 +479,7 @@ class _HomeBodyState extends State<_HomeBody> {
                 totalCards: cardViewModel.cards.length,
                 totalViews: profile?.cardViews ?? 0,
                 sharedCards: profile?.shareCount ?? 0,
-                scannedCards: contactViewModel.contacts.where((c) => c.source != 'phone').length,
+                scannedCards: contactViewModel.scannedContactsCount,
               ),
 
               const SizedBox(height: 32),
@@ -561,7 +566,7 @@ class _HomeBodyState extends State<_HomeBody> {
                 ),
               ),
               const SizedBox(height: 8),
-              RecentActivityList(activities: contactViewModel.contacts.where((c) => c.source != 'phone').toList()), // Placeholder using contacts for scans
+              RecentActivityList(activities: contactViewModel.allContacts.where((c) => c.source != 'phone' && !c.id.startsWith('phone_')).toList()), // Placeholder using contacts for scans
               
               const SizedBox(height: 100), // FAB padding
             ],
@@ -734,9 +739,16 @@ class _QuickActionCard extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 4),
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
-            color: isPrimary ? AppColors.primaryRed : Colors.transparent,
+            color: isPrimary ? AppColors.primaryRed : AppColors.primaryRed.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.primaryRed, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryRed.withValues(alpha: 0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

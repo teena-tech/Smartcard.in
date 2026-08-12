@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
 import '../../viewmodels/theme_viewmodel.dart';
 import '../../models/scanned_contact_model.dart';
+import '../screens/contact_detail_screen.dart';
 import 'package:provider/provider.dart';
 
 class RecentActivityList extends StatelessWidget {
@@ -77,7 +78,12 @@ class RecentActivityList extends StatelessWidget {
             color: colors.muted.withValues(alpha: 0.15),
           ),
           onTap: () {
-            // Action to view contact details
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ContactDetailScreen(contact: activity),
+              ),
+            );
           },
         );
       },

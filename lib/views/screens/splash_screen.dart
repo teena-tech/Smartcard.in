@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    await Future<void>.delayed(const Duration(seconds: 3));
+    await Future<void>.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
     final authViewModel = context.read<AuthViewModel>();
@@ -35,10 +35,9 @@ class _SplashScreenState extends State<SplashScreen> {
         ? const HomeScreen(initialIndex: 0)
         : const LandingScreen();
 
-    Navigator.pushAndRemoveUntil(
+    Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => nextPage),
-      (route) => false,
     );
   }
 
@@ -56,12 +55,12 @@ class _SplashScreenState extends State<SplashScreen> {
             colors: [colors.backgroundStart, colors.backgroundEnd],
           ),
         ),
-        child: const Stack(
+        child: Stack(
           children: [
-            // Full-screen Rive animation background (primary 285KB welcome asset)
+            // Full-screen Rive animation background
             Positioned.fill(
               child: RiveAnimation.asset(
-                "assets/rive/RIVE sc__welcome_screen.riv",
+                "assets/rive/splash_screen_animation_2.riv",
                 fit: BoxFit.cover,
               ),
             ),
@@ -71,4 +70,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

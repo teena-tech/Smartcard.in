@@ -34,6 +34,15 @@ class ScannedContactModel extends Equatable {
   final String? bgImageColor;
   final String? opacity;
 
+  // System SmartCard Match Fields
+  final bool isMatched;
+  final String? matchedUserId;
+  final int? totalCardsCount;
+  final String? primaryDesignation;
+  final String? cardUrl;
+  final String? matchedProfileImage;
+  final List<Map<String, dynamic>>? matchedCards;
+
   const ScannedContactModel({
     required this.id,
     required this.name,
@@ -64,6 +73,13 @@ class ScannedContactModel extends Equatable {
     this.textColor,
     this.bgImageColor,
     this.opacity,
+    this.isMatched = false,
+    this.matchedUserId,
+    this.totalCardsCount,
+    this.primaryDesignation,
+    this.cardUrl,
+    this.matchedProfileImage,
+    this.matchedCards,
   });
 
   ScannedContactModel copyWith({
@@ -96,6 +112,13 @@ class ScannedContactModel extends Equatable {
     String? textColor,
     String? bgImageColor,
     String? opacity,
+    bool? isMatched,
+    String? matchedUserId,
+    int? totalCardsCount,
+    String? primaryDesignation,
+    String? cardUrl,
+    String? matchedProfileImage,
+    List<Map<String, dynamic>>? matchedCards,
   }) {
     return ScannedContactModel(
       id: id ?? this.id,
@@ -127,6 +150,13 @@ class ScannedContactModel extends Equatable {
       textColor: textColor ?? this.textColor,
       bgImageColor: bgImageColor ?? this.bgImageColor,
       opacity: opacity ?? this.opacity,
+      isMatched: isMatched ?? this.isMatched,
+      matchedUserId: matchedUserId ?? this.matchedUserId,
+      totalCardsCount: totalCardsCount ?? this.totalCardsCount,
+      primaryDesignation: primaryDesignation ?? this.primaryDesignation,
+      cardUrl: cardUrl ?? this.cardUrl,
+      matchedProfileImage: matchedProfileImage ?? this.matchedProfileImage,
+      matchedCards: matchedCards ?? this.matchedCards,
     );
   }
 
@@ -161,6 +191,13 @@ class ScannedContactModel extends Equatable {
       'textColor': textColor,
       'bgImageColor': bgImageColor,
       'opacity': opacity,
+      'isMatched': isMatched,
+      'matchedUserId': matchedUserId,
+      'totalCardsCount': totalCardsCount,
+      'primaryDesignation': primaryDesignation,
+      'cardUrl': cardUrl,
+      'matchedProfileImage': matchedProfileImage,
+      'matchedCards': matchedCards,
     };
   }
 
@@ -195,6 +232,13 @@ class ScannedContactModel extends Equatable {
       textColor: json['textColor']?.toString(),
       bgImageColor: json['bgImageColor']?.toString(),
       opacity: json['opacity']?.toString(),
+      isMatched: json['isMatched'] == true,
+      matchedUserId: json['matchedUserId']?.toString() ?? json['userId']?.toString(),
+      totalCardsCount: json['totalCardsCount'] != null ? int.tryParse(json['totalCardsCount'].toString()) ?? json['cardCount'] as int? : json['cardCount'] as int?,
+      primaryDesignation: json['primaryDesignation']?.toString(),
+      cardUrl: json['cardUrl']?.toString(),
+      matchedProfileImage: json['matchedProfileImage']?.toString(),
+      matchedCards: (json['matchedCards'] as Iterable?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList() ?? (json['cards'] as Iterable?)?.map((e) => Map<String, dynamic>.from(e as Map)).toList(),
     );
   }
 
@@ -229,5 +273,13 @@ class ScannedContactModel extends Equatable {
         textColor,
         bgImageColor,
         opacity,
+        isMatched,
+        matchedUserId,
+        totalCardsCount,
+        primaryDesignation,
+        cardUrl,
+        matchedProfileImage,
+        matchedCards,
       ];
 }
+

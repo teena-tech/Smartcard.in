@@ -18,6 +18,7 @@ import '../widgets/image_cropper_widget.dart';
 import '../widgets/info_card.dart';
 import '../widgets/otp_input_field.dart';
 import '../widgets/delete_confirm_dialog.dart';
+import '../widgets/rotating_profile_avatar_ring.dart';
 import 'login_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════
@@ -1062,12 +1063,28 @@ class _ProfileBodyState extends State<_ProfileBody> {
         return;
       }
 
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Deleting account...', style: GoogleFonts.inter(color: Colors.white)),
+        backgroundColor: Colors.blue.shade600,
+        duration: const Duration(seconds: 2),
+      ));
+
       final success = await authVm.deleteAccount(userId);
       if (success) {
         if (context.mounted) {
-          context.read<MessageViewModel>().stopPolling();
-          Navigator.pushAndRemoveUntil(
-            context,
+          try {
+            context.read<MessageViewModel>().stopPolling();
+          } catch (_) {}
+          try {
+            context.read<ProfileViewModel>().clearUser();
+          } catch (_) {}
+
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Account deleted successfully.', style: GoogleFonts.inter(color: Colors.white)),
+            backgroundColor: Colors.green.shade600,
+          ));
+
+          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const LoginScreen()),
             (route) => false,
           );
@@ -1201,53 +1218,27 @@ class _Header extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
 
-            // Circular Avatar
+            // Circular Avatar with Rotating Ring
             GestureDetector(
               onTap: onCameraTap,
               child: Stack(
                 children: [
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        width: 2,
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 3.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: isUploading
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                    color: AppColors.primaryRed,
-                                    strokeWidth: 2.5))
-                            : (imagePath != null && imagePath!.isNotEmpty)
-                                ? Image.network(
-                                    UploadUrlResolver.resolve(imagePath!, type: 'profile'),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) =>
-                                        _Initials(initials: initials),
-                                  )
-                                : _Initials(initials: initials),
-                      ),
-                    ),
+                  RotatingProfileAvatarRing(
+                    size: 90,
+                    borderWidth: 3.5,
+                    child: isUploading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.primaryRed,
+                                strokeWidth: 2.5))
+                        : (imagePath != null && imagePath!.isNotEmpty)
+                            ? Image.network(
+                                UploadUrlResolver.resolve(imagePath!, type: 'profile'),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    _Initials(initials: initials),
+                              )
+                            : _Initials(initials: initials),
                   ),
                   // Camera badge
                   Positioned(

@@ -104,10 +104,6 @@ class AppThemeItem {
 
     final rawFront = map['front_image']?.toString() ??
         map['frontImage']?.toString() ??
-        map['bg_image']?.toString() ??
-        map['bgimage']?.toString() ??
-        map['background_image']?.toString() ??
-        map['backgroundImage']?.toString() ??
         map['image_url']?.toString() ??
         map['imageUrl']?.toString() ??
         map['url']?.toString() ??
