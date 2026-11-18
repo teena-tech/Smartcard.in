@@ -2,8 +2,86 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
+  static const String _envApiUrl = String.fromEnvironment('API_URL');
+  static const String _envSharedUploadsUrl = String.fromEnvironment('SHARED_UPLOADS_URL');
+  static const String _envUseLocalBackend = String.fromEnvironment('USE_LOCAL_BACKEND');
+  static const String _envUsePhysicalDevice = String.fromEnvironment('USE_PHYSICAL_DEVICE_FOR_LOCAL');
+  static const String _envLocalPhysicalIp = String.fromEnvironment('LOCAL_PHYSICAL_IP');
+
+  static String _readConfig(String compiledValue, String dotenvKey, String fallback) {
+    if (compiledValue.trim().isNotEmpty) {
+      return compiledValue.trim();
+    }
+    try {
+      if (dotenv.isInitialized) {
+        final raw = dotenv.env[dotenvKey];
+        if (raw != null && raw.trim().isNotEmpty) {
+          return raw.trim();
+        }
+      }
+    } catch (_) {}
+    return fallback;
+  }
+
   static String get _liveApiBaseUrl =>
-      dotenv.env['API_URL'] ?? 'https://api.thesmartcards.com';
+      _readConfig(_envApiUrl, 'API_URL', 'https://thesmartcards.in');
+
+  /// Base web origin for public smart card URLs.
+  static String get publicWebBaseUrl =>
+      _liveApiBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+
+  /// Canonical public profile URL for a work profile ID.
+  static String cardProfileUrl(String workProfileId) =>
+      '$publicWebBaseUrl/profile/$workProfileId';
+
+  /// Short share URL for a card slug / query parameter (`/?sc=...`).
+  static String cardShortUrl(String slug) =>
+      '$publicWebBaseUrl/?sc=${Uri.encodeComponent(slug)}';
+
+  /// Formats a raw card identifier, query string, path, or full URL into a canonical SmartCard URL.
+  static String formatSmartCardUrl(String? rawUrl) {
+    if (rawUrl == null || rawUrl.trim().isEmpty) return publicWebBaseUrl;
+    final trimmed = rawUrl.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('?sc=') || trimmed.startsWith('sc=')) {
+      final q = trimmed.startsWith('?') ? trimmed : '?$trimmed';
+      return '$publicWebBaseUrl/$q';
+    }
+    if (trimmed.startsWith('/c/') || trimmed.startsWith('/')) {
+      return '$publicWebBaseUrl$trimmed';
+    }
+    return '$publicWebBaseUrl/c/$trimmed';
+  }
+
+  /// Resolves a live card's public URL from an optional [qrCode], [profileUrl],
+  /// or [workProfileId].
+  static String resolveLiveCardUrl({
+    String? qrCode,
+    String? profileUrl,
+    required String workProfileId,
+  }) {
+    final trimmedQr = (qrCode ?? '').trim();
+    if (trimmedQr.isNotEmpty) {
+      if (trimmedQr.contains('?sc=')) {
+        final slug = trimmedQr.split('?sc=').last.split('&').first.trim();
+        if (slug.isNotEmpty) {
+          return cardShortUrl(slug);
+        }
+      }
+      if (trimmedQr.startsWith('http://') || trimmedQr.startsWith('https://')) {
+        return trimmedQr;
+      }
+      return cardShortUrl(trimmedQr);
+    }
+
+    final trimmedProfile = (profileUrl ?? '').trim();
+    if (trimmedProfile.isNotEmpty) {
+      return trimmedProfile;
+    }
+    return cardProfileUrl(workProfileId);
+  }
   // Public accessor for the API base URL used throughout the app.
 
 
@@ -63,6 +141,8 @@ class ApiConfig {
 
   // Suspension and OTP
   static String selfSuspension(String userId) => '/api/v1/users/$userId/suspension';
+  static String cardSuspension(String userId, int workProfileId) =>
+      '/api/v1/users/$userId/work-profile/$workProfileId/suspension';
   static String sendProfileOtp(String userId) => '/api/v1/users/$userId/phone-otp/send';
   static String verifyProfileOtp(String userId) => '/api/v1/users/$userId/phone-otp/verify';
 
@@ -99,14 +179,22 @@ class ApiConfig {
   // Pincode
   static String pincode(String pincode) => '/api/v1/pincode/$pincode';
 
+  // NFC Physical Orders
+  static String nfcOrders(String userId) => '/api/v1/users/$userId/nfc-orders';
+
+  // AI Assistant Endpoints
+  static const String aiGenerateBio = '/api/v1/ai/generate-bio';
+  static const String aiParseVisitingCard = '/api/v1/ai/parse-visiting-card';
+  static const String aiSuggestDesign = '/api/v1/ai/suggest-design';
+
   // -------------------------------------------------------------------------
   // Local backend server URLs
   static String get _localIosAndWebUrl =>
-      dotenv.env['API_URL'] ?? 'http://localhost:5000';
+      _readConfig(_envApiUrl, 'API_URL', 'http://localhost:5000');
 
   static String get _localAndroidEmulatorUrl {
-    final envUrl = dotenv.env['API_URL'];
-    if (envUrl != null && envUrl.isNotEmpty) {
+    final envUrl = _readConfig(_envApiUrl, 'API_URL', '');
+    if (envUrl.isNotEmpty) {
       return envUrl
           .replaceAll('localhost', '10.0.2.2')
           .replaceAll('127.0.0.1', '10.0.2.2');
@@ -114,24 +202,17 @@ class ApiConfig {
     return 'http://10.0.2.2:5000';
   }
 
-
-  // =========================================================================
-  // 📱 PHYSICAL DEVICE LOCAL TESTING CONFIGURATION
-  // If you are testing your local backend server on a PHYSICAL phone (real Android/iOS),
-  // set 'usePhysicalDeviceForLocal' to 'true' and update '_localPhysicalIp'
-  // with your computer's local Wi-Fi IP address (e.g., 192.168.1.5 or 192.168.29.X).
-  // =========================================================================
   static bool get usePhysicalDeviceForLocal =>
-      (dotenv.env['USE_PHYSICAL_DEVICE_FOR_LOCAL']?.toLowerCase() ?? 'false') == 'true';
+      _readConfig(_envUsePhysicalDevice, 'USE_PHYSICAL_DEVICE_FOR_LOCAL', 'false')
+          .toLowerCase() ==
+      'true';
   static String get _localPhysicalIp =>
-      dotenv.env['LOCAL_PHYSICAL_IP'] ?? '192.168.1.1';
+      _readConfig(_envLocalPhysicalIp, 'LOCAL_PHYSICAL_IP', '192.168.1.1');
 
-  // =========================================================================
-  // ⚡ CONFIGURATION SWITCH
-  // Set this to 'false' to connect to the LIVE server.
-  // Set this to 'true' to connect to your LOCAL backend server.
   static bool get useLocalBackend =>
-      (dotenv.env['USE_LOCAL_BACKEND']?.toLowerCase() ?? 'false') == 'true';
+      _readConfig(_envUseLocalBackend, 'USE_LOCAL_BACKEND', 'false')
+          .toLowerCase() ==
+      'true';
 
   static String get baseUrl {
     if (!useLocalBackend) {
@@ -159,10 +240,17 @@ class ApiConfig {
   // Uploads directory mapping
   static String get sharedUploadsUrl => useLocalBackend
       ? '$baseUrl/shared-uploads'
-      : (dotenv.env['SHARED_UPLOADS_URL'] ?? 'https://thesmartcards.com/shared-uploads');
+      : _readConfig(
+          _envSharedUploadsUrl,
+          'SHARED_UPLOADS_URL',
+          'https://thesmartcards.in/shared-uploads',
+        );
 
   // Required only for /api/v1/agents/* routes because server uses CARD_API_KEY.
   static String get cardApiKey =>
-      dotenv.env['CARD_API_KEY'] ??
-      'BSOEYKz2/TPMwJP0ZV2p0Vzn4MxP6CaXyEClHf9BFecAHJGwSxfTFalLTF5P8mkioTxld8ETM073UlIjeJ/Eww==';
+      _readConfig(
+        const String.fromEnvironment('CARD_API_KEY'),
+        'CARD_API_KEY',
+        'BSOEYKz2/TPMwJP0ZV2p0Vzn4MxP6CaXyEClHf9BFecAHJGwSxfTFalLTF5P8mkioTxld8ETM073UlIjeJ/Eww==',
+      );
 }
