@@ -1,25 +1,56 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
 import '../../models/scanned_contact_model.dart';
 
 class SqliteDatabase {
   static const String _dbName = 'smartcards_app.db';
-  static const int _dbVersion = 1;
+  static const int _dbVersion = 4;
 
   static const String tableContacts = 'scanned_contacts';
   static const String tablePendingDeletions = 'pending_deletions';
 
   static Database? _db;
+  static const String _webStorageKey = 'web_cached_contacts_json';
+  static const String _webPendingDeletionsKey = 'web_cached_pending_deletions_json';
+  static List<ScannedContactModel> _webMemoryContacts = [];
+  static List<Map<String, String>> _webMemoryPendingDeletions = [];
+  static bool _webInitialized = false;
 
-  /// Initializes SQLite Database on device application storage.
+  /// Initializes SQLite Database on device application storage or Web in-memory/SharedPreferences fallback.
   static Future<void> init() async {
+    if (kIsWeb) {
+      if (!_webInitialized) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final rawJson = prefs.getString(_webStorageKey);
+          if (rawJson != null && rawJson.isNotEmpty) {
+            final decoded = jsonDecode(rawJson);
+            if (decoded is List) {
+              _webMemoryContacts = decoded.map((e) => ScannedContactModel.fromJson(Map<String, dynamic>.from(e as Map))).toList();
+            }
+          }
+          final rawDelJson = prefs.getString(_webPendingDeletionsKey);
+          if (rawDelJson != null && rawDelJson.isNotEmpty) {
+            final decodedDel = jsonDecode(rawDelJson);
+            if (decodedDel is List) {
+              _webMemoryPendingDeletions = decodedDel.map((e) => Map<String, String>.from(e as Map)).toList();
+            }
+          }
+        } catch (e) {
+          debugPrint('Web storage init warning: $e');
+        }
+        _webInitialized = true;
+      }
+      return;
+    }
+
     try {
       if (_db != null && _db!.isOpen) return;
 
-      if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS)) {
+      if (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS) {
         sqfliteFfiInit();
         databaseFactory = databaseFactoryFfi;
       }
@@ -39,6 +70,8 @@ class SqliteDatabase {
               designation TEXT,
               phone TEXT,
               alternative_phone TEXT,
+              additional_phones TEXT,
+              additional_companies TEXT,
               landline TEXT,
               whatsapp TEXT,
               email TEXT,
@@ -58,7 +91,12 @@ class SqliteDatabase {
               total_cards_count INTEGER,
               is_matched INTEGER,
               is_favorite INTEGER,
-              created_at TEXT
+              created_at TEXT,
+              is_corporate INTEGER DEFAULT 0,
+              corporate_group TEXT,
+              corporate_department TEXT,
+              corporate_tags TEXT,
+              company_id TEXT
             )
           ''');
 
@@ -70,6 +108,48 @@ class SqliteDatabase {
               ts TEXT
             )
           ''');
+
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS share_history (
+              id TEXT PRIMARY KEY,
+              title TEXT,
+              method TEXT,
+              timestamp TEXT
+            )
+          ''');
+        },
+        onUpgrade: (db, oldVersion, newVersion) async {
+          // v1 → v2: add additional_phones column for multi-phone merge support
+          if (oldVersion < 2) {
+            try {
+              await db.execute('ALTER TABLE $tableContacts ADD COLUMN additional_phones TEXT');
+              debugPrint('📦 SQLite migration v1→v2: added additional_phones column.');
+            } catch (e) {
+              debugPrint('⚠️ Migration v1→v2 warning: $e');
+            }
+          }
+          // v2 → v3: add additional_companies column for multi-company support
+          if (oldVersion < 3) {
+            try {
+              await db.execute('ALTER TABLE $tableContacts ADD COLUMN additional_companies TEXT');
+              debugPrint('📦 SQLite migration v2→v3: added additional_companies column.');
+            } catch (e) {
+              debugPrint('⚠️ Migration v2→v3 warning: $e');
+            }
+          }
+          // v3 → v4: add corporate lead support columns
+          if (oldVersion < 4) {
+            try {
+              await db.execute('ALTER TABLE $tableContacts ADD COLUMN is_corporate INTEGER DEFAULT 0');
+              await db.execute('ALTER TABLE $tableContacts ADD COLUMN corporate_group TEXT');
+              await db.execute('ALTER TABLE $tableContacts ADD COLUMN corporate_department TEXT');
+              await db.execute('ALTER TABLE $tableContacts ADD COLUMN corporate_tags TEXT');
+              await db.execute('ALTER TABLE $tableContacts ADD COLUMN company_id TEXT');
+              debugPrint('📦 SQLite migration v3→v4: added corporate lead columns.');
+            } catch (e) {
+              debugPrint('⚠️ Migration v3→v4 warning: $e');
+            }
+          }
         },
       );
       debugPrint('📦 SQLite Database initialized successfully at: $path');
@@ -79,6 +159,9 @@ class SqliteDatabase {
   }
 
   static Future<Database> _getDatabaseAsync() async {
+    if (kIsWeb) {
+      throw UnsupportedError('Native SQLite database not available on Web Chrome.');
+    }
     if (_db != null && _db!.isOpen) {
       return _db!;
     }
@@ -91,6 +174,18 @@ class SqliteDatabase {
 
   static String _cleanPhone(String phone) => phone.replaceAll(RegExp(r'\D'), '');
 
+  static Future<void> _persistWebStorage() async {
+    if (!kIsWeb) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final listMap = _webMemoryContacts.map((c) => c.toJson()).toList();
+      await prefs.setString(_webStorageKey, jsonEncode(listMap));
+      await prefs.setString(_webPendingDeletionsKey, jsonEncode(_webMemoryPendingDeletions));
+    } catch (e) {
+      debugPrint('Error persisting Web Contacts storage: $e');
+    }
+  }
+
   /// Converts a ScannedContactModel into a Map suitable for SQLite database storage.
   static Map<String, dynamic> _contactToMap(ScannedContactModel c) {
     return {
@@ -100,6 +195,8 @@ class SqliteDatabase {
       'designation': c.designation,
       'phone': c.phone,
       'alternative_phone': c.alternativePhone,
+      'additional_phones': c.additionalPhones.isNotEmpty ? jsonEncode(c.additionalPhones) : null,
+      'additional_companies': c.additionalCompanies.isNotEmpty ? jsonEncode(c.additionalCompanies) : null,
       'landline': c.landline,
       'whatsapp': c.whatsApp,
       'email': c.email,
@@ -120,10 +217,15 @@ class SqliteDatabase {
       'is_matched': c.isMatched ? 1 : 0,
       'is_favorite': c.isFavorite ? 1 : 0,
       'created_at': c.createdAt.toIso8601String(),
+      'is_corporate': c.isCorporate ? 1 : 0,
+      'corporate_group': c.corporateGroup,
+      'corporate_department': c.corporateDepartment,
+      'corporate_tags': c.corporateTags.isNotEmpty ? jsonEncode(c.corporateTags) : null,
+      'company_id': c.companyId,
     };
   }
 
-  /// Converts a SQLite Map row into a ScannedContactModel.
+  /// Converts a SQLite row Map into a ScannedContactModel.
   static ScannedContactModel _mapToContact(Map<String, dynamic> map) {
     List<Map<String, dynamic>>? matchedCards;
     if (map['matched_cards_json'] != null && map['matched_cards_json'].toString().isNotEmpty) {
@@ -145,6 +247,16 @@ class SqliteDatabase {
       } catch (_) {}
     }
 
+    List<String> parsedCorpTags = [];
+    if (map['corporate_tags'] != null && map['corporate_tags'].toString().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(map['corporate_tags'].toString());
+        if (decoded is List) {
+          parsedCorpTags = decoded.map((e) => e.toString()).toList();
+        }
+      } catch (_) {}
+    }
+
     return ScannedContactModel(
       id: map['id']?.toString() ?? '',
       name: map['name']?.toString() ?? '',
@@ -152,6 +264,24 @@ class SqliteDatabase {
       designation: map['designation']?.toString() ?? '',
       phone: map['phone']?.toString() ?? '',
       alternativePhone: map['alternative_phone']?.toString(),
+      additionalPhones: () {
+        final raw = map['additional_phones'];
+        if (raw == null || raw.toString().isEmpty) return <String>[];
+        try {
+          final decoded = jsonDecode(raw.toString());
+          if (decoded is List) return decoded.map((e) => e.toString()).toList();
+        } catch (_) {}
+        return <String>[];
+      }(),
+      additionalCompanies: () {
+        final raw = map['additional_companies'];
+        if (raw == null || raw.toString().isEmpty) return <Map<String, dynamic>>[];
+        try {
+          final decoded = jsonDecode(raw.toString());
+          if (decoded is List) return decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        } catch (_) {}
+        return <Map<String, dynamic>>[];
+      }(),
       landline: map['landline']?.toString(),
       whatsApp: map['whatsapp']?.toString(),
       email: map['email']?.toString() ?? '',
@@ -161,7 +291,13 @@ class SqliteDatabase {
       stateName: map['state_name']?.toString(),
       pinCode: map['pin_code']?.toString(),
       socialLinks: socialLinks,
-      source: map['source']?.toString() ?? 'smartcard',
+      source: (map['source'] != null && map['source'].toString().trim().isNotEmpty)
+          ? map['source'].toString().trim()
+          : (map['id']?.toString().startsWith('phone_') == true
+              ? 'phone'
+              : (map['is_matched'] == 1 || map['matched_user_id'] != null
+                  ? 'smart_card'
+                  : 'scanned')),
       syncStatus: map['sync_status']?.toString() ?? 'synced',
       cardUrl: map['card_url']?.toString(),
       profileImage: map['profile_image']?.toString(),
@@ -172,61 +308,61 @@ class SqliteDatabase {
       isMatched: map['is_matched'] == 1,
       isFavorite: map['is_favorite'] == 1,
       createdAt: map['created_at'] != null ? (DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()) : DateTime.now(),
+      isCorporate: map['is_corporate'] == 1,
+      corporateGroup: map['corporate_group']?.toString(),
+      corporateDepartment: map['corporate_department']?.toString(),
+      corporateTags: parsedCorpTags,
+      companyId: map['company_id']?.toString(),
     );
   }
 
-  /// Saves or updates a scanned contact in the SQLite database, purging any duplicate rows.
+  /// Saves or updates a scanned contact in the SQLite database / Web cache.
   static Future<void> saveContact(ScannedContactModel contact) async {
+    if (kIsWeb) {
+      await init();
+      _webMemoryContacts.removeWhere((c) => c.id == contact.id);
+      _webMemoryContacts.add(contact);
+      _webMemoryContacts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      await _persistWebStorage();
+      return;
+    }
+
     final db = await _getDatabaseAsync();
-    final cleanP = _cleanPhone(contact.phone);
-    final cleanE = contact.email.trim().toLowerCase();
-    final cleanN = contact.name.trim().toLowerCase();
 
     String? existingProfileImage;
     String? existingImagePath;
 
-    // Find any existing contact matching ID, phone, email, or name
-    final existingRows = await db.query(tableContacts);
-    final staleIds = <String>[];
+    // Check if a row with this exact ID already exists to preserve existing photo if not provided
+    final existingRow = await db.query(
+      tableContacts,
+      where: 'id = ?',
+      whereArgs: [contact.id],
+      limit: 1,
+    );
 
-    for (final row in existingRows) {
-      final c = _mapToContact(row);
-      final p = _cleanPhone(c.phone);
-      final e = c.email.trim().toLowerCase();
-      final n = c.name.trim().toLowerCase();
-
-      final isSameContact = c.id == contact.id ||
-          (cleanP.isNotEmpty && cleanP.length >= 10 && p.endsWith(cleanP.substring(cleanP.length - 10))) ||
-          (cleanE.isNotEmpty && e == cleanE) ||
-          (cleanN.isNotEmpty && cleanN.length >= 3 && n == cleanN);
-
-      if (isSameContact) {
-        if (c.profileImage != null && c.profileImage!.trim().isNotEmpty) {
-          existingProfileImage = c.profileImage;
-        }
-        if (c.imagePath != null && c.imagePath!.trim().isNotEmpty) {
-          existingImagePath = c.imagePath;
-        }
-        if (c.id != contact.id) {
-          staleIds.add(c.id);
-        }
+    if (existingRow.isNotEmpty) {
+      final existing = _mapToContact(existingRow.first);
+      if (existing.profileImage != null && existing.profileImage!.trim().isNotEmpty) {
+        existingProfileImage = existing.profileImage;
+      }
+      if (existing.imagePath != null && existing.imagePath!.trim().isNotEmpty) {
+        existingImagePath = existing.imagePath;
       }
     }
 
-    if (staleIds.isNotEmpty) {
-      for (final id in staleIds) {
-        await db.delete(tableContacts, where: 'id = ?', whereArgs: [id]);
-      }
-      debugPrint('🗑️ Purged ${staleIds.length} stale duplicate SQLite rows.');
-    }
+    final effectiveProfileImg = (contact.profileImage != null &&
+            contact.profileImage!.trim().isNotEmpty &&
+            contact.profileImage!.trim().toLowerCase() != 'null')
+        ? contact.profileImage
+        : ((contact.matchedProfileImage != null &&
+                contact.matchedProfileImage!.trim().isNotEmpty &&
+                contact.matchedProfileImage!.trim().toLowerCase() != 'null')
+            ? contact.matchedProfileImage
+            : existingProfileImage);
 
     final finalContact = contact.copyWith(
-      profileImage: (contact.profileImage != null && contact.profileImage!.trim().isNotEmpty)
-          ? contact.profileImage
-          : existingProfileImage,
-      imagePath: (contact.imagePath != null && contact.imagePath!.trim().isNotEmpty)
-          ? contact.imagePath
-          : existingImagePath,
+      profileImage: effectiveProfileImg,
+      imagePath: (contact.imagePath == null || contact.imagePath!.trim().isEmpty) ? existingImagePath : contact.imagePath,
     );
 
     await db.insert(
@@ -234,49 +370,122 @@ class SqliteDatabase {
       _contactToMap(finalContact),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    debugPrint('💾 Saved contact in SQLite: ${finalContact.name} (${finalContact.id})');
   }
 
-  /// Saves or updates a batch of contacts in SQLite.
+  /// Batch saves a list of contacts into SQLite or Web cache using high-speed transaction batch.
   static Future<void> saveContacts(List<ScannedContactModel> contacts) async {
-    for (var contact in contacts) {
-      await saveContact(contact);
+    if (contacts.isEmpty) return;
+    if (kIsWeb) {
+      await init();
+      for (final contact in contacts) {
+        await saveContact(contact);
+      }
+      return;
     }
-    debugPrint('💾 Batch saved ${contacts.length} contacts in SQLite.');
+    final db = await _getDatabaseAsync();
+    final batch = db.batch();
+    for (final contact in contacts) {
+      batch.insert(
+        tableContacts,
+        _contactToMap(contact),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit(noResult: true);
   }
 
-  /// Deletes a contact by ID and phone/email/name from the SQLite database.
-  static Future<void> deleteContact(String id, {String? phone, String? email, String? name}) async {
+  /// Retrieves all contacts that have pending backend uploads.
+  static Future<List<ScannedContactModel>> getPendingContactsAsync() async {
+    if (kIsWeb) {
+      await init();
+      return _webMemoryContacts.where((c) => c.syncStatus == 'pending').toList();
+    }
     final db = await _getDatabaseAsync();
-    final cleanP = _cleanPhone(phone ?? '');
-    final cleanE = (email ?? '').trim().toLowerCase();
-    final cleanN = (name ?? '').trim().toLowerCase();
+    final rows = await db.query(tableContacts, where: 'sync_status = ?', whereArgs: ['pending']);
+    return rows.map((r) => _mapToContact(r)).toList();
+  }
 
-    final allRows = await db.query(tableContacts);
-    final idsToDelete = <String>{id};
+  /// Deletes a contact permanently by its ID and direct ID variants ONLY.
+  /// Never purges separate profiles sharing the same phone number or name.
+  static Future<void> deleteContact(
+    String id, {
+    String? phone,
+    String? email,
+    String? name,
+    String? company,
+  }) async {
+    final cleanId = id.trim();
+    final rawId = cleanId.replaceFirst('phone_', '').replaceFirst('matched_', '');
 
-    for (final row in allRows) {
-      final c = _mapToContact(row);
-      if (c.id == id) continue;
-      final p = _cleanPhone(c.phone);
-      final e = c.email.trim().toLowerCase();
-      final n = c.name.trim().toLowerCase();
-
-      if ((cleanP.isNotEmpty && cleanP.length >= 10 && p.endsWith(cleanP.substring(cleanP.length - 10))) ||
-          (cleanE.isNotEmpty && e == cleanE) ||
-          (cleanN.isNotEmpty && cleanN.length >= 3 && n == cleanN)) {
-        idsToDelete.add(c.id);
-      }
+    if (kIsWeb) {
+      await init();
+      _webMemoryContacts.removeWhere((c) {
+        if (cleanId.isNotEmpty && (c.id == cleanId || c.id == rawId || c.id == 'phone_$rawId' || c.id == 'matched_$rawId')) {
+          return true;
+        }
+        if (c.deviceContactId != null && rawId.isNotEmpty && c.deviceContactId == rawId &&
+            (c.id == rawId || c.id == 'phone_$rawId' || c.id == 'matched_$rawId')) {
+          return true;
+        }
+        return false;
+      });
+      await _persistWebStorage();
+      return;
     }
 
+    final db = await _getDatabaseAsync();
+    final Set<String> idsToDelete = {};
+
+    if (cleanId.isNotEmpty) {
+      idsToDelete.add(cleanId);
+    }
+    if (rawId.isNotEmpty) {
+      idsToDelete.add(rawId);
+      idsToDelete.add('phone_$rawId');
+      idsToDelete.add('matched_$rawId');
+    }
+
+    // Direct deletion by known ID variations ONLY
     for (final targetId in idsToDelete) {
       await db.delete(tableContacts, where: 'id = ?', whereArgs: [targetId]);
     }
-    debugPrint('❌ Deleted ${idsToDelete.length} matching contact rows from SQLite.');
+    debugPrint('🗑️ [SqliteDatabase] Deleted contact $cleanId (variants: $idsToDelete) from SQLite.');
+  }
+
+  /// Clears all contacts and pending deletions from the database.
+  /// Typically used during logout, account switch, or test teardowns.
+  static Future<void> clearAllContacts() async {
+    if (kIsWeb) {
+      _webMemoryContacts.clear();
+      _webMemoryPendingDeletions.clear();
+      await _persistWebStorage();
+      return;
+    }
+    try {
+      final db = await _getDatabaseAsync();
+      await db.delete(tableContacts);
+      await db.delete(tablePendingDeletions);
+      debugPrint('🧹 Cleared all contacts and pending deletions from SQLite.');
+    } catch (e) {
+      debugPrint('🚨 Failed to clear SQLite contacts: $e');
+    }
   }
 
   /// Adds a contact ID to offline pending deletions table.
   static Future<void> addPendingDeletion(String id, {String? phone, String? email}) async {
+    if (kIsWeb) {
+      await init();
+      _webMemoryPendingDeletions.removeWhere((t) => t['id'] == id);
+      _webMemoryPendingDeletions.add({
+        'id': id,
+        'phone': phone ?? '',
+        'email': email ?? '',
+        'ts': DateTime.now().toIso8601String(),
+      });
+      await _persistWebStorage();
+      return;
+    }
+
     try {
       final db = await _getDatabaseAsync();
       await db.insert(
@@ -295,30 +504,12 @@ class SqliteDatabase {
     }
   }
 
-  /// Gets all pending deletion IDs.
-  static Future<List<String>> getPendingDeletionsAsync() async {
-    try {
-      final db = await _getDatabaseAsync();
-      final rows = await db.query(tablePendingDeletions);
-      return rows.map((r) => r['id'].toString()).toList();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  /// Synchronous fallback helper for pending deletions.
-  static List<String> getPendingDeletions() {
-    try {
-      if (_db == null || !_db!.isOpen) return [];
-      // Note: async caller preferred via getPendingDeletionsAsync
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
   /// Gets all pending deletion tombstones with details.
   static Future<List<Map<String, String>>> getPendingDeletionTombstonesAsync() async {
+    if (kIsWeb) {
+      await init();
+      return List<Map<String, String>>.from(_webMemoryPendingDeletions);
+    }
     try {
       final db = await _getDatabaseAsync();
       final rows = await db.query(tablePendingDeletions);
@@ -334,6 +525,12 @@ class SqliteDatabase {
 
   /// Removes a contact ID from the offline pending deletions table once synced.
   static Future<void> removePendingDeletion(String id) async {
+    if (kIsWeb) {
+      await init();
+      _webMemoryPendingDeletions.removeWhere((t) => t['id'] == id);
+      await _persistWebStorage();
+      return;
+    }
     try {
       final db = await _getDatabaseAsync();
       await db.delete(tablePendingDeletions, where: 'id = ?', whereArgs: [id]);
@@ -343,107 +540,162 @@ class SqliteDatabase {
     }
   }
 
-  /// Retrieves all contacts sorted by newest first.
-  static List<ScannedContactModel> getAllContacts() {
-    try {
-      if (_db == null || !_db!.isOpen) return [];
-      // Synchronous return wrapper using underlying DB
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
   /// Async fetch of all contacts sorted by newest created_at.
   static Future<List<ScannedContactModel>> getAllContactsAsync() async {
+    if (kIsWeb) {
+      await init();
+      final list = List<ScannedContactModel>.from(_webMemoryContacts);
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    }
     final db = await _getDatabaseAsync();
     final rows = await db.query(tableContacts, orderBy: 'created_at DESC');
     return rows.map((r) => _mapToContact(r)).toList();
   }
 
-  /// Retrieves all contacts that have pending backend uploads.
-  static Future<List<ScannedContactModel>> getPendingContactsAsync() async {
-    final db = await _getDatabaseAsync();
-    final rows = await db.query(tableContacts, where: 'sync_status = ?', whereArgs: ['pending']);
-    return rows.map((r) => _mapToContact(r)).toList();
+  /// Offline-First: Fetches all corporate contacts/leads with optional search query & group filter
+  static Future<List<ScannedContactModel>> getCorporateContacts({String? query, String? group}) async {
+    final all = await getAllContactsAsync();
+    return all.where((c) {
+      if (!c.isCorporate) return false;
+      if (group != null && group.isNotEmpty && group.toUpperCase() != 'ALL') {
+        if (c.corporateGroup?.toLowerCase() != group.toLowerCase()) return false;
+      }
+      if (query != null && query.trim().isNotEmpty) {
+        final q = query.trim().toLowerCase();
+        final matchName = c.name.toLowerCase().contains(q);
+        final matchCompany = c.company.toLowerCase().contains(q);
+        final matchPhone = c.phone.contains(q);
+        final matchDept = c.corporateDepartment?.toLowerCase().contains(q) ?? false;
+        final matchGroup = c.corporateGroup?.toLowerCase().contains(q) ?? false;
+        return matchName || matchCompany || matchPhone || matchDept || matchGroup;
+      }
+      return true;
+    }).toList();
+  }
+
+  /// Offline-First: Fetches all personal contacts
+  static Future<List<ScannedContactModel>> getPersonalContacts({String? query}) async {
+    final all = await getAllContactsAsync();
+    return all.where((c) {
+      if (c.isCorporate) return false;
+      if (query != null && query.trim().isNotEmpty) {
+        final q = query.trim().toLowerCase();
+        final matchName = c.name.toLowerCase().contains(q);
+        final matchCompany = c.company.toLowerCase().contains(q);
+        final matchPhone = c.phone.contains(q);
+        return matchName || matchCompany || matchPhone;
+      }
+      return true;
+    }).toList();
+  }
+
+  /// Fetches a single contact by its ID.
+  /// Falls back to phone-number matching if ID is empty or not found.
+  static Future<ScannedContactModel?> getContactByIdOrPhone(String id, {String? phone}) async {
+    if (kIsWeb) {
+      await init();
+      final cleanId = id.trim();
+      final cleanP = _cleanPhone(phone ?? '');
+      final p10 = cleanP.length >= 10 ? cleanP.substring(cleanP.length - 10) : cleanP;
+
+      for (final c in _webMemoryContacts) {
+        if (cleanId.isNotEmpty && c.id == cleanId) return c;
+        if (p10.length >= 7) {
+          final cp = _cleanPhone(c.phone);
+          if (cp.isNotEmpty && cp.endsWith(p10)) return c;
+        }
+      }
+      return null;
+    }
+
+    try {
+      final db = await _getDatabaseAsync();
+
+      // Try direct ID lookup first (fastest)
+      if (id.isNotEmpty) {
+        final rows = await db.query(tableContacts, where: 'id = ?', whereArgs: [id], limit: 1);
+        if (rows.isNotEmpty) return _mapToContact(rows.first);
+      }
+
+      // Fallback: phone-number match
+      if (phone != null && phone.isNotEmpty) {
+        final cleanP = _cleanPhone(phone);
+        if (cleanP.length >= 7) {
+          final allRows = await db.query(tableContacts);
+          for (final row in allRows) {
+            final rowPhone = _cleanPhone(row['phone']?.toString() ?? '');
+            final tail = cleanP.length >= 10 ? cleanP.substring(cleanP.length - 10) : cleanP;
+            if (rowPhone.endsWith(tail)) return _mapToContact(row);
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error in getContactByIdOrPhone: $e');
+    }
+    return null;
   }
 
   /// Reconciles SmartCard contacts in SQLite database with server contacts list.
   static Future<void> reconcileSmartCardContacts(List<ScannedContactModel> serverContacts) async {
-    final db = await _getDatabaseAsync();
+    if (kIsWeb) {
+      await init();
+      final pendingTombstones = await getPendingDeletionTombstonesAsync();
+      final pendingDeletionIds = <String>{};
+
+      for (final t in pendingTombstones) {
+        if (t['id']!.isNotEmpty) pendingDeletionIds.add(t['id']!);
+      }
+
+      final filtered = serverContacts.where((c) {
+        if (pendingDeletionIds.contains(c.id)) return false;
+        return true;
+      }).toList();
+
+      for (var contact in filtered) {
+        await saveContact(contact);
+      }
+      debugPrint('🌐 Reconciled ${filtered.length} SmartCard contacts in Web Memory Storage.');
+      return;
+    }
+
+    await _getDatabaseAsync();
 
     final pendingTombstones = await getPendingDeletionTombstonesAsync();
-    final pendingDeletionPhones = <String>{};
-    final pendingDeletionEmails = <String>{};
     final pendingDeletionIds = <String>{};
 
     for (final t in pendingTombstones) {
       if (t['id']!.isNotEmpty) pendingDeletionIds.add(t['id']!);
-      final p = _cleanPhone(t['phone']!);
-      final e = t['email']!.trim().toLowerCase();
-      if (p.length >= 10) pendingDeletionPhones.add(p.substring(p.length - 10));
-      if (e.isNotEmpty) pendingDeletionEmails.add(e);
     }
 
     final filteredServerContacts = serverContacts.where((c) {
       if (pendingDeletionIds.contains(c.id)) return false;
-      final p = _cleanPhone(c.phone);
-      final e = c.email.trim().toLowerCase();
-      if (p.length >= 10 && pendingDeletionPhones.contains(p.substring(p.length - 10))) return false;
-      if (e.isNotEmpty && pendingDeletionEmails.contains(e)) return false;
       return true;
     }).toList();
 
     if (serverContacts.isEmpty) {
-      debugPrint('ℹ️ Server contacts response is empty. Skipping reconcile deletion in SQLite.');
+      debugPrint('ℹ️ Server contacts response is empty. Skipping reconcile in SQLite.');
       return;
     }
 
-    final serverIds = filteredServerContacts.map((c) => c.id).toSet();
-    final serverPhones = <String>{};
-    final serverEmails = <String>{};
-    for (var sc in filteredServerContacts) {
-      final p = _cleanPhone(sc.phone);
-      final e = sc.email.trim().toLowerCase();
-      if (p.isNotEmpty && p.length >= 10) serverPhones.add(p.substring(p.length - 10));
-      if (e.isNotEmpty) serverEmails.add(e);
-    }
-
-    final existingRows = await db.query(tableContacts);
-    final idsToDelete = <String>[];
-
-    for (final row in existingRows) {
-      final contact = _mapToContact(row);
-      final p = _cleanPhone(contact.phone);
-      final e = contact.email.trim().toLowerCase();
-
-      final matchesPhone = p.isNotEmpty && p.length >= 10 && serverPhones.contains(p.substring(p.length - 10));
-      final matchesEmail = e.isNotEmpty && serverEmails.contains(e);
-      final matchesId = serverIds.contains(contact.id);
-
-      final isLocallyScanned = contact.source == 'scanned' || contact.source == 'card' || contact.source == 'qr';
-      if (contact.source != 'phone' && !isLocallyScanned && contact.syncStatus == 'synced') {
-        if (!matchesId && !matchesPhone && !matchesEmail) {
-          idsToDelete.add(contact.id);
-        }
-      }
-    }
-
-    for (final delId in idsToDelete) {
-      await db.delete(tableContacts, where: 'id = ?', whereArgs: [delId]);
-    }
-    if (idsToDelete.isNotEmpty) {
-      debugPrint('🗑️ Removed ${idsToDelete.length} stale contacts from SQLite.');
-    }
-
+    // Only upsert valid server contacts — NEVER delete local scanned contacts or matched phone contacts!
     for (var contact in filteredServerContacts) {
       await saveContact(contact);
     }
-    debugPrint('🔄 Reconciled ${filteredServerContacts.length} SmartCard contacts in SQLite.');
+    debugPrint('🔄 Reconciled ${filteredServerContacts.length} SmartCard contacts in SQLite (local scanned and matched contacts safely preserved).');
   }
 
-  /// Updates the synchronization status of a contact in SQLite.
+  /// Updates the synchronization status of a contact in SQLite / Web.
   static Future<void> updateSyncStatus(String id, String status) async {
+    if (kIsWeb) {
+      await init();
+      final idx = _webMemoryContacts.indexWhere((c) => c.id == id);
+      if (idx >= 0) {
+        _webMemoryContacts[idx] = _webMemoryContacts[idx].copyWith(syncStatus: status);
+        await _persistWebStorage();
+      }
+      return;
+    }
     final db = await _getDatabaseAsync();
     await db.update(
       tableContacts,
@@ -452,5 +704,67 @@ class SqliteDatabase {
       whereArgs: [id],
     );
     debugPrint('🔄 Updated contact sync status ($id) in SQLite: $status');
+  }
+
+  static Future<void> saveShareLog(String title, String method) async {
+    final entry = {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'title': title,
+      'method': method,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    if (kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString('web_share_history') ?? '[]';
+        final list = List<Map<String, dynamic>>.from(jsonDecode(raw));
+        list.insert(0, entry);
+        await prefs.setString('web_share_history', jsonEncode(list));
+      } catch (_) {}
+      return;
+    }
+    try {
+      final db = await _getDatabaseAsync();
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS share_history (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          method TEXT,
+          timestamp TEXT
+        )
+      ''');
+      await db.insert('share_history', entry, conflictAlgorithm: ConflictAlgorithm.replace);
+    } catch (e) {
+      debugPrint('Error saving share log: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getShareLogsAsync() async {
+    if (kIsWeb) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final raw = prefs.getString('web_share_history') ?? '[]';
+        final list = List<Map<String, dynamic>>.from(jsonDecode(raw));
+        return list;
+      } catch (_) {
+        return [];
+      }
+    }
+    try {
+      final db = await _getDatabaseAsync();
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS share_history (
+          id TEXT PRIMARY KEY,
+          title TEXT,
+          method TEXT,
+          timestamp TEXT
+        )
+      ''');
+      final maps = await db.query('share_history', orderBy: 'timestamp DESC');
+      return List<Map<String, dynamic>>.from(maps);
+    } catch (e) {
+      debugPrint('Error fetching share logs: $e');
+      return [];
+    }
   }
 }

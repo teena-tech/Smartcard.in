@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
-import 'lottie_loader.dart';
+import '../../../core/utils/upload_url_resolver.dart';
+import '../../../core/utils/safe_base64.dart';
 
 class CircularProfileAvatar extends StatefulWidget {
   final double radius;
@@ -64,12 +67,26 @@ class _CircularProfileAvatarState extends State<CircularProfileAvatar>
     final avatarSize = widget.size ?? widget.radius * 2;
     final effectiveBackgroundColor = widget.backgroundColor ?? Colors.white;
 
+    final avatarBody = Container(
+      width: avatarSize,
+      height: avatarSize,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: effectiveBackgroundColor,
+      ),
+      padding: widget.padding ?? EdgeInsets.all(widget.borderWidth > 0 ? 0 : 0),
+      child: ClipOval(
+        child: _buildImageContent(),
+      ),
+    );
+
     if (!widget.animateRing) {
-      return _buildStaticAvatar(avatarSize, effectiveBackgroundColor);
+      return avatarBody;
     }
 
     return AnimatedBuilder(
       animation: _controller,
+      child: avatarBody,
       builder: (context, child) {
         final angle = _controller.value * 2 * math.pi;
         final pulseScale = 1.0 + 0.05 * math.sin(angle * 2);
@@ -115,84 +132,76 @@ class _CircularProfileAvatarState extends State<CircularProfileAvatar>
               ),
             ),
 
-            // Avatar Main Body
-            Container(
-              width: avatarSize,
-              height: avatarSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: effectiveBackgroundColor,
-                border: widget.borderColor != null
-                    ? Border.all(color: widget.borderColor!, width: widget.borderWidth)
-                    : null,
-                boxShadow: widget.shadow != null ? [widget.shadow!] : null,
-              ),
-              padding: widget.padding ?? EdgeInsets.all(widget.borderWidth > 0 ? 0 : 0),
-              child: ClipOval(
-                child: _buildImageContent(),
-              ),
-            ),
+            // Avatar Main Body (Static Child, No Blinking!)
+            child!,
           ],
         );
       },
     );
   }
 
-  Widget _buildStaticAvatar(double avatarSize, Color effectiveBackgroundColor) {
-    return Container(
-      width: avatarSize,
-      height: avatarSize,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: effectiveBackgroundColor,
-        border: widget.borderColor != null
-            ? Border.all(color: widget.borderColor!, width: widget.borderWidth)
-            : null,
-        boxShadow: widget.shadow != null ? [widget.shadow!] : null,
-      ),
-      padding: widget.padding ?? EdgeInsets.all(widget.borderWidth > 0 ? 0 : 0),
-      child: ClipOval(
-        child: _buildImageContent(),
-      ),
-    );
-  }
+
 
   Widget _buildImageContent() {
-    final hasImage = (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) ||
-        (widget.imagePath != null && widget.imagePath!.isNotEmpty);
+    final hasImage = (widget.imageUrl != null && widget.imageUrl!.trim().isNotEmpty && widget.imageUrl!.trim().toLowerCase() != 'null') ||
+        (widget.imagePath != null && widget.imagePath!.trim().isNotEmpty && widget.imagePath!.trim().toLowerCase() != 'null');
 
     if (!hasImage) {
       return _fallbackContent();
     }
 
-    // Handle network images
-    if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
-      final normalizedUrl = widget.imageUrl!.trim();
-      if (normalizedUrl.startsWith('http://') || normalizedUrl.startsWith('https://')) {
-        return Image.network(
-          normalizedUrl,
+    // Handle image URLs (network, data URI, or server upload path)
+    if (widget.imageUrl != null && widget.imageUrl!.trim().isNotEmpty && widget.imageUrl!.trim().toLowerCase() != 'null') {
+      final raw = widget.imageUrl!.trim();
+      final resolvedUrl = UploadUrlResolver.resolve(raw, type: 'profile');
+
+      if (resolvedUrl.startsWith('data:image') || resolvedUrl.startsWith('data:')) {
+        try {
+          final base64Bytes = safeBase64Decode(resolvedUrl);
+          if (base64Bytes == null) return _fallbackContent();
+          return Image.memory(
+            base64Bytes,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.high,
+            isAntiAlias: true,
+            gaplessPlayback: true,
+            errorBuilder: (_, _, _) => _fallbackContent(),
+          );
+        } catch (_) {
+          return _fallbackContent();
+        }
+      }
+
+      if (resolvedUrl.startsWith('http://') || resolvedUrl.startsWith('https://')) {
+        return CachedNetworkImage(
+          imageUrl: resolvedUrl,
+          cacheKey: widget.cacheKey ?? resolvedUrl.split('?').first,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _fallbackContent(),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return const Center(
-              child: LottieLoader(size: 24),
-            );
-          },
+          filterQuality: FilterQuality.high,
+          useOldImageOnUrlChange: true,
+          fadeInDuration: Duration.zero,
+          fadeOutDuration: Duration.zero,
+          placeholder: (_, _) => _fallbackContent(),
+          errorWidget: (_, _, _) => _fallbackContent(),
         );
       }
     }
 
     // Handle local file images
-    if (widget.imagePath != null && widget.imagePath!.isNotEmpty) {
-      final file = File(widget.imagePath!);
-      if (file.existsSync()) {
-        return Image.file(
-          file,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => _fallbackContent(),
-        );
-      }
+    if (!kIsWeb && widget.imagePath != null && widget.imagePath!.isNotEmpty) {
+      try {
+        final file = File(widget.imagePath!);
+        if (file.existsSync()) {
+          return Image.file(
+            file,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.high,
+            isAntiAlias: true,
+            gaplessPlayback: true,
+            errorBuilder: (_, _, _) => _fallbackContent(),
+          );
+        }
+      } catch (_) {}
     }
 
     return _fallbackContent();

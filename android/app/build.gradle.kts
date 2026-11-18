@@ -6,10 +6,11 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
-    namespace = "com.techvarna.smartcards26"
+    namespace = "com.antz_media_solutions.SmartCards"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,7 +25,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.techvarna.smartcards26"
+        applicationId = "com.antz_media_solutions.SmartCards"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -32,9 +33,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // Target physical mobile device architectures only (prevents x86 CMake NDK errors on Windows)
         ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
+            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
         }
     }
 
@@ -44,7 +44,7 @@ android {
         if (keystorePropertiesFile.exists()) {
             keystoreProperties.load(FileInputStream(keystorePropertiesFile))
             val storePath = keystoreProperties["storeFile"] as String?
-            val keyStoreFile = storePath?.let { file(it) }
+            val keyStoreFile = storePath?.let { rootProject.file(it) }
             if (keyStoreFile != null && keyStoreFile.exists()) {
                 create("release") {
                     keyAlias = keystoreProperties["keyAlias"] as String
@@ -63,13 +63,34 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
     lint {
         checkReleaseBuilds = false
         abortOnError = false
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            excludes += listOf(
+                "lib/x86/**",
+                "lib/x86_64/**"
+            )
+        }
+        resources {
+            excludes += listOf(
+                "META-INF/*.kotlin_module",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/*.txt",
+                "META-INF/DEPENDENCIES"
+            )
+        }
     }
 }
 

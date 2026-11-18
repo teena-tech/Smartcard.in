@@ -20,6 +20,11 @@ class UserModel {
   final String? district;
   final String? state;
 
+  // ── International Phone & OTP fields ───────────────────────
+  final String? countryCode;
+  final String? whatsappNumber;
+  final String? preferredOtpMethod; // 'phone' or 'whatsapp'
+
   String get displayName => "${firstName ?? ''} ${lastName ?? ''}".trim();
 
   // Alias getters for UI compatibility
@@ -56,6 +61,9 @@ class UserModel {
     this.pincode,
     this.district,
     this.state,
+    this.countryCode,
+    this.whatsappNumber,
+    this.preferredOtpMethod,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -78,6 +86,9 @@ class UserModel {
       pincode:            json['pincode']?.toString()      ?? json['pin_code']?.toString() ?? json['zip']?.toString(),
       district:           json['district']?.toString(),
       state:              json['state']?.toString(),
+      countryCode:        json['country_code']?.toString() ?? json['countryCode']?.toString(),
+      whatsappNumber:     json['whatsapp_number']?.toString() ?? json['whatsapp']?.toString(),
+      preferredOtpMethod: json['preferred_otp_method']?.toString() ?? json['delivery_method']?.toString() ?? json['otp_channel']?.toString(),
     );
   }
 
@@ -101,6 +112,9 @@ class UserModel {
       'pincode':              pincode,
       'district':             district,
       'state':                state,
+      'country_code':         countryCode,
+      'whatsapp_number':      whatsappNumber,
+      'preferred_otp_method': preferredOtpMethod,
     };
   }
 
@@ -123,6 +137,9 @@ class UserModel {
     String? pincode,
     String? district,
     String? state,
+    String? countryCode,
+    String? whatsappNumber,
+    String? preferredOtpMethod,
   }) {
     return UserModel(
       id:                 id                 ?? this.id,
@@ -144,6 +161,9 @@ class UserModel {
       pincode:            pincode            ?? this.pincode,
       district:           district           ?? this.district,
       state:              state              ?? this.state,
+      countryCode:        countryCode        ?? this.countryCode,
+      whatsappNumber:     whatsappNumber     ?? this.whatsappNumber,
+      preferredOtpMethod: preferredOtpMethod ?? this.preferredOtpMethod,
     );
   }
 }

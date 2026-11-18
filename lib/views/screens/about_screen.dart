@@ -348,7 +348,7 @@ class AboutScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: colors.card,
                 borderRadius: BorderRadius.circular(26),
-                border: Border.all(color: colors.border),
+                border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.6), width: 1.2),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.1),

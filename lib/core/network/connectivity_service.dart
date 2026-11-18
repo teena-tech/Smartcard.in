@@ -7,14 +7,23 @@ class ConnectivityService {
   final _controller = StreamController<bool>.broadcast();
 
   ConnectivityService() {
-    _connectivity.onConnectivityChanged.listen((result) {
-      _controller.add(result != ConnectivityResult.none);
+    _connectivity.onConnectivityChanged.listen((results) {
+      _controller.add(_isNetworkActive(results));
     });
   }
 
   Future<bool> get isOnline async {
-    final result = await _connectivity.checkConnectivity();
-    return result != ConnectivityResult.none;
+    final results = await _connectivity.checkConnectivity();
+    return _isNetworkActive(results);
+  }
+
+  bool _isNetworkActive(dynamic results) {
+    if (results is List<ConnectivityResult>) {
+      return results.isNotEmpty && !results.contains(ConnectivityResult.none);
+    } else if (results is ConnectivityResult) {
+      return results != ConnectivityResult.none;
+    }
+    return true;
   }
 
   Stream<bool> get onlineChanges => _controller.stream;

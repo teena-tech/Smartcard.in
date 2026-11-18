@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/scanned_contact_model.dart';
+import 'contact_photo_resolver.dart';
+import 'vcard_photo_service.dart';
 
 class ExportService {
   /// Exports contacts as a CSV and opens system share dialog
@@ -40,28 +42,39 @@ class ExportService {
     final file = File(path);
     await file.writeAsString(csvString);
 
-    await Share.shareXFiles([XFile(path)], text: 'Exported Contacts CSV');
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(path)], text: 'Exported Contacts CSV'),
+    );
   }
 
   /// Exports contacts as a single VCF (vCard) and opens system share dialog
   static Future<void> exportAsVcf(List<ScannedContactModel> contacts) async {
     StringBuffer vcfBuffer = StringBuffer();
-    
+
     for (var contact in contacts) {
-      vcfBuffer.writeln('BEGIN:VCARD');
-      vcfBuffer.writeln('VERSION:3.0');
-      vcfBuffer.writeln('FN:${contact.name}');
-      if (contact.company.isNotEmpty) vcfBuffer.writeln('ORG:${contact.company}');
-      if (contact.designation.isNotEmpty) vcfBuffer.writeln('TITLE:${contact.designation}');
-      if (contact.phone.isNotEmpty) vcfBuffer.writeln('TEL;TYPE=CELL:${contact.phone}');
+      vcfBuffer.write('BEGIN:VCARD\r\n');
+      vcfBuffer.write('VERSION:3.0\r\n');
+      vcfBuffer.write('FN:${contact.name}\r\n');
+      if (contact.company.isNotEmpty) vcfBuffer.write('ORG:${contact.company}\r\n');
+      if (contact.designation.isNotEmpty) vcfBuffer.write('TITLE:${contact.designation}\r\n');
+      if (contact.phone.isNotEmpty) vcfBuffer.write('TEL;TYPE=CELL:${contact.phone}\r\n');
       if (contact.alternativePhone != null && contact.alternativePhone!.isNotEmpty) {
-        vcfBuffer.writeln('TEL;TYPE=HOME:${contact.alternativePhone}');
+        vcfBuffer.write('TEL;TYPE=HOME:${contact.alternativePhone}\r\n');
       }
-      if (contact.email.isNotEmpty) vcfBuffer.writeln('EMAIL;TYPE=WORK:${contact.email}');
-      if (contact.website.isNotEmpty) vcfBuffer.writeln('URL:${contact.website}');
-      if (contact.address.isNotEmpty) vcfBuffer.writeln('ADR:;;${contact.address.replaceAll('\n', ';')}');
-      vcfBuffer.writeln('END:VCARD');
-      vcfBuffer.writeln('');
+      if (contact.email.isNotEmpty) vcfBuffer.write('EMAIL;TYPE=WORK:${contact.email}\r\n');
+      if (contact.website.isNotEmpty) vcfBuffer.write('URL:${contact.website}\r\n');
+      if (contact.address.isNotEmpty) {
+        vcfBuffer.write('ADR:;;${contact.address.replaceAll('\n', ';')}\r\n');
+      }
+      final photoSource = ContactPhotoResolver.resolveScannedPhotoSource(contact);
+      final photoB64 = await VCardPhotoService.getVcfPhotoBase64(photoSource);
+      if (photoB64 != null && photoB64.isNotEmpty) {
+        vcfBuffer.write(
+          '${VCardPhotoService.foldVCardLine('PHOTO;ENCODING=b;TYPE=JPEG:$photoB64')}\r\n',
+        );
+      }
+      vcfBuffer.write('END:VCARD\r\n');
+      vcfBuffer.write('\r\n');
     }
 
     if (kIsWeb) return;
@@ -79,6 +92,11 @@ class ExportService {
     final file = File(path);
     await file.writeAsString(vcfBuffer.toString());
 
-    await Share.shareXFiles([XFile(path)], text: 'Exported Contacts VCF');
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(path, mimeType: 'text/vcard')],
+        text: 'Exported Contacts VCF',
+      ),
+    );
   }
 }

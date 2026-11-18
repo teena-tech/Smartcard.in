@@ -22,7 +22,6 @@ class ImageCropperHelper {
         toolbarWidgetColor: Colors.white,
         initAspectRatio: aspectRatioPreset,
         lockAspectRatio: lockAspectRatio,
-        statusBarColor: AppColors.primaryRed,
         hideBottomControls: true, 
         cropStyle: cropStyle,
         cropFrameColor: AppColors.primaryRed,
@@ -71,9 +70,9 @@ class ImageCropperHelper {
         cropStyle: CropStyle.circle,
       ),
       compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 80,
-      maxWidth: 512,
-      maxHeight: 512,
+      compressQuality: 95,
+      maxWidth: 1080,
+      maxHeight: 1080,
     );
   }
 
@@ -91,9 +90,9 @@ class ImageCropperHelper {
         cropStyle: CropStyle.rectangle,
       ),
       compressFormat: ImageCompressFormat.png,
-      compressQuality: 90,
-      maxWidth: 512,
-      maxHeight: 512,
+      compressQuality: 95,
+      maxWidth: 1080,
+      maxHeight: 1080,
     );
   }
 

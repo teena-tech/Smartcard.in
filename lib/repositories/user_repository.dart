@@ -8,6 +8,7 @@ import '../core/services/dio_client.dart';
 import '../core/services/api_config.dart';
 import '../models/user_model.dart';
 import '../models/card_model.dart';
+import '../core/utils/international_phone_helper.dart';
 
 class UserRepository {
   final DioClient _dioClient = DioClient();
@@ -34,10 +35,23 @@ class UserRepository {
     Map<String, dynamic> updateData,
   ) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiConfig.userProfile(userId),
-        data: updateData,
-      );
+      Response response;
+      try {
+        response = await _dioClient.dio.put(
+          ApiConfig.userProfile(userId),
+          data: updateData,
+        );
+      } on DioException catch (putErr) {
+        final statusCode = putErr.response?.statusCode;
+        if (statusCode == 403 || statusCode == 405) {
+          response = await _dioClient.dio.post(
+            ApiConfig.userProfile(userId),
+            data: updateData,
+          );
+        } else {
+          rethrow;
+        }
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
@@ -115,11 +129,25 @@ class UserRepository {
         payload['work_profile_id'] = workProfileId;
       }
 
-      final response = await _dioClient.dio.put(
-        ApiConfig.userProfile(userId),
-        data: payload,
-        queryParameters: queryParams,
-      );
+      Response response;
+      try {
+        response = await _dioClient.dio.put(
+          ApiConfig.userProfile(userId),
+          data: payload,
+          queryParameters: queryParams,
+        );
+      } on DioException catch (putErr) {
+        final statusCode = putErr.response?.statusCode;
+        if (statusCode == 403 || statusCode == 405) {
+          response = await _dioClient.dio.post(
+            ApiConfig.userProfile(userId),
+            data: payload,
+            queryParameters: queryParams,
+          );
+        } else {
+          rethrow;
+        }
+      }
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data;
       }
@@ -221,8 +249,6 @@ class UserRepository {
     int? workProfileId,
   }) async {
     try {
-      final formData = FormData();
-
       // Determine extension — strip query params first (blob URLs on web may have none)
       final cleanPath = filePath.split('?').first;
       final extension = cleanPath.contains('.')
@@ -236,22 +262,6 @@ class UserRepository {
       final filename = 'company_logo.$extension';
       final mediaType = MediaType.parse(mimeType);
 
-      MultipartFile logoFile;
-      if (kIsWeb) {
-        // On Web, filePath may be a blob: URL after cropping
-        final response = await http.get(Uri.parse(filePath));
-        logoFile = MultipartFile.fromBytes(
-          response.bodyBytes,
-          filename: filename,
-          contentType: mediaType,
-        );
-      } else {
-        logoFile = await MultipartFile.fromFile(
-          filePath,
-          filename: filename,
-          contentType: mediaType,
-        );
-      }
       final queryParams = <String, dynamic>{};
       if (workProfileId != null && workProfileId > 0) {
         queryParams['work_profile_id'] = workProfileId.toString();
@@ -749,12 +759,34 @@ class UserRepository {
     try {
       Response response;
       try {
-        response = await _dioClient.dio.delete(
-          ApiConfig.deleteUserAccount(userId),
+        // 1. Try POST endpoint first (bypasses LiteSpeed / proxy HTTP DELETE blocks)
+        response = await _dioClient.dio.post(
+          ApiConfig.deleteUserAccountPost(userId),
         );
       } on DioException catch (e) {
-        if (e.response?.statusCode == 404 || e.response?.statusCode == 403) {
-          response = await _dioClient.dio.delete('/api/v1/users/me');
+        // Fallback for environments with different routing or HTTP method support
+        if (e.response?.statusCode == 404 || e.response?.statusCode == 405) {
+          try {
+            response = await _dioClient.dio.delete(
+              ApiConfig.deleteUserAccount(userId),
+            );
+          } on DioException catch (e2) {
+            if (e2.response?.statusCode == 404 ||
+                e2.response?.statusCode == 403 ||
+                e2.response?.statusCode == 405) {
+              try {
+                response = await _dioClient.dio.post(
+                  ApiConfig.deleteUserAccountMePost,
+                );
+              } on DioException catch (_) {
+                response = await _dioClient.dio.delete(
+                  ApiConfig.deleteUserAccountMe,
+                );
+              }
+            } else {
+              rethrow;
+            }
+          }
         } else {
           rethrow;
         }
@@ -763,7 +795,10 @@ class UserRepository {
       if (response.statusCode == 200 || response.statusCode == 204) {
         final data = response.data;
         if (data is Map && data['success'] == false) {
-          return false;
+          final errMsg = data['message']?.toString() ??
+              data['error']?.toString() ??
+              'Failed to delete account';
+          throw errMsg;
         }
         return true;
       }
@@ -788,7 +823,9 @@ class UserRepository {
     int? workProfileId,
   }) async {
     try {
-      final queryParams = <String, dynamic>{};
+      final queryParams = <String, dynamic>{
+        'filename': filename,
+      };
       if (workProfileId != null && workProfileId > 0) {
         queryParams['work_profile_id'] = workProfileId.toString();
       }
@@ -798,11 +835,26 @@ class UserRepository {
         payload['work_profile_id'] = workProfileId;
       }
 
-      final response = await _dioClient.dio.delete(
-        ApiConfig.galleryImages(userId),
-        data: payload,
-        queryParameters: queryParams,
-      );
+      Response response;
+      try {
+        response = await _dioClient.dio.delete(
+          ApiConfig.galleryImages(userId),
+          data: payload,
+          queryParameters: queryParams,
+        );
+      } on DioException catch (delErr) {
+        final statusCode = delErr.response?.statusCode;
+        if (statusCode == 403 || statusCode == 404 || statusCode == 405) {
+          response = await _dioClient.dio.post(
+            ApiConfig.deleteGalleryImage(userId),
+            data: payload,
+            queryParameters: queryParams,
+          );
+        } else {
+          rethrow;
+        }
+      }
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data;
       }
@@ -812,10 +864,35 @@ class UserRepository {
     }
   }
 
-  /// Updates YouTube links
+  /// Fetches video gallery links and rich metadata
+  Future<Map<String, dynamic>?> getVideoGallery(
+    String userId, {
+    int? workProfileId,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (workProfileId != null && workProfileId > 0) {
+        queryParams['work_profile_id'] = workProfileId.toString();
+      }
+      final response = await _dioClient.dio.get(
+        ApiConfig.galleryYoutubeLinks(userId),
+        queryParameters: queryParams,
+        options: Options(headers: {'x-background-sync': 'true'}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Updates video gallery links & metadata (supports Option A 'links' and Option B 'videos')
   Future<Map<String, dynamic>?> updateYoutubeLinks(
     String userId,
     List<String> links, {
+    List<Map<String, dynamic>>? videos,
     int? workProfileId,
   }) async {
     try {
@@ -824,7 +901,10 @@ class UserRepository {
         queryParams['work_profile_id'] = workProfileId.toString();
       }
 
-      final payload = <String, dynamic>{'links': links};
+      final payload = <String, dynamic>{
+        'links': links,
+        if (videos != null && videos.isNotEmpty) 'videos': videos,
+      };
       if (workProfileId != null && workProfileId > 0) {
         payload['work_profile_id'] = workProfileId;
       }
@@ -839,7 +919,7 @@ class UserRepository {
       }
       return null;
     } on DioException catch (e) {
-      throw DioClient.getErrorMessage(e, 'Failed to update YouTube links');
+      throw DioClient.getErrorMessage(e, 'Failed to update video links');
     }
   }
 
@@ -889,10 +969,23 @@ class UserRepository {
     Map<String, dynamic> payload,
   ) async {
     try {
-      final response = await _dioClient.dio.put(
-        ApiConfig.primaryCard(userId, cardUserId),
-        data: payload,
-      );
+      Response response;
+      try {
+        response = await _dioClient.dio.put(
+          ApiConfig.primaryCard(userId, cardUserId),
+          data: payload,
+        );
+      } on DioException catch (putErr) {
+        final statusCode = putErr.response?.statusCode;
+        if (statusCode == 403 || statusCode == 405) {
+          response = await _dioClient.dio.post(
+            ApiConfig.primaryCard(userId, cardUserId),
+            data: payload,
+          );
+        } else {
+          rethrow;
+        }
+      }
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data;
       }
@@ -926,12 +1019,47 @@ class UserRepository {
   /// Sends OTP for updating personal details
   Future<Map<String, dynamic>?> sendProfileOtp(
     String userId,
-    String phone,
-  ) async {
+    String phone, {
+    String channel = 'phone',
+    String countryCode = '+91',
+    String? whatsappNumber,
+  }) async {
     try {
+      final formattedPhone = InternationalPhoneHelper.formatForBackend(
+        phone: phone,
+        countryCode: countryCode,
+      );
+      final e164 = InternationalPhoneHelper.toE164(
+        phone: phone,
+        countryCode: countryCode,
+      );
+
+      final isWhatsApp = channel.toLowerCase() == 'whatsapp';
+      final deliveryChannel = isWhatsApp ? 'whatsapp' : 'phone';
+
+      final Map<String, dynamic> data = {
+        'phone': formattedPhone,
+        'country_code': countryCode,
+        'full_phone': e164,
+        'channel': deliveryChannel,
+        'otp_channel': deliveryChannel,
+        'delivery_method': deliveryChannel,
+      };
+
+      if (isWhatsApp) {
+        if (whatsappNumber != null && whatsappNumber.trim().isNotEmpty) {
+          data['whatsapp_number'] = InternationalPhoneHelper.formatForBackend(
+            phone: whatsappNumber,
+            countryCode: countryCode,
+          );
+        } else {
+          data['whatsapp_number'] = formattedPhone;
+        }
+      }
+
       final response = await _dioClient.dio.post(
         ApiConfig.sendProfileOtp(userId),
-        data: {'phone': phone},
+        data: data,
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return response.data;

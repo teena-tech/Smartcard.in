@@ -212,11 +212,11 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
         context: context,
         builder: (context) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Row(
+          title: const Row(
             children: [
               Icon(Icons.lock_outline, color: AppColors.primaryRed),
-              const SizedBox(width: 8),
-              const Text('Premium Theme'),
+              SizedBox(width: 8),
+              Text('Premium Theme'),
             ],
           ),
           content: const Text('This theme is locked. Please upgrade to a premium plan to customize with this theme.'),
@@ -396,7 +396,7 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
       return Image.asset(
         imagePath,
         fit: fit,
-        errorBuilder: (_, __, ___) => Image.asset('assets/images/smartlogo.png', fit: fit),
+        errorBuilder: (_, _, _) => Image.asset('assets/images/smartlogo.png', fit: fit),
       );
     }
     return CachedNetworkImage(

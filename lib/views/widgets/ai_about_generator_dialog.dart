@@ -98,47 +98,6 @@ Guidelines:
     }
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required Color textColor,
-    required Color borderColor,
-    int maxLines = 1,
-    bool isRequired = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextFormField(
-        controller: controller,
-        maxLines: maxLines,
-        style: GoogleFonts.inter(color: textColor, fontSize: 14),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          labelStyle: GoogleFonts.inter(color: textColor.withValues(alpha: 0.15), fontSize: 13),
-          hintStyle: GoogleFonts.inter(color: textColor.withValues(alpha: 0.15), fontSize: 13),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: borderColor),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: borderColor),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primaryRed, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        ),
-        validator: isRequired
-            ? (value) => value == null || value.trim().isEmpty ? 'This field is required' : null
-            : null,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = context.watch<ThemeViewModel>().colors;

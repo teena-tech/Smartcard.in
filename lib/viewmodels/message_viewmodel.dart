@@ -104,7 +104,16 @@ class MessageViewModel extends ChangeNotifier {
         _error = null;
         notifyListeners();
       }
-      _messages = _sort(await _repository.getDashboardMessages());
+      final fetched = await _repository.getDashboardMessages();
+      for (final m in fetched) {
+        final idStr = m['id']?.toString() ?? '';
+        if (_locallyReadSet.contains(idStr)) {
+          final action = m['user_action'] is Map ? Map<String, dynamic>.from(m['user_action']) : <String, dynamic>{};
+          action['read_at'] ??= DateTime.now().toIso8601String();
+          m['user_action'] = action;
+        }
+      }
+      _messages = _sort(fetched);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -117,7 +126,7 @@ class MessageViewModel extends ChangeNotifier {
 
   /// Start background polling every [intervalSeconds] seconds.
   /// Safe to call multiple times – cancels previous timer first.
-  void startPolling({int intervalSeconds = 8}) {
+  void startPolling({int intervalSeconds = 60}) {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(Duration(seconds: intervalSeconds), (_) async {
       try {
@@ -156,15 +165,18 @@ class MessageViewModel extends ChangeNotifier {
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
+  Set<String>? _locallyReadMessageIds;
+  Set<String> get _locallyReadSet => _locallyReadMessageIds ??= <String>{};
+
   Future<bool> markAsRead(String id) async {
+    _locallyReadSet.add(id);
+    _updateLocalAction(id, {'read_at': DateTime.now().toIso8601String()}, resort: true);
     try {
-      _updateLocalAction(id, {'read_at': DateTime.now().toIso8601String()}, resort: true);
       await _repository.updateDashboardMessageAction(id, 'mark_read');
-      return true;
     } catch (e) {
-      await loadMessages(silent: true);
-      rethrow;
+      debugPrint('⚠️ Gracefully handled backend message action error: $e');
     }
+    return true;
   }
 
   Future<void> likeMessage(String id) async {

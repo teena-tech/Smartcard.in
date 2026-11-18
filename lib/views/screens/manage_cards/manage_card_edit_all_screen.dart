@@ -2,25 +2,18 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../widgets/delete_confirm_dialog.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
-import '../../widgets/image_cropper_widget.dart';
 import '../../widgets/rich_text_editor_widget.dart';
-import '../../widgets/premium_card_widget.dart';
 
 import '../../../viewmodels/theme_viewmodel.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
 import '../../../viewmodels/card_viewmodel.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/upload_url_resolver.dart';
-import '../../../models/card_model.dart';
-import '../../widgets/circular_profile_avatar.dart';
-import '../../widgets/common_drawer.dart';
 import '../../widgets/master_app_bar.dart';
+import '../../widgets/manage_cards/widgets/manage_cards_video_widget.dart';
 import '../home_screen.dart';
 
 class ManageCardEditAllScreen extends StatefulWidget {
@@ -33,7 +26,6 @@ class ManageCardEditAllScreen extends StatefulWidget {
 }
 
 class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
-  final ImagePicker _picker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
 
   // Input Controllers
@@ -335,159 +327,6 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
     });
   }
 
-  Future<String?> _cropImage(String filePath, bool isProfile) async {
-    try {
-      CroppedFile? croppedFile;
-      if (isProfile) {
-        croppedFile = await ImageCropperHelper.cropProfileImage(
-          filePath,
-          context: context,
-        );
-      } else {
-        croppedFile = await ImageCropperHelper.cropCompanyLogo(
-          filePath,
-          context: context,
-        );
-      }
-      return croppedFile?.path;
-    } catch (_) {
-      return filePath;
-    }
-  }
-
-  void _pickAndUploadImage(bool isProfile) {
-    _showImageSourceSheet(isProfile);
-  }
-
-  Future<XFile?> _pickImageFromSource(ImageSource source) async {
-    if (kIsWeb && source == ImageSource.camera) {
-      source = ImageSource.gallery;
-    }
-
-    try {
-      return await _picker.pickImage(
-        source: source,
-        imageQuality: 75,
-        maxWidth: 1600,
-        maxHeight: 1600,
-      );
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _handlePickAndUpload(bool isProfile, ImageSource source) async {
-    final viewModel = context.read<CardViewModel>();
-    final image = await _pickImageFromSource(source);
-    if (image == null || !context.mounted) return;
-
-    final croppedPath = await _cropImage(image.path, isProfile);
-    if (croppedPath == null || !context.mounted) return;
-
-    // Pop the source sheet first so it doesn't stay behind the confirm sheet
-    if (context.mounted) {
-      Navigator.pop(context);
-    }
-
-    // ── Show confirmation preview with OK button ──
-    final bool? confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => _ImageConfirmSheet(
-        imagePath: croppedPath,
-        isProfile: isProfile,
-        userId: viewModel.userId,
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    // Show heartbeat success overlay
-    showGeneralDialog(
-      context: context,
-      barrierDismissible: false,
-      barrierColor: Colors.black54,
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (_, _, _) => _HeartbeatSuccessOverlay(
-        message: isProfile ? 'Profile updated successfully!' : 'Logo updated successfully!',
-      ),
-    );
-  }
-
-  void _showImageSourceSheet(bool isProfile) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Text(
-                isProfile ? 'Upload Profile Photo' : 'Upload Company Logo',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryRed.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.camera_alt_outlined, color: AppColors.primaryRed),
-                ),
-                title: Text(
-                  'Take Photo',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _handlePickAndUpload(isProfile, ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryRed.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.photo_library_outlined, color: AppColors.primaryRed),
-                ),
-                title: Text(
-                  'Choose from Gallery',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _handlePickAndUpload(isProfile, ImageSource.gallery);
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   void _saveAndOpenLivePreview() async {
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -529,6 +368,27 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
     details.companyDistrict = _controllers['companyDistrict'].text.trim();
     details.companyOfficeSelected =
         details.companyPincode.isNotEmpty && details.companyCityId.isNotEmpty;
+
+    // Synchronize address fields if one is populated and the other is empty
+    if (details.companyAddress.isEmpty && details.address.isNotEmpty) {
+      details.companyAddress = details.address;
+      details.companyPincode = details.pincode;
+      details.companyCityId = details.cityId;
+      details.companyStateId = details.stateId;
+      details.companyCity = details.city;
+      details.companyState = details.state;
+      details.companyDistrict = details.district;
+      details.companyOfficeSelected = details.officeSelected;
+    } else if (details.address.isEmpty && details.companyAddress.isNotEmpty) {
+      details.address = details.companyAddress;
+      details.pincode = details.companyPincode;
+      details.cityId = details.companyCityId;
+      details.stateId = details.companyStateId;
+      details.city = details.companyCity;
+      details.state = details.companyState;
+      details.district = details.companyDistrict;
+      details.officeSelected = details.companyOfficeSelected;
+    }
 
     // Save Company Contact
     details.companyEmails =
@@ -649,6 +509,27 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
     details.companyOfficeSelected =
         details.companyPincode.isNotEmpty && details.companyCityId.isNotEmpty;
 
+    // Synchronize address fields if one is populated and the other is empty
+    if (details.companyAddress.isEmpty && details.address.isNotEmpty) {
+      details.companyAddress = details.address;
+      details.companyPincode = details.pincode;
+      details.companyCityId = details.cityId;
+      details.companyStateId = details.stateId;
+      details.companyCity = details.city;
+      details.companyState = details.state;
+      details.companyDistrict = details.district;
+      details.companyOfficeSelected = details.officeSelected;
+    } else if (details.address.isEmpty && details.companyAddress.isNotEmpty) {
+      details.address = details.companyAddress;
+      details.pincode = details.companyPincode;
+      details.cityId = details.companyCityId;
+      details.stateId = details.companyStateId;
+      details.city = details.companyCity;
+      details.state = details.companyState;
+      details.district = details.companyDistrict;
+      details.officeSelected = details.companyOfficeSelected;
+    }
+
     // Save Company Contact
     details.companyEmails =
         (_controllers['emails'] as List<TextEditingController>)
@@ -707,127 +588,6 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
     }
   }
 
-  void _showLivePreviewModal(BuildContext context, CardModel card) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final linkToDisplay = (card.qrCode != null && card.qrCode!.isNotEmpty) 
-            ? card.qrCode! 
-            : 'https://www.google.com';
-
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.red, width: 2),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Live Card Preview',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.grey),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  PremiumCardWidget(card: card),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: QrImageView(
-                      data: linkToDisplay,
-                      version: QrVersions.auto,
-                      size: 140,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Scan or visit card link:',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  InkWell(
-                    onTap: () async {
-                      try {
-                        final uri = Uri.parse(linkToDisplay);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        }
-                      } catch (_) {}
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        linkToDisplay,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: Colors.blue.shade700,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'CLOSE',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_controllers.isEmpty) {
@@ -838,15 +598,6 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
     final colors = themeViewModel.colors;
     final viewModel = context.watch<CardViewModel>();
 
-    final profileUrl = UploadUrlResolver.resolve(
-      viewModel.selectedCardDetails?.profileImageName,
-      type: 'profile',
-    );
-    final logoUrl = UploadUrlResolver.resolve(
-      viewModel.selectedCardDetails?.companyLogoName,
-      type: 'logo',
-    );
-
     final emails = _controllers['emails'] as List<TextEditingController>;
     final phones = _controllers['phones'] as List<TextEditingController>;
     final whatsapps = _controllers['whatsapps'] as List<TextEditingController>;
@@ -854,7 +605,6 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
 
     return Scaffold(
       backgroundColor: widget.isTab ? Colors.transparent : colors.backgroundStart,
-      drawer: widget.isTab ? null : const CommonDrawer(currentRoute: 'Manage Card'),
       appBar: widget.isTab
           ? null
           : MasterAppBar(
@@ -1299,14 +1049,29 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
 
             const SizedBox(height: 24),
 
-            _buildSectionTitle('YouTube Video', colors),
+            _buildSectionTitle('Videos', colors),
             _buildTextFormField(
               _controllers['youtube'],
-              'Video Link',
+              'Video Link (YouTube, Instagram, Facebook, TikTok, etc.)',
               colors,
               keyboardType: TextInputType.url,
+              onChanged: (_) => setState(() {}),
             ),
-            const SizedBox(height: 24),
+            Builder(
+              builder: (context) {
+                final text = _controllers['youtube']?.text.trim() ?? '';
+                if (text.isEmpty) return const SizedBox.shrink();
+                final detected = VideoPlatformHelper.detect(text);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: VideoPlatformBadge(info: detected),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
 
               const SizedBox(height: 48),
             ],

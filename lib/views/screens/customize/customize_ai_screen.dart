@@ -14,7 +14,7 @@ import '../../../viewmodels/auth_viewmodel.dart';
 import '../../../viewmodels/card_viewmodel.dart';
 import '../../../viewmodels/customize_viewmodel.dart';
 import '../../../viewmodels/theme_viewmodel.dart';
-import '../../widgets/common_drawer.dart';
+import '../../widgets/profile_menu_bottom_sheet.dart';
 import '../../widgets/customize_flow_widgets.dart';
 import '../../widgets/global_bottom_nav.dart';
 import '../../../core/utils/customize_utils.dart';
@@ -55,10 +55,14 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   bool _textColorEnabled = true;
   bool _overlayEnabled = true;
   bool _loading = true;
+  bool get isLoading => _loading;
   bool _saving = false;
   bool _showUploadBanner = true;
+  bool get showUploadBanner => _showUploadBanner;
   String _message = '';
+  String get message => _message;
   String _error = '';
+  String get error => _error;
   List<String> _logoPalette = [];
   String _selectedFilterColor = '';
   String _activeSheet = '';
@@ -224,17 +228,17 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
 
   bool get _canNavigateImages => _backgroundImages.length > 1;
   int get _totalImageCount => _backgroundImages.length;
-  int get _currentImagePosition =>
+  int get currentImagePosition =>
       _totalImageCount == 0 ? 0 : _currentImageIndex + 1;
   int get _prevIndex => _totalImageCount == 0
       ? 0
       : (_currentImageIndex - 1 + _totalImageCount) % _totalImageCount;
   int get _nextIndex =>
       _totalImageCount == 0 ? 0 : (_currentImageIndex + 1) % _totalImageCount;
-  String get _prevImageUrl => _totalImageCount == 0
+  String get prevImageUrl => _totalImageCount == 0
       ? ''
       : resolveBackgroundImageUrl(_backgroundImages[_prevIndex]);
-  String get _nextImageUrl => _totalImageCount == 0
+  String get nextImageUrl => _totalImageCount == 0
       ? ''
       : resolveBackgroundImageUrl(_backgroundImages[_nextIndex]);
 
@@ -437,7 +441,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     );
   }
 
-  void _toggleBgImage() {
+  void toggleBgImage() {
     setState(() {
       _backgroundImageEnabled = !_backgroundImageEnabled;
       if (_backgroundImageEnabled && _backgroundImages.isNotEmpty) {
@@ -449,13 +453,13 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     });
   }
 
-  void _toggleBgColor() {
+  void toggleBgColor() {
     setState(() {
       _backgroundColorEnabled = !_backgroundColorEnabled;
     });
   }
 
-  void _toggleOverlay() {
+  void toggleOverlay() {
     setState(() {
       if (_overlayEnabled) {
         _overlayEnabled = false;
@@ -483,7 +487,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     }
   }
 
-  Future<void> _pickBackgroundImage() async {
+  Future<void> pickBackgroundImage() async {
     final file = await _showImageSourceSheet(
       title: 'Upload Background Image',
       sourceLabel: 'Background Image',
@@ -579,7 +583,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     );
   }
 
-  void _selectImageAt(int index) {
+  void selectImageAt(int index) {
     if (_backgroundImages.isEmpty) return;
     final normalizedIndex =
         (index + _backgroundImages.length) % _backgroundImages.length;
@@ -1455,14 +1459,10 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   Widget build(BuildContext context) {
     final colors = context.watch<ThemeViewModel>().colors;
     final cardVm = context.watch<CardViewModel>();
-    final currentCard = cardVm.currentCard;
     final details = cardVm.selectedCardDetails;
     
     final selectedImageUrl = _selectedImageUrl;
     
-    final currentImageCountLabel = _uploadBytes != null
-        ? 'Upload Preview'
-        : '${_currentImageIndex + 1}/${_backgroundImages.length}';
     final showSolidTopStrip =
         _backgroundImageEnabled &&
         _backgroundColorEnabled &&
@@ -1475,12 +1475,11 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const CommonDrawer(),
       backgroundColor: colors.backgroundStart,
       appBar: SmartCardsFlowAppBar(
-        onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+        onMenuTap: () {},
         initials: _previewInitials,
-        onProfileTap: () {},
+        onProfileTap: () => ProfileMenuBottomSheet.show(context),
       ),
       bottomNavigationBar: const GlobalBottomNav(),
             body: SafeArea(
@@ -1524,12 +1523,11 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              if (_backgroundImageEnabled &&
-                                  (_uploadBytes != null ||
-                                      selectedImageUrl.isNotEmpty) &&
-                                  _overlayEnabled)
+                              if (_overlayEnabled)
                                 Container(
-                                  color: _overlayColor.withValues(alpha: 0.15),
+                                  color: _overlayColor.withValues(
+                                    alpha: _opacity.clamp(0.0, 1.0),
+                                  ),
                                 ),
                               if (!hideShadeOverlay)
                                 Container(

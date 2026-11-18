@@ -634,7 +634,7 @@ class _ProcessingScanLineState extends State<ProcessingScanLine>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
-      builder: (_, __) {
+      builder: (_, _) {
         return FractionallySizedBox(
           heightFactor: 1,
           child: Align(

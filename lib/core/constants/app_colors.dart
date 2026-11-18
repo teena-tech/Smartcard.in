@@ -8,6 +8,38 @@ class AppColors {
   static const Color primaryRedHover = Color(0xFF990000);
   static const Color secondaryRed = Color(0xFF990000);
   static const Color redLight = Color(0xFFFFF0F0);
+  static const Color primary = Color(0xFFE50000);
+  static const Color primaryLight = Color(0xFFFF5252);
+  static const Color primaryDark = Color(0xFFB71C1C);
+
+  // Action Brand Colors
+  static const Color callGreen = Color(0xFF10B981); // Emerald 500
+  static const Color smsBlue = Color(0xFF3B82F6); // Blue 500
+  static const Color whatsappGreen = Color(0xFF25D366); // WhatsApp Brand
+  static const Color emailOrange = Color(0xFFF97316); // Orange 500
+  static const Color favoriteGold = Color(0xFFF59E0B); // Amber 500
+  static const Color deleteRed = Color(0xFFEF4444); // Red 500
+  static const Color success = Color(0xFF10B981); // Emerald 500
+
+  // Gradients
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFFE50000), Color(0xFFFF5252)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Dynamic Avatar Gradients
+  static const List<List<Color>> avatarGradients = [
+    [Color(0xFFE50000), Color(0xFFFF5252)], // Red
+    [Color(0xFF6366F1), Color(0xFF8B5CF6)], // Indigo to Purple
+    [Color(0xFFEC4899), Color(0xFFF43F5E)], // Pink to Rose
+    [Color(0xFF3B82F6), Color(0xFF06B6D4)], // Blue to Cyan
+    [Color(0xFF10B981), Color(0xFF059669)], // Emerald
+    [Color(0xFFF59E0B), Color(0xFFD97706)], // Amber
+    [Color(0xFF8B5CF6), Color(0xFFD946EF)], // Purple to Fuchsia
+    [Color(0xFF14B8A6), Color(0xFF0D9488)], // Teal
+    [Color(0xFFF97316), Color(0xFFEA580C)], // Orange
+  ];
   
   // Theme-specific colors
   final Color backgroundStart;
@@ -23,6 +55,7 @@ class AppColors {
   final Color danger;
 
   Color get accent => primaryRed;
+  bool get isDark => text.computeLuminance() > 0.5;
 
   AppColors({
     required this.backgroundStart,

@@ -17,11 +17,6 @@ class AppLoadingService extends ChangeNotifier {
 
   AppLoadingService._internal();
 
-  // ── Minimum display duration ──────────────────────────────────────────────
-  /// Overlay stays visible for at least this long so users can actually see it
-  /// even on a very fast connection.
-  static const Duration _minDisplayDuration = Duration(milliseconds: 3000);
-
   DateTime? _loadingStartedAt;
   Timer? _hideTimer;
 
@@ -44,7 +39,6 @@ class AppLoadingService extends ChangeNotifier {
   }
 
   /// Decrement the active task counter (hides overlay when it reaches 0).
-  /// Respects the minimum display duration — waits if needed.
   void endTask() {
     if (_taskCount > 0) _taskCount--;
     if (_taskCount == 0) {
@@ -53,18 +47,7 @@ class AppLoadingService extends ChangeNotifier {
   }
 
   void _scheduleHide() {
-    final startedAt = _loadingStartedAt;
-    if (startedAt == null) {
-      _doHide();
-      return;
-    }
-    final elapsed = DateTime.now().difference(startedAt);
-    final remaining = _minDisplayDuration - elapsed;
-    if (remaining <= Duration.zero) {
-      _doHide();
-    } else {
-      _hideTimer = Timer(remaining, _doHide);
-    }
+    _doHide();
   }
 
   void _doHide() {

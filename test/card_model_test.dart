@@ -97,5 +97,26 @@ void main() {
       expect(updatedSecondary.templateKey, equals('template_04'));
       expect(primaryCard.templateKey, equals('template_01')); // Primary card remains unaffected
     });
+
+    test('CardModel correctly parses isOrganization flag from JSON and copyWith', () {
+      final orgJson = {
+        'id': 202,
+        'card_id': 202,
+        'work_profile_id': 202,
+        'account_user_id': 50,
+        'name': 'Corporate Exec',
+        'company_name': 'Tech Corp Ltd',
+        'is_organization': 1,
+      };
+
+      final card = CardModel.fromJson(orgJson, 0, 50, 'Corporate Exec', '', null);
+      expect(card.isOrganization, isTrue);
+      expect(card.isCorporate, isTrue);
+
+      final personalCard = card.copyWith(isOrganization: false);
+      expect(personalCard.isOrganization, isFalse);
+      expect(personalCard.isCorporate, isFalse);
+    });
   });
 }
+

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../models/card_model.dart';
 import '../../core/utils/upload_url_resolver.dart';
 import '../../core/constants/app_colors.dart';
+import '../screens/contact_detail_screen.dart';
 
 
 class PulsingBadge extends StatefulWidget {
@@ -73,12 +74,14 @@ class PremiumCardWidget extends StatelessWidget {
   final CardModel card;
   final EdgeInsetsGeometry? margin;
   final Widget? bottomActions;
+  final VoidCallback? onTap;
 
   const PremiumCardWidget({
     super.key,
     required this.card,
     this.margin,
     this.bottomActions,
+    this.onTap,
   });
 
   Color? _parseHexColor(String? hexString) {
@@ -173,10 +176,13 @@ class PremiumCardWidget extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 680),
       child: AspectRatio(
         aspectRatio: hasActions ? 1.45 : 1.62,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ColorFiltered(
+        child: GestureDetector(
+          onTap: onTap,
+          behavior: HitTestBehavior.opaque,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ColorFiltered(
                 colorFilter: card.isSuspended 
                     ? const ColorFilter.matrix(<double>[
                         0.2126, 0.7152, 0.0722, 0, 0,
@@ -230,68 +236,67 @@ class PremiumCardWidget extends StatelessWidget {
                       final cardHeight = constraints.maxHeight;
                       final verticalPadding = cardHeight * 0.04;
                       final bottomPadding = hasActions ? cardHeight * 0.22 : verticalPadding;
-                      final logoSize = cardHeight * 0.44;
+                      final logoSize = (cardHeight * 0.38).clamp(36.0, 75.0);
+
+                      // ── Smart Card Logo / Image Resolution ──
+                      // Profile image is strictly blocked from card carousel per user request
+                      String companyLogoUrl = '';
+                      if (card.companyLogo != null &&
+                          card.companyLogo!.trim().isNotEmpty &&
+                          card.companyLogo!.trim().toLowerCase() != 'null') {
+                        companyLogoUrl = card.companyLogo!.trim();
+                      }
 
                       return Padding(
-                        padding: EdgeInsets.fromLTRB(20, verticalPadding, 20, bottomPadding),
+                        padding: EdgeInsets.fromLTRB(16, verticalPadding, 16, bottomPadding),
                         child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // Center-aligned Logo (🏢)
-                              if (card.companyLogo != null && card.companyLogo!.isNotEmpty) ...[
-                                Image.network(
-                                  UploadUrlResolver.resolve(card.companyLogo!, type: 'logo'),
-                                  height: logoSize,
-                                  width: logoSize,
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) => Icon(
-                                    Icons.business_rounded, 
-                                    color: customTextColor, 
-                                    size: logoSize * 0.9,
+                              SmartCardAvatarImage(
+                                companyLogoUrl: companyLogoUrl,
+                                logoSize: logoSize,
+                                customTextColor: customTextColor,
+                                displayName: displayName,
+                                onTap: onTap,
+                              ),
+                              SizedBox(height: cardHeight * 0.02),
+
+                              // Display Name (Responsive FittedBox scaling)
+                              if (displayName.isNotEmpty)
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    displayName,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      fontSize: (cardHeight * 0.075).clamp(13.0, 22.0),
+                                      fontWeight: FontWeight.bold,
+                                      color: customTextColor,
+                                      letterSpacing: 0.3,
+                                    ),
+                                    maxLines: 1,
                                   ),
                                 ),
-                              ] else ...[
-                                Icon(
-                                  Icons.business_rounded, 
-                                  color: customTextColor, 
-                                  size: logoSize * 0.9,
+
+                              if (card.designation?.isNotEmpty == true) ...[
+                                SizedBox(height: cardHeight * 0.008),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    card.designation!,
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.inter(
+                                      fontSize: (cardHeight * 0.055).clamp(11.0, 16.0),
+                                      fontWeight: FontWeight.w600,
+                                      color: customTextColor.withValues(alpha: 0.85),
+                                    ),
+                                    maxLines: 1,
+                                  ),
                                 ),
                               ],
-                               SizedBox(height: cardHeight * 0.015),
-
-                               // Display Name (Company Name or Personal Name fallback)
-                               if (displayName.isNotEmpty)
-                                 Text(
-                                   displayName,
-                                   textAlign: TextAlign.center,
-                                   style: GoogleFonts.inter(
-                                     fontSize: cardHeight * 0.080,
-                                     fontWeight: FontWeight.bold,
-                                     color: customTextColor,
-                                     letterSpacing: 0.3,
-                                   ),
-                                   maxLines: 1,
-                                   overflow: TextOverflow.ellipsis,
-                                 ),
-
-                               SizedBox(height: cardHeight * 0.008),
-
-                               // Designation
-                               if (card.designation?.isNotEmpty == true)
-                                 Text(
-                                   card.designation!,
-                                   textAlign: TextAlign.center,
-                                   style: GoogleFonts.inter(
-                                     fontSize: cardHeight * 0.060,
-                                     fontWeight: FontWeight.w500,
-                                     color: customTextColor.withValues(alpha: 0.75),
-                                   ),
-                                   maxLines: 1,
-                                   overflow: TextOverflow.ellipsis,
-                                 ),
                             ],
                           ),
                         ),
@@ -353,9 +358,78 @@ class PremiumCardWidget extends StatelessWidget {
                   child: bottomActions,
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
+class SmartCardAvatarImage extends StatelessWidget {
+  final String companyLogoUrl;
+  final double logoSize;
+  final Color customTextColor;
+  final String displayName;
+  final VoidCallback? onTap;
+
+  const SmartCardAvatarImage({
+    super.key,
+    required this.companyLogoUrl,
+    required this.logoSize,
+    required this.customTextColor,
+    required this.displayName,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    String? fullImageSrc;
+    if (companyLogoUrl.isNotEmpty) {
+      fullImageSrc = UploadUrlResolver.resolve(companyLogoUrl, type: 'logo');
+    }
+
+    Widget imageWidget;
+    if (fullImageSrc != null && fullImageSrc.isNotEmpty) {
+      imageWidget = ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: logoSize,
+          maxWidth: MediaQuery.of(context).size.width * 0.70,
+        ),
+        child: Image.network(
+          fullImageSrc,
+          height: logoSize,
+          fit: BoxFit.fitHeight,
+          errorBuilder: (context, error, stackTrace) => Icon(
+            Icons.business_rounded,
+            color: customTextColor,
+            size: logoSize * 0.9,
+          ),
+        ),
+      );
+    } else {
+      imageWidget = Icon(
+        Icons.business_rounded,
+        color: customTextColor,
+        size: logoSize * 0.9,
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (onTap != null) {
+          onTap!();
+        } else if (fullImageSrc != null && fullImageSrc.isNotEmpty) {
+          ContactDetailScreen.showFullImageDialog(
+            context,
+            fullImageSrc,
+            displayName,
+            displayName.isNotEmpty ? displayName[0] : 'C',
+          );
+        }
+      },
+      child: imageWidget,
+    );
+  }
+}
+

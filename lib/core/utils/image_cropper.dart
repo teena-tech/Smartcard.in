@@ -142,7 +142,7 @@ class ImageCropper {
     final List<int> compressedBytes = img.encodeJpg(resizedImage, quality: 88);
 
     // Save to local cache directory
-    if (kIsWeb) return imageFile.path;
+    if (kIsWeb) return imagePath;
     Directory tempDir;
     try {
       tempDir = await getTemporaryDirectory();
@@ -150,7 +150,7 @@ class ImageCropper {
       try {
         tempDir = Directory.systemTemp;
       } catch (_) {
-        return imageFile.path;
+        return imagePath;
       }
     }
     final String croppedPath =

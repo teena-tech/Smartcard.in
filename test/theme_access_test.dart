@@ -3,7 +3,7 @@ import 'package:smartcard_flutter/models/app_theme_item.dart';
 
 void main() {
   group('Theme Permission & Premium Access Unit Tests', () {
-    final freeTheme = AppThemeItem(
+    final freeTheme = const AppThemeItem(
       id: 'theme_free',
       name: 'Free Classic Theme',
       frontImage: 'assets/images/smartlogo.png',
@@ -12,7 +12,7 @@ void main() {
       isFree: true,
     );
 
-    final premiumTheme = AppThemeItem(
+    final premiumTheme = const AppThemeItem(
       id: 'theme_premium',
       name: 'Premium Dark Theme',
       frontImage: 'assets/images/smartlogo.png',

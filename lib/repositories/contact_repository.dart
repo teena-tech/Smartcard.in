@@ -5,9 +5,19 @@ import 'base_repository.dart';
 class ContactRepository extends BaseRepository {
   final ScannerApiService _service = ScannerApiService.instance;
 
-  /// Fetches the list of contacts for the current user.
-  Future<List<dynamic>> getContacts({int page = 1, int limit = 50}) async {
-    final Map<String, dynamic> response = await _service.getContacts(page: page, limit: limit);
+  /// Fetches the list of contacts for the current user with high-scale delta sync support.
+  Future<List<dynamic>> getContacts({
+    int page = 1,
+    int limit = 50,
+    String? since,
+    String? source,
+  }) async {
+    final Map<String, dynamic> response = await _service.getContacts(
+      page: page,
+      limit: limit,
+      since: since,
+      source: source,
+    );
     if (response['data'] is List) {
       return response['data'] as List;
     }

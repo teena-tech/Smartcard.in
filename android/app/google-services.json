@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "187136167853",
+    "project_id": "smartcards-aa22c",
+    "storage_bucket": "smartcards-aa22c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:187136167853:android:0a7aa9978392e7a5c69b24",
+        "android_client_info": {
+          "package_name": "com.antz_media_solutions.SmartCards"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATKpS8zDVZQYf5ubjgTNOLC1VvgdIQWDU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,8 @@ import '../../core/constants/app_colors.dart';
 import '../../viewmodels/theme_viewmodel.dart';
 import '../../models/scanned_contact_model.dart';
 import '../screens/contact_detail_screen.dart';
+import '../../core/utils/card_expansion_route.dart';
+import 'genie_hero_route.dart';
 import 'package:provider/provider.dart';
 
 class RecentActivityList extends StatelessWidget {
@@ -80,8 +82,15 @@ class RecentActivityList extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => ContactDetailScreen(contact: activity),
+              CardExpansionPageRoute(
+                page: ContactDetailScreen(
+                  contact: activity,
+                  heroTag: contactHeroTag(
+                    id: activity.id,
+                    phone: activity.phone,
+                    name: activity.name,
+                  ),
+                ),
               ),
             );
           },

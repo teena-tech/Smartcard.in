@@ -25,11 +25,12 @@ class AppTheme {
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: colors.menuBg,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        iconTheme: IconThemeData(color: colors.text),
+        iconTheme: const IconThemeData(color: Colors.white),
         titleTextStyle: GoogleFonts.inter(
-          color: colors.text,
+          color: Colors.white,
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
@@ -45,6 +46,39 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: colors.border),
         ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colors.panel,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryRed, width: 1.2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: AppColors.primaryRed.withValues(alpha: 0.6), width: 1.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primaryRed, width: 2.0),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colors.danger, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: colors.danger, width: 2.0),
+        ),
+        hintStyle: GoogleFonts.inter(color: colors.muted, fontSize: 14),
+        labelStyle: GoogleFonts.inter(color: colors.muted, fontSize: 14),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+        },
       ),
     );
   }

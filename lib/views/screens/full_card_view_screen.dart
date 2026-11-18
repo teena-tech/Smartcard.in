@@ -3,8 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../models/contact_model.dart';
 import '../../../models/scanned_contact_model.dart';
 import '../../../core/services/contact_saver_service.dart';
+import '../../../core/utils/contact_action_helper.dart';
+import '../../../core/utils/intent_launcher.dart';
 import '../../../core/utils/upload_url_resolver.dart';
-import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
 import '../widgets/master_app_bar.dart';
 import '../widgets/rotating_profile_avatar_ring.dart';
@@ -56,10 +57,11 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
       final hasPermission = await ContactSaverService.requestContactsPermission();
       if (hasPermission) {
         final saved = await ContactSaverService.saveToDevice(widget.scannedContact);
-        if (saved && context.mounted) {
+        if (saved != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Contact saved to your phone successfully!'), backgroundColor: Colors.green),
           );
+          Navigator.of(context).pop(true);
         } else if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to save contact. Please try again.'), backgroundColor: Colors.redAccent),
@@ -93,7 +95,6 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
-      drawer: const CommonDrawer(),
       appBar: const MasterAppBar(
         titleText: 'Business Profile',
         style: MasterHeaderStyle.transparent,
@@ -197,7 +198,7 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                           UploadUrlResolver.resolve(widget.contact.companyLogo!.trim(), type: 'logo'),
                           height: 40,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          errorBuilder: (_, _, _) => const SizedBox.shrink(),
                         ),
                       ),
                     ),
@@ -238,10 +239,38 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
 
                   // Contact Details Card
                   _buildSectionHeader('Contact Information'),
-                  _buildDetailRow(Icons.phone_outlined, 'Phone', widget.contact.phone ?? 'Not provided'),
-                  _buildDetailRow(Icons.email_outlined, 'Email', widget.contact.email ?? 'Not provided'),
-                  _buildDetailRow(Icons.language_outlined, 'Website', widget.contact.website ?? 'Not provided'),
-                  _buildDetailRow(Icons.location_on_outlined, 'Office Location', widget.contact.address ?? 'Not provided'),
+                  _buildDetailRow(
+                    Icons.phone_outlined,
+                    'Phone',
+                    widget.contact.phone?.isNotEmpty == true ? widget.contact.phone! : 'Not provided',
+                    onTap: widget.contact.phone?.isNotEmpty == true
+                        ? () => ContactActionHelper.handleCall(context, contact: widget.scannedContact, contactName: widget.contact.name)
+                        : null,
+                  ),
+                  _buildDetailRow(
+                    Icons.email_outlined,
+                    'Email',
+                    widget.contact.email?.isNotEmpty == true ? widget.contact.email! : 'Not provided',
+                    onTap: widget.contact.email?.isNotEmpty == true
+                        ? () => ContactActionHelper.handleEmail(context, contact: widget.scannedContact, contactName: widget.contact.name)
+                        : null,
+                  ),
+                  _buildDetailRow(
+                    Icons.language_outlined,
+                    'Website',
+                    widget.contact.website?.isNotEmpty == true ? widget.contact.website! : 'Not provided',
+                    onTap: widget.contact.website?.isNotEmpty == true
+                        ? () => ContactActionHelper.handleWebsite(context, contact: widget.scannedContact, contactName: widget.contact.name)
+                        : null,
+                  ),
+                  _buildDetailRow(
+                    Icons.location_on_outlined,
+                    'Office Location',
+                    widget.contact.address?.isNotEmpty == true ? widget.contact.address! : 'Not provided',
+                    onTap: widget.contact.address?.isNotEmpty == true
+                        ? () => IntentLauncher.openMap(context, widget.contact.address!)
+                        : null,
+                  ),
                   const SizedBox(height: 24),
 
                   // Social Media section
@@ -279,36 +308,44 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(IconData icon, String label, String value, {VoidCallback? onTap}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.redAccent, size: 20),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.redAccent, size: 20),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      value,
+                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
+              ),
+              if (onTap != null && value != 'Not provided')
+                const Icon(Icons.chevron_right_rounded, color: Colors.white38, size: 20),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

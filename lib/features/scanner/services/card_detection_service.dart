@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../models/card_corners.dart';
 import '../models/detected_card.dart';
@@ -44,7 +42,6 @@ class CardDetectionService {
     final areaRatio = screenArea > 0 ? (cardArea / screenArea) : 0.4;
 
     // Check stability against previous corners
-    bool isFrameStable = false;
     if (_previousCorners != null) {
       final dxTopLeft = (corners.topLeft.dx - _previousCorners!.topLeft.dx).abs();
       final dyTopLeft = (corners.topLeft.dy - _previousCorners!.topLeft.dy).abs();
@@ -53,7 +50,6 @@ class CardDetectionService {
 
       // If movement is under 12 pixels, frame is stable
       if (dxTopLeft < 14 && dyTopLeft < 14 && dxBottomRight < 14 && dyBottomRight < 14) {
-        isFrameStable = true;
         _consecutiveStableFrames++;
       } else {
         _consecutiveStableFrames = (0.5 * _consecutiveStableFrames).toInt();

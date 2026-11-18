@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:smartcard_flutter/core/constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../../core/constants/app_colors.dart';
+import '../../viewmodels/theme_viewmodel.dart';
 
 class InfoCard extends StatelessWidget {
   final String title;
@@ -18,18 +20,19 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeViewModel>().colors;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.15), width: 0.5),
-        boxShadow: const [
+        border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
+            color: colors.isDark ? Colors.black38 : Colors.black12,
             blurRadius: 4,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -42,7 +45,7 @@ class InfoCard extends StatelessWidget {
               Text(
                 title.toUpperCase(),
                 style: GoogleFonts.inter(
-                  color: const Color(0xFF888888),
+                  color: colors.muted,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
@@ -57,7 +60,9 @@ class InfoCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFCF0F0),
+                      color: colors.isDark
+                          ? const Color(0xFFE53935).withValues(alpha: 0.2)
+                          : const Color(0xFFFCF0F0),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(
@@ -87,54 +92,67 @@ class InfoCard extends StatelessWidget {
           ...rows.asMap().entries.map((entry) {
             final idx = entry.key;
             final row = entry.value;
-            return Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: idx == rows.length - 1 ? Colors.transparent : const Color(0xFFEEEEEE),
-                    width: 1,
+            return InkWell(
+              onTap: row.onTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: idx == rows.length - 1
+                          ? Colors.transparent
+                          : (colors.isDark ? Colors.white12 : const Color(0xFFEEEEEE)),
+                      width: 1,
+                    ),
                   ),
                 ),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12.0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFCF0F0),
-                      borderRadius: BorderRadius.circular(10),
+                padding: const EdgeInsets.symmetric(vertical: 12.0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: colors.isDark
+                            ? const Color(0xFFE53935).withValues(alpha: 0.15)
+                            : const Color(0xFFFCF0F0),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(row.icon, color: const Color(0xFFD32F2F), size: 20),
                     ),
-                    child: Icon(row.icon, color: const Color(0xFFD32F2F), size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          row.label,
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            color: const Color(0xFFAAAAAA),
-                            fontWeight: FontWeight.w500,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            row.label,
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              color: colors.muted,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          row.value,
-                          style: GoogleFonts.inter(
-                            fontSize: 13.5,
-                            color: const Color(0xFF1A1A1A),
-                            height: 1.5,
+                          const SizedBox(height: 2),
+                          Text(
+                            row.value,
+                            style: GoogleFonts.inter(
+                              fontSize: 13.5,
+                              color: colors.text,
+                              height: 1.5,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC), size: 18),
-                ],
+                    if (row.trailing != null)
+                      row.trailing!
+                    else
+                      const Icon(Icons.chevron_right, color: Color(0xFFE53935), size: 18),
+                  ],
+                ),
               ),
             );
           }),
@@ -148,5 +166,7 @@ class RowData {
   final IconData icon;
   final String label;
   final String value;
-  const RowData(this.icon, this.label, this.value);
+  final VoidCallback? onTap;
+  final Widget? trailing;
+  const RowData(this.icon, this.label, this.value, {this.onTap, this.trailing});
 }

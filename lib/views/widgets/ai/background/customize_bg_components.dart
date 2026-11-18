@@ -91,7 +91,6 @@ class BgColorField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.watch<ThemeViewModel>().colors;
-    final isDark = colors.backgroundStart.computeLuminance() < 0.45;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [

@@ -45,65 +45,72 @@ class ContactParser {
       }
     }
 
-    // 2. Identify Phones (Mobile, Alternative, Landline, WhatsApp)
-    final phoneRegex = AppValidators.phoneRegex;
-    final List<String> mobileList = [];
-    final List<String> landlineList = [];
-    final List<String> whatsappList = [];
-    final List<String> otherList = [];
+    // 2. Identify Phones (Mobile, Alternative, Landline, WhatsApp, Additional)
+    final phoneRegex = RegExp(r'(\+?\d[\d\-\s\(\)\.]{6,16}\d)');
+    final List<String> allDetectedPhones = [];
+    final Set<String> seenPhoneDigits = {};
+    final List<String> additionalPhones = [];
 
-    for (final line in uniqueLines) {
-      // Avoid parsing emails or websites as phone numbers
-      if (line.contains('@') || line.toLowerCase().contains('www.') || line.toLowerCase().contains('http')) {
-        continue;
-      }
-      final match = phoneRegex.firstMatch(line);
-      if (match != null) {
-        final lowerLine = line.toLowerCase();
-        // Handle slash or comma separated multiple numbers in single line (e.g. +91 90728 63555 / 90720 20000)
-        final subNumbers = line.split(RegExp(r'[/,]')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-        for (final subNum in subNumbers) {
-          if (!phoneRegex.hasMatch(subNum)) continue;
-          String cleanPhone = subNum.replaceAll(RegExp(r'^(mob(ile)?|tel(ephone)?|ph(one)?|cell|p|m|t|alt|f|fax|wa|whatsapp|landline|work)\s*[:\-\.]?\s*', caseSensitive: false), '').trim();
-          cleanPhone = cleanPhone.replaceAll(RegExp(r'[^\d+\-\s\(\)]'), '').trim();
-
-          if (cleanPhone.isNotEmpty) {
-            if (lowerLine.contains('whatsapp') || lowerLine.contains('wa:') || lowerLine.contains('wa ')) {
-              whatsappList.add(cleanPhone);
-            } else if (lowerLine.contains('landline') || lowerLine.contains('tel:') || lowerLine.contains('land') || (cleanPhone.startsWith('0') && !cleanPhone.startsWith('09') && !cleanPhone.startsWith('08') && !cleanPhone.startsWith('07'))) {
-              landlineList.add(cleanPhone);
-            } else if (lowerLine.contains('mob') || lowerLine.contains('cell') || lowerLine.contains('m:')) {
-              mobileList.add(cleanPhone);
-            } else {
-              otherList.add(cleanPhone);
-            }
+    void addPhoneCandidate(String candidate, {bool isWa = false, bool isLand = false}) {
+      final clean = candidate.replaceAll(RegExp(r'^(mob(ile)?|tel(ephone)?|ph(one)?|cell|p|m|t|alt|f|fax|wa|whatsapp|landline|work|office|contact)\s*[:\-\.]?\s*', caseSensitive: false), '').trim();
+      final digits = clean.replaceAll(RegExp(r'\D'), '');
+      if (digits.length >= 7 && digits.length <= 16) {
+        final norm = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+        if (seenPhoneDigits.add(norm)) {
+          final formatted = _formatPhoneNumber(clean);
+          allDetectedPhones.add(formatted);
+          if (isWa && whatsApp == null) {
+            whatsApp = formatted;
+          }
+          if (isLand && landline == null) {
+            landline = formatted;
           }
         }
       }
     }
 
-    // Assign Phone fields
-    if (mobileList.isNotEmpty) {
-      phone = _formatPhoneNumber(mobileList[0]);
-      if (mobileList.length > 1) {
-        alternativePhone = _formatPhoneNumber(mobileList[1]);
+    for (final line in uniqueLines) {
+      if (line.contains('@') || line.toLowerCase().contains('www.') || line.toLowerCase().contains('http')) {
+        continue;
       }
-    } else if (otherList.isNotEmpty) {
-      phone = _formatPhoneNumber(otherList[0]);
-      if (otherList.length > 1) {
-        alternativePhone = _formatPhoneNumber(otherList[1]);
+      final lowerLine = line.toLowerCase();
+      final isWa = lowerLine.contains('whatsapp') || lowerLine.contains('wa:') || lowerLine.contains('wa ');
+      final isLand = lowerLine.contains('landline') || lowerLine.contains('tel:') || lowerLine.contains('land');
+
+      // Split lines with multiple phone numbers (e.g. +91 90728 63555 / 90720 20000 | 044-2456789)
+      final subChunks = line.split(RegExp(r'[/,|;\\]|\s+(?:or|and|&)\s+')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      for (final chunk in subChunks) {
+        final matches = phoneRegex.allMatches(chunk);
+        if (matches.isNotEmpty) {
+          for (final m in matches) {
+            final matchedStr = m.group(0);
+            if (matchedStr != null && matchedStr.isNotEmpty) {
+              addPhoneCandidate(matchedStr, isWa: isWa, isLand: isLand);
+            }
+          }
+        } else if (chunk.replaceAll(RegExp(r'\D'), '').length >= 7) {
+          addPhoneCandidate(chunk, isWa: isWa, isLand: isLand);
+        }
       }
     }
 
-    if (whatsappList.isNotEmpty) {
-      whatsApp = _formatPhoneNumber(whatsappList[0]);
-    } else if (phone != null) {
-      whatsApp = phone; // Fallback WhatsApp to primary phone number
+    // Assign Phone fields without overwriting
+    if (allDetectedPhones.isNotEmpty) {
+      phone = allDetectedPhones[0];
+      if (allDetectedPhones.length > 1) {
+        alternativePhone = allDetectedPhones[1];
+      }
+      if (allDetectedPhones.length > 2) {
+        additionalPhones.addAll(allDetectedPhones.sublist(2));
+      }
     }
+    whatsApp ??= phone;
 
-    if (landlineList.isNotEmpty) {
-      landline = _formatPhoneNumber(landlineList[0]);
-      phone ??= landline;
+    bool isPhoneLine(String line) {
+      if (phoneRegex.hasMatch(line)) return true;
+      final clean = line.replaceAll(RegExp(r'\D'), '');
+      if (clean.length >= 7) return true;
+      return allDetectedPhones.any((p) => line.contains(p) || p.contains(line));
     }
 
     // 3. Identify Website / URL
@@ -151,7 +158,7 @@ class ContactParser {
     for (final line in uniqueLines) {
       final lowerLine = line.toLowerCase();
       bool hasKeyword = designationKeywords.any((kw) => lowerLine.contains(kw));
-      bool isPhone = mobileList.contains(line) || landlineList.contains(line) || otherList.contains(line);
+      bool isPhone = isPhoneLine(line);
       if (hasKeyword && line != email && !isPhone && line != website) {
         designation = line;
         break;
@@ -171,7 +178,7 @@ class ContactParser {
         final reg = RegExp('\\b$suffix\\b|\\b$suffix\\.', caseSensitive: false);
         return reg.hasMatch(lowerLine);
       });
-      bool isPhone = mobileList.contains(line) || landlineList.contains(line) || otherList.contains(line);
+      bool isPhone = isPhoneLine(line);
 
       if (hasSuffix && line != email && !isPhone && line != website && line != designation) {
         companyName = line;
@@ -187,7 +194,7 @@ class ContactParser {
         // Verify it isn't part of any parsed phone numbers
         final potentialPin = match.group(0)!;
         bool isPhone = false;
-        for (var p in [...mobileList, ...landlineList, ...otherList]) {
+        for (var p in allDetectedPhones) {
           if (p.contains(potentialPin)) isPhone = true;
         }
         if (!isPhone) {
@@ -207,7 +214,7 @@ class ContactParser {
 
     final List<String> addressLines = [];
     for (final line in uniqueLines) {
-      bool isPhone = phoneRegex.hasMatch(line) || mobileList.contains(line) || landlineList.contains(line) || otherList.contains(line);
+      bool isPhone = isPhoneLine(line);
       if (line == email || isPhone || line == website || line == designation || line == companyName) {
         continue;
       }
@@ -226,7 +233,7 @@ class ContactParser {
 
     // 9. Identify Person Name (Heuristics)
     for (final line in uniqueLines) {
-      bool isPhone = mobileList.contains(line) || landlineList.contains(line) || otherList.contains(line);
+      bool isPhone = isPhoneLine(line);
       if (line == email ||
           isPhone ||
           line == website ||
@@ -247,8 +254,8 @@ class ContactParser {
 
     // Fallback Values
     name ??= (uniqueLines.isNotEmpty ? uniqueLines.first : 'Scanned Contact');
-    designation ??= 'Professional';
-    companyName ??= 'Unknown Company';
+    designation ??= '';
+    companyName ??= '';
     phone ??= '';
     email ??= '';
     website ??= '';
@@ -267,6 +274,7 @@ class ContactParser {
       designation: designation,
       phone: phone,
       alternativePhone: alternativePhone,
+      additionalPhones: additionalPhones,
       landline: landline,
       whatsApp: whatsApp,
       email: email,
@@ -321,8 +329,11 @@ class ContactParser {
     String website = '';
     String address = '';
     String? pinCode;
+    String? profileImage;
 
-    final lines = vcardText.split(RegExp(r'\r?\n'));
+    // Unfold RFC 2426/6350 folded lines before parsing (CRLF/LF followed by space/tab)
+    final unfolded = vcardText.replaceAll(RegExp(r'\r?\n[ \t]'), '');
+    final lines = unfolded.split(RegExp(r'\r?\n'));
     for (var line in lines) {
       line = line.trim();
       if (line.isEmpty) continue;
@@ -343,7 +354,8 @@ class ContactParser {
       } else if (upperLine.startsWith('TEL;') || upperLine.startsWith('TEL:')) {
         final idx = line.indexOf(':');
         if (idx != -1) {
-          final val = line.substring(idx + 1).trim();
+          final val = _unwrapBracketedScalar(line.substring(idx + 1).trim());
+          if (val.isEmpty) continue;
           if (upperLine.contains('FAX') || upperLine.contains('LANDLINE')) {
             landline = val;
           } else if (upperLine.contains('WHATSAPP') || upperLine.contains('WA')) {
@@ -359,7 +371,7 @@ class ContactParser {
       } else if (upperLine.startsWith('EMAIL:') || RegExp(r'^EMAIL;.*:', caseSensitive: false).hasMatch(line)) {
         final idx = line.indexOf(':');
         if (idx != -1) {
-          email = line.substring(idx + 1).trim();
+          email = _unwrapBracketedScalar(line.substring(idx + 1).trim());
         }
       } else if (upperLine.startsWith('URL:') || RegExp(r'^URL;.*:', caseSensitive: false).hasMatch(line)) {
         final idx = line.indexOf(':');
@@ -378,14 +390,28 @@ class ContactParser {
             pinCode = pinMatch.group(0);
           }
         }
+      } else if (upperLine.startsWith('PHOTO;') || upperLine.startsWith('PHOTO:')) {
+        final idx = line.indexOf(':');
+        if (idx != -1) {
+          final header = upperLine.substring(0, idx);
+          final val = line.substring(idx + 1).trim();
+          if (val.isNotEmpty &&
+              val.toLowerCase() != 'null' &&
+              val.toLowerCase() != 'undefined') {
+            profileImage = _normalizeVCardPhoto(header, val);
+          }
+        }
       }
     }
 
+    String unescapeVCard(String val) =>
+        val.replaceAll(r'\,', ',').replaceAll(r'\;', ';').replaceAll(r'\\', r'\');
+
     // Clean name
-    name = name.replaceAll(';', ' ').replaceAll(',', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    name = unescapeVCard(name).replaceAll(';', ' ').replaceAll(',', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    company = unescapeVCard(company).trim();
+    designation = unescapeVCard(designation).trim();
     if (name.isEmpty) name = 'QR Contact';
-    if (company.isEmpty) company = 'Unknown Company';
-    if (designation.isEmpty) designation = 'Professional';
     whatsApp ??= phone.isNotEmpty ? phone : null;
 
     return ScannedContactModel(
@@ -401,9 +427,48 @@ class ContactParser {
       website: website,
       address: address,
       pinCode: pinCode,
+      profileImage: profileImage,
       socialLinks: const [],
       createdAt: DateTime.now(),
     );
+  }
+
+  static String _unwrapBracketedScalar(String value) {
+    final trimmed = value.trim();
+    if (trimmed.startsWith('[')) {
+      final m = RegExp(r'''^\[\s*["']([^"']+)["']''').firstMatch(trimmed);
+      if (m != null) return m.group(1)!.trim();
+    }
+    return trimmed;
+  }
+
+  static String _normalizeVCardPhoto(String upperHeader, String rawValue) {
+    final val = rawValue.trim();
+    if (val.startsWith('http://') ||
+        val.startsWith('https://') ||
+        val.startsWith('data:')) {
+      return val;
+    }
+    final looksBase64 = upperHeader.contains('ENCODING=B') ||
+        upperHeader.contains('BASE64') ||
+        val.startsWith('/9j/') ||
+        val.startsWith('iVBOR') ||
+        val.startsWith('UklGR') ||
+        val.startsWith('R0lGOD');
+    if (!looksBase64) return val;
+
+    final String subtype;
+    if (upperHeader.contains('PNG') || val.startsWith('iVBOR')) {
+      subtype = 'png';
+    } else if (upperHeader.contains('WEBP') || val.startsWith('UklGR')) {
+      subtype = 'webp';
+    } else if (upperHeader.contains('GIF') || val.startsWith('R0lGOD')) {
+      subtype = 'gif';
+    } else {
+      subtype = 'jpeg';
+    }
+    final cleanB64 = val.replaceAll(RegExp(r'\s+'), '');
+    return 'data:image/$subtype;base64,$cleanB64';
   }
 
   /// Parses a MECARD string into a [ScannedContactModel].
@@ -451,8 +516,8 @@ class ContactParser {
     }
 
     if (name.isEmpty) name = 'QR Contact';
-    if (company.isEmpty) company = 'Unknown Company';
-    if (designation.isEmpty) designation = 'Professional';
+    if (company.isEmpty) company = '';
+    if (designation.isEmpty) designation = '';
     whatsApp ??= phone.isNotEmpty ? phone : null;
 
     return ScannedContactModel(
@@ -485,8 +550,8 @@ class ContactParser {
       return ScannedContactModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: 'QR Contact',
-        company: 'Unknown Company',
-        designation: 'Professional',
+        company: '',
+        designation: '',
         phone: '',
         email: trimmed.substring(7).split('?').first,
         website: '',
@@ -498,8 +563,8 @@ class ContactParser {
       return ScannedContactModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: 'QR Contact',
-        company: 'Unknown Company',
-        designation: 'Professional',
+        company: '',
+        designation: '',
         phone: trimmed.substring(4).trim(),
         email: '',
         website: '',
@@ -514,8 +579,8 @@ class ContactParser {
       return ScannedContactModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: 'Website Contact',
-        company: 'Unknown Company',
-        designation: 'Professional',
+        company: '',
+        designation: '',
         phone: '',
         email: '',
         website: url,

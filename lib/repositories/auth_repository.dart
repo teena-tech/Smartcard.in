@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../core/services/dio_client.dart';
 import '../core/services/api_config.dart';
 import '../models/user_model.dart';
+import '../core/utils/international_phone_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -11,17 +12,55 @@ class AuthRepository {
   final DioClient _dioClient = DioClient();
 
   /// Sends a login OTP request
-  Future<String> sendLoginOtp(String phone) async {
+  Future<String> sendLoginOtp(
+    String phone, {
+    String channel = 'phone',
+    String countryCode = '+91',
+    String? whatsappNumber,
+  }) async {
     try {
+      final formattedPhone = InternationalPhoneHelper.formatForBackend(
+        phone: phone,
+        countryCode: countryCode,
+      );
+      final e164 = InternationalPhoneHelper.toE164(
+        phone: phone,
+        countryCode: countryCode,
+      );
+
+      final isWhatsApp = channel.toLowerCase() == 'whatsapp';
+      final deliveryChannel = isWhatsApp ? 'whatsapp' : 'phone';
+
+      final Map<String, dynamic> body = {
+        'phone': formattedPhone,
+        'country_code': countryCode,
+        'full_phone': e164,
+        'otp_check_only': false,
+        'channel': deliveryChannel,
+        'otp_channel': deliveryChannel,
+        'delivery_method': deliveryChannel,
+      };
+
+      if (isWhatsApp) {
+        if (whatsappNumber != null && whatsappNumber.trim().isNotEmpty) {
+          body['whatsapp_number'] = InternationalPhoneHelper.formatForBackend(
+            phone: whatsappNumber,
+            countryCode: countryCode,
+          );
+        } else {
+          body['whatsapp_number'] = formattedPhone;
+        }
+      }
+
       final response = await _dioClient.dio.post(
         ApiConfig.login,
-        data: {'phone': phone, 'otp_check_only': false},
+        data: body,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         if (data['request_id'] != null) {
-          return data['request_id'];
+          return data['request_id'].toString();
         }
       }
       throw 'Failed to send OTP';
@@ -148,11 +187,23 @@ class AuthRepository {
   }
 
   /// Checks if a phone number is already registered
-  Future<bool> checkPhone(String phone) async {
+  Future<bool> checkPhone(String phone, {String countryCode = '+91'}) async {
     try {
+      final formattedPhone = InternationalPhoneHelper.formatForBackend(
+        phone: phone,
+        countryCode: countryCode,
+      );
+      final e164 = InternationalPhoneHelper.toE164(
+        phone: phone,
+        countryCode: countryCode,
+      );
       final response = await _dioClient.dio.post(
         ApiConfig.checkPhone,
-        data: {'phone': phone},
+        data: {
+          'phone': formattedPhone,
+          'country_code': countryCode,
+          'full_phone': e164,
+        },
       );
       return response.statusCode == 200 || response.statusCode == 201;
     } on DioException catch (e) {
@@ -163,7 +214,13 @@ class AuthRepository {
   /// Logs out the user
   Future<void> logout() async {
     try {
-      await _dioClient.dio.post(ApiConfig.logout);
+      await _dioClient.dio.post(ApiConfig.logout).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => Response(
+          requestOptions: RequestOptions(path: ApiConfig.logout),
+          statusCode: 408,
+        ),
+      );
     } catch (e) {
       // Ignore errors on logout
     } finally {
@@ -171,12 +228,49 @@ class AuthRepository {
     }
   }
 
-  /// Sends an OTP for login or password reset
-  Future<String> sendOtp(String identifier) async {
+  /// Sends an OTP for registration
+  Future<String> sendOtp(
+    String identifier, {
+    String channel = 'phone',
+    String countryCode = '+91',
+    String? whatsappNumber,
+  }) async {
     try {
+      final formattedPhone = InternationalPhoneHelper.formatForBackend(
+        phone: identifier,
+        countryCode: countryCode,
+      );
+      final e164 = InternationalPhoneHelper.toE164(
+        phone: identifier,
+        countryCode: countryCode,
+      );
+
+      final isWhatsApp = channel.toLowerCase() == 'whatsapp';
+      final deliveryChannel = isWhatsApp ? 'whatsapp' : 'phone';
+
+      final Map<String, dynamic> body = {
+        'phone': formattedPhone,
+        'country_code': countryCode,
+        'full_phone': e164,
+        'channel': deliveryChannel,
+        'otp_channel': deliveryChannel,
+        'delivery_method': deliveryChannel,
+      };
+
+      if (isWhatsApp) {
+        if (whatsappNumber != null && whatsappNumber.trim().isNotEmpty) {
+          body['whatsapp_number'] = InternationalPhoneHelper.formatForBackend(
+            phone: whatsappNumber,
+            countryCode: countryCode,
+          );
+        } else {
+          body['whatsapp_number'] = formattedPhone;
+        }
+      }
+
       final response = await _dioClient.dio.post(
         ApiConfig.sendRegistrationOtp,
-        data: {'phone': identifier},
+        data: body,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -282,7 +376,6 @@ class AuthRepository {
       throw DioClient.getErrorMessage(e, 'Failed to fetch welcome slides');
     } catch (e) {
       return [];
-      return [];
     }
   }
 
@@ -303,8 +396,18 @@ class AuthRepository {
     return null;
   }
 
-  Future<String> sendRegisterOtp(String phone) {
-    return sendOtp(phone);
+  Future<String> sendRegisterOtp(
+    String phone, {
+    String channel = 'phone',
+    String countryCode = '+91',
+    String? whatsappNumber,
+  }) {
+    return sendOtp(
+      phone,
+      channel: channel,
+      countryCode: countryCode,
+      whatsappNumber: whatsappNumber,
+    );
   }
 
   Future<String?> verifyRegisterOtp(String requestId, String code) {
@@ -332,10 +435,20 @@ class AuthRepository {
   Future<void> clearTokens() async {
     await _dioClient.clearTokens();
     const storage = FlutterSecureStorage();
-    await storage.delete(key: 'user_id');
+    try {
+      await storage.deleteAll();
+    } catch (_) {
+      await storage.delete(key: 'user_id');
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_id');
     await prefs.remove('cached_user_profile');
+    await prefs.remove('cached_device_app_contacts_v1');
+    await prefs.remove('cached_smart_card_count_v1');
+    await prefs.remove('cached_scanned_count_v1');
+    await prefs.remove('cached_phone_count_v1');
+    await prefs.remove('stats_lifetime_scan_count');
+    await prefs.remove('stats_scanned_cards');
   }
 }
 

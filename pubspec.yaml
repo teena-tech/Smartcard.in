@@ -3,7 +3,7 @@ description: "A new Flutter project."
 
 publish_to: 'none'
 
-version: 1.0.7+8
+version: 1.0.7+26
 
 environment:
   sdk: '>=3.10.4 <4.0.0'
@@ -20,6 +20,7 @@ dependencies:
   qr_flutter: ^4.1.0
   share_plus: ^13.1.0
   path_provider: ^2.1.5
+  package_info_plus: ^10.2.1
   permission_handler: ^12.0.1
   http: ^1.6.0
   intl: ^0.19.0
@@ -33,9 +34,11 @@ dependencies:
   image_picker: ^1.1.2
   url_launcher: ^6.3.0
   camera: ^0.11.0
-  flutter_contacts: ^1.1.9
+  flutter_contacts: ^2.1.0
   sqflite: ^2.3.3+1
   sqflite_common_ffi: ^2.3.3
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   connectivity_plus: ^6.0.3
   flutter_bloc: ^8.1.6
   equatable: ^2.0.5
@@ -52,11 +55,18 @@ dependencies:
   flutter_widget_from_html: ^0.17.2
   shimmer: ^3.0.0
   youtube_player_iframe: ^6.0.2
+  webview_flutter: ^4.10.0
   http_parser: any
   font_awesome_flutter: ^11.0.0
-  rive: ^0.13.0
+  rive: ^0.14.11
   flutter_animate: ^4.5.2
   google_mlkit_document_scanner: ^0.4.0
+  smart_auth: ^3.2.0
+  audioplayers: ^6.7.1
+  firebase_core: ^3.8.0
+  cloud_firestore: ^5.5.0
+  firebase_storage: ^12.3.6
+  in_app_update: ^4.2.5
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -75,9 +85,11 @@ flutter:
 
   assets:
     - .env
+    - .env_live
     - assets/images/
     - assets/rive/
     - assets/icon/
     - assets/lottie/
     - assets/lottie/profile_user_card.json
     - assets/gif/
+    - assets/audio/

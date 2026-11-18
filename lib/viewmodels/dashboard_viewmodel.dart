@@ -30,6 +30,9 @@ int get currentIndex => _currentIndex;
       notifyListeners();
     }
   }
+  void refresh() {
+    notifyListeners();
+  }
   int get currentPage => _currentPage;
 
   // Fetch all dashboard data

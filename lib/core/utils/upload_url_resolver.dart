@@ -12,6 +12,7 @@ class UploadUrlResolver {
   };
 
   static String _cacheBuster = DateTime.now().millisecondsSinceEpoch.toString();
+  static String get cacheBuster => _cacheBuster;
 
   static void bustCache() {
     _cacheBuster = DateTime.now().millisecondsSinceEpoch.toString();
@@ -25,6 +26,7 @@ class UploadUrlResolver {
     final raw = (value ?? '').trim();
     if (raw.isEmpty || raw.toLowerCase() == 'null' || raw.toLowerCase() == 'undefined') return fallback ?? '';
     if (raw.startsWith('data:')) return raw;
+    if (raw.startsWith('/') || raw.startsWith('file://')) return raw;
 
     String resolved;
     final absolute = Uri.tryParse(raw);
@@ -40,6 +42,8 @@ class UploadUrlResolver {
         } else {
           resolved = raw;
         }
+      } else if (absolute.scheme == 'file') {
+        resolved = raw;
       } else {
         resolved = raw;
       }
@@ -52,7 +56,7 @@ class UploadUrlResolver {
       } else if (normalized.startsWith('uploads/')) {
         resolved = '${_trimTrailing(ApiConfig.baseUrl)}/$normalized';
       } else if (normalized.contains('/')) {
-        resolved = raw;
+        resolved = _buildSharedUploadsUrl(normalized);
       } else if (type == 'logo') {
         resolved = _buildSharedUploadsUrl(
           '$_sharedUploadsDir/users/logo/$normalized',
@@ -76,15 +80,6 @@ class UploadUrlResolver {
       }
     }
 
-    if (resolved.isNotEmpty &&
-        (resolved.startsWith('http://') || resolved.startsWith('https://')) &&
-        (type == 'logo' ||
-            type == 'profile' ||
-            type == 'gallery' ||
-            type == 'image')) {
-      final separator = resolved.contains('?') ? '&' : '?';
-      return '$resolved${separator}t=$_cacheBuster';
-    }
     return resolved;
   }
 
@@ -115,7 +110,7 @@ class UploadUrlResolver {
     if (normalized.toLowerCase().startsWith('$_sharedUploadsDir/')) {
       normalized = normalized.substring(_sharedUploadsDir.length + 1);
     }
-    return '${_trimTrailing(ApiConfig.baseUrl)}/$_sharedUploadsDir/$normalized';
+    return '${_trimTrailing(ApiConfig.sharedUploadsUrl)}/$normalized';
   }
 
   static String _trimTrailing(String value) =>

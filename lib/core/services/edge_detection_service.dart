@@ -20,23 +20,30 @@ class EdgeDetectionService {
     double? screenWidth,
     double? screenHeight,
   }) async {
-    final rootToken = RootIsolateToken.instance!;
-    return compute(_autoDetectIsolate, {
-      'imagePath': imagePath,
-      'textBoundingBox': textBoundingBox != null
-          ? [
-              textBoundingBox.left,
-              textBoundingBox.top,
-              textBoundingBox.width,
-              textBoundingBox.height,
-            ]
-          : null,
-      'frameWidth': frameWidth,
-      'frameHeight': frameHeight,
-      'screenWidth': screenWidth,
-      'screenHeight': screenHeight,
-      'rootToken': rootToken,
-    });
+    if (kIsWeb) return imagePath;
+    final rootToken = RootIsolateToken.instance;
+    if (rootToken == null) return imagePath;
+    try {
+      return await compute(_autoDetectIsolate, {
+        'imagePath': imagePath,
+        'textBoundingBox': textBoundingBox != null
+            ? [
+                textBoundingBox.left,
+                textBoundingBox.top,
+                textBoundingBox.width,
+                textBoundingBox.height,
+              ]
+            : null,
+        'frameWidth': frameWidth,
+        'frameHeight': frameHeight,
+        'screenWidth': screenWidth,
+        'screenHeight': screenHeight,
+        'rootToken': rootToken,
+      });
+    } catch (e) {
+      debugPrint('⚠️ Auto-detect isolate fallback safely handled: $e');
+      return imagePath;
+    }
   }
 
   /// Runs auto crop, then opens native manual edge UI if [manualAdjust] is true.
@@ -291,10 +298,6 @@ class EdgeDetectionService {
     double t,
   ) {
     return math.Point(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
-  }
-
-  static double _dist(math.Point<int> a, math.Point<int> b) {
-    return math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2));
   }
 
   static double _distD(math.Point<double> a, math.Point<double> b) {

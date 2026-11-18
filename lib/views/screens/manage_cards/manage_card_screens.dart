@@ -7,7 +7,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart'
     hide ImageSource;
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../viewmodels/dashboard_viewmodel.dart';
 import '../../../viewmodels/theme_viewmodel.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
@@ -18,12 +17,16 @@ import '../../../core/utils/upload_url_resolver.dart';
 import '../../widgets/manage_cards/widgets/manage_cards_header.dart';
 import '../../widgets/manage_cards/widgets/manage_cards_summary.dart';
 import '../../widgets/manage_cards/widgets/manage_cards_edit_sheet.dart';
+import '../../widgets/manage_cards/widgets/manage_cards_video_widget.dart';
 import '../../widgets/image_confirm_sheet.dart';
 import '../../widgets/image_cropper_widget.dart';
+import '../../widgets/master_app_bar.dart';
+import '../../widgets/global_bottom_nav.dart';
 
 class ManageCardsScreen extends StatefulWidget {
   final bool isTab;
-  const ManageCardsScreen({super.key, this.isTab = false});
+  final CardModel? initialCard;
+  const ManageCardsScreen({super.key, this.isTab = false, this.initialCard});
 
   @override
   State<ManageCardsScreen> createState() => _ManageCardsScreenState();
@@ -34,6 +37,9 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialCard?.isOrganization == true) {
+        return;
+      }
       final authViewModel = context.read<AuthViewModel>();
       final user = authViewModel.currentUser;
       if (user != null) {
@@ -158,6 +164,17 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   }
 
   void _showImageSourceSheet(String sectionId) {
+    final viewModel = context.read<CardViewModel>();
+    if (viewModel.currentCard?.isOrganization == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Organization branding assets are managed by your administrator and cannot be modified.'),
+          backgroundColor: Color(0xFF0284C7),
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -270,13 +287,24 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   }
 
   void _showEditSheet(BuildContext context, String sectionId) {
+    final viewModel = context.read<CardViewModel>();
+    final currentCard = widget.initialCard ?? viewModel.currentCard;
+    if (currentCard?.isOrganization == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Organization card details are managed by your administrator and cannot be edited.'),
+          backgroundColor: Color(0xFF0284C7),
+        ),
+      );
+      return;
+    }
+
     if (sectionId == 'section-profile-image' ||
         sectionId == 'section-company-logo') {
       _showImageSourceSheet(sectionId);
       return;
     }
 
-    final viewModel = context.read<CardViewModel>();
     viewModel.openSection(sectionId);
 
     showModalBottomSheet(
@@ -491,9 +519,27 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       );
     }
 
-    final cards = viewModel.cards;
-    final currentCard = viewModel.currentCard;
-    final details = viewModel.selectedCardDetails ??
+    final currentCard = widget.initialCard ?? viewModel.currentCard;
+    final isOrganization = (widget.initialCard?.isOrganization == true) || (currentCard?.isOrganization == true);
+
+    final orgDetails = (isOrganization && currentCard != null)
+        ? CardProfileDetails(
+            firstName: currentCard.name,
+            companyName: currentCard.companyName,
+            designation: currentCard.designation ?? '',
+            email: currentCard.email ?? '',
+            phone: currentCard.phone,
+            profileImageName: currentCard.profileUrl ?? currentCard.profileImageName ?? '',
+            companyLogoName: currentCard.companyLogo ?? '',
+            companyEmails: (currentCard.email != null && currentCard.email!.isNotEmpty)
+                ? [currentCard.email!]
+                : [],
+            contactNumbers: currentCard.phone.isNotEmpty ? [currentCard.phone] : [],
+            whatsappNumbers: currentCard.phone.isNotEmpty ? [currentCard.phone] : [],
+          )
+        : null;
+
+    final details = orgDetails ?? viewModel.selectedCardDetails ??
         (currentCard != null
             ? CardProfileDetails(
                 firstName: currentCard.name,
@@ -502,6 +548,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                 phone: currentCard.phone,
                 profileImageName: currentCard.profileImageName ?? '',
                 companyLogoName: currentCard.companyLogo ?? '',
+                designation: currentCard.designation ?? '',
               )
             : null);
     final logoUrl = details != null
@@ -510,7 +557,14 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: null,
+      appBar: widget.isTab
+          ? null
+          : MasterAppBar(
+              titleText: isOrganization ? 'Organization Card Details' : 'Manage Card Details',
+              style: MasterHeaderStyle.gradient,
+              showBackButton: true,
+            ),
+      bottomNavigationBar: const GlobalBottomNav(),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -523,12 +577,6 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              if (details != null)
-                StickyManageCardsTopBar(
-                  viewModel: viewModel,
-                  details: details,
-                  resolveImgUrl: _resolveImgUrl,
-                ),
               // Main Editor Panel
               Expanded(
               child: details == null
@@ -618,6 +666,29 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
+                                  if (viewModel.currentCard?.isOrganization == true)
+                                    Container(
+                                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0F1E36),
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.5)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.lock_rounded, color: Color(0xFF38BDF8), size: 18),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              'Organization Card (Read-Only)\nAll details and branding are governed by your Organization Administrator.',
+                                              style: GoogleFonts.inter(fontSize: 11.5, color: Colors.white, height: 1.35),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
                                   // Card Profile Preview Header
                                   buildProfileHeader(
                             context,
@@ -626,6 +697,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                             colors,
                             _resolveImgUrl,
                             _showEditSheet,
+                            isOrganization: isOrganization,
                           ),
 
                           Transform.translate(
@@ -709,32 +781,33 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                                     ),
                                             ),
                                           ),
-                                          Transform.translate(
-                                            offset: const Offset(8, 8),
-                                            child: GestureDetector(
-                                              onTap: () => _showEditSheet(
-                                                context,
-                                                'section-company-logo',
-                                              ),
-                                              child: Container(
-                                                width: 32,
-                                                height: 32,
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.primaryRed,
-                                                  shape: BoxShape.circle,
-                                                  border: Border.all(
-                                                    color: Colors.white,
-                                                    width: 2,
-                                                  ),
+                                          if (!isOrganization)
+                                            Transform.translate(
+                                              offset: const Offset(8, 8),
+                                              child: GestureDetector(
+                                                onTap: () => _showEditSheet(
+                                                  context,
+                                                  'section-company-logo',
                                                 ),
-                                                child: const Icon(
-                                                  Icons.camera_alt,
-                                                  color: Colors.white,
-                                                  size: 16,
+                                                child: Container(
+                                                  width: 32,
+                                                  height: 32,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primaryRed,
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: Colors.white,
+                                                      width: 2,
+                                                    ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.camera_alt,
+                                                    color: Colors.white,
+                                                    size: 16,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          ),
                                         ],
                                       ),
                                       const SizedBox(height: 16),
@@ -758,19 +831,14 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                   buildSummaryCard(
                                     title: 'Professional Details',
                                     hasContent:
-                                        viewModel
-                                            .selectedCardDetails!
-                                            .companyName
-                                            .isNotEmpty ||
-                                        viewModel
-                                            .selectedCardDetails!
-                                            .designation
-                                            .isNotEmpty,
+                                        details.companyName.isNotEmpty ||
+                                        details.designation.isNotEmpty,
                                     onEdit: () => _showEditSheet(
                                       context,
                                       'section-company',
                                     ),
                                     colors: colors,
+                                    isEditable: !isOrganization,
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -798,69 +866,76 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                   const SizedBox(height: 12),
 
                                   // Professional Address Card
-                                  buildSummaryCard(
-                                    title: 'Professional Address',
-                                    hasContent:
-                                        details.address.isNotEmpty ||
-                                        details.pincode.isNotEmpty ||
-                                        details.district.isNotEmpty ||
-                                        details.state.isNotEmpty,
-                                    onEdit: () => _showEditSheet(
-                                      context,
-                                      'section-address',
-                                    ),
-                                    colors: colors,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        if (details.address.isNotEmpty ||
-                                            details.district.isNotEmpty ||
-                                            details.state.isNotEmpty)
-                                          buildFieldRow(
-                                            icon: Icons.location_on_outlined,
-                                            label: 'Address',
-                                            value:
+                                  () {
+                                    final displayAddress = details.companyAddress.isNotEmpty
+                                        ? details.companyAddress
+                                        : details.address;
+                                    final displayPincode = details.companyPincode.isNotEmpty
+                                        ? details.companyPincode
+                                        : details.pincode;
+                                    final displayDistrict = details.companyDistrict.isNotEmpty
+                                        ? details.companyDistrict
+                                        : (details.district.isNotEmpty
+                                            ? details.district
+                                            : (details.companyCity.isNotEmpty
+                                                ? details.companyCity
+                                                : details.city));
+                                    final displayState = details.companyState.isNotEmpty
+                                        ? details.companyState
+                                        : details.state;
+
+                                    return buildSummaryCard(
+                                      title: 'Professional Address',
+                                      hasContent:
+                                          displayAddress.isNotEmpty ||
+                                          displayPincode.isNotEmpty ||
+                                          displayDistrict.isNotEmpty ||
+                                          displayState.isNotEmpty,
+                                      onEdit: () => _showEditSheet(
+                                        context,
+                                        'section-address',
+                                      ),
+                                      colors: colors,
+                                      isEditable: !isOrganization,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (displayAddress.isNotEmpty ||
+                                              displayDistrict.isNotEmpty ||
+                                              displayState.isNotEmpty)
+                                            buildFieldRow(
+                                              icon: Icons.location_on_outlined,
+                                              label: 'Address',
+                                              value: [
+                                                if (displayAddress.isNotEmpty)
+                                                  displayAddress,
                                                 [
-                                                      if (details
-                                                          .address
-                                                          .isNotEmpty)
-                                                        details.address,
-                                                      [
-                                                            if (details
-                                                                .district
-                                                                .isNotEmpty)
-                                                              details.district
-                                                            else if (details
-                                                                .city
-                                                                .isNotEmpty)
-                                                              details.city,
-                                                            if (details
-                                                                .state
-                                                                .isNotEmpty)
-                                                              details.state,
-                                                          ]
-                                                          .where(
-                                                            (s) => s.isNotEmpty,
-                                                          )
-                                                          .join(', '),
-                                                    ]
+                                                  if (displayDistrict.isNotEmpty)
+                                                    displayDistrict,
+                                                  if (displayState.isNotEmpty)
+                                                    displayState,
+                                                ]
                                                     .where((s) => s.isNotEmpty)
-                                                    .join('\n'),
-                                            iconColor: const Color(0xFFD32F2F),
-                                            iconBg: const Color(0xFFFCF0F0),
-                                          ),
-                                        if (details.pincode.isNotEmpty)
-                                          buildFieldRow(
-                                            icon: Icons.pin_drop_outlined,
-                                            label: 'Pin Code',
-                                            value: details.pincode,
-                                            iconColor: const Color(0xFFD32F2F),
-                                            iconBg: const Color(0xFFFCF0F0),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
+                                                    .join(', '),
+                                              ]
+                                                  .where((s) => s.isNotEmpty)
+                                                  .join('\n'),
+                                              iconColor: const Color(0xFFD32F2F),
+                                              iconBg: const Color(0xFFFCF0F0),
+                                            ),
+                                          if (displayPincode.isNotEmpty)
+                                            buildFieldRow(
+                                              icon: Icons.pin_drop_outlined,
+                                              label: 'Pin Code',
+                                              value: displayPincode,
+                                              iconColor: const Color(0xFFD32F2F),
+                                              iconBg: const Color(0xFFFCF0F0),
+                                            ),
+                                        ],
+                                      ),
+                                    );
+                                  }(),
 
                                   const SizedBox(height: 12),
 
@@ -876,6 +951,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                       'section-company-contact',
                                     ),
                                     colors: colors,
+                                    isEditable: !isOrganization,
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -945,6 +1021,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                       'section-social',
                                     ),
                                     colors: colors,
+                                    isEditable: !isOrganization,
                                     child: GridView.count(
                                       shrinkWrap: true,
                                       physics:
@@ -1167,6 +1244,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                       'section-about',
                                     ),
                                     colors: colors,
+                                    isEditable: !isOrganization,
                                     child: HtmlWidget(
                                       details.aboutCompany.isNotEmpty
                                           ? details.aboutCompany.replaceAll('\n', '<br>')
@@ -1181,26 +1259,12 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
 
                                   const SizedBox(height: 12),
 
-                                  // YouTube Card
-                                  buildSummaryCard(
-                                    title: 'YouTube',
-                                    hasContent:
-                                        details.youtubeLinks.isNotEmpty &&
-                                        details.youtubeLinks[0]
-                                            .trim()
-                                            .isNotEmpty,
-                                    onEdit: () => _showEditSheet(
-                                      context,
-                                      'section-youtube',
-                                    ),
+                                  // My Videos Section
+                                  MyVideosSectionWidget(
+                                    viewModel: viewModel,
+                                    details: details,
                                     colors: colors,
-                                    child: Builder(
-                                      builder: (context) {
-                                        final link = details.youtubeLinks[0]
-                                            .trim();
-                                        return _YoutubePreviewWidget(url: link);
-                                      },
-                                    ),
+                                    isOrganization: isOrganization,
                                   ),
 
                                   const SizedBox(height: 12),
@@ -1215,6 +1279,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                                       'section-gallery',
                                     ),
                                     colors: colors,
+                                    isEditable: !isOrganization,
                                     customButtonText:
                                         details.existingPhotos.isNotEmpty
                                         ? 'Edit'
@@ -1293,73 +1358,74 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                           ),
                           const SizedBox(height: 16),
                           // ─── Footer Action Buttons (mirrors React UserEditFooterActions) ───
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Column(
-                              children: [
-                                // 1. Top: Make Primary Button (full width when secondary card)
-                                if (!viewModel.isPrimaryCardSelected && viewModel.canSetSelectedAsPrimary) ...[
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF4F46E5), // Indigo
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(vertical: 14),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                      ),
-                                      onPressed: viewModel.isBusy
-                                          ? null
-                                          : () {
-                                              showDialog(
-                                                context: context,
-                                                builder: (ctx) => AlertDialog(
-                                                  title: const Text('Set As Primary Card'),
-                                                  content: const Text(
-                                                    'Make this your primary card? Your primary card is the one shared by default.',
+                          if (!isOrganization)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: Column(
+                                children: [
+                                  // 1. Top: Make Primary Button (full width when secondary card)
+                                  if (!viewModel.isPrimaryCardSelected && viewModel.canSetSelectedAsPrimary) ...[
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF4F46E5), // Indigo
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        ),
+                                        onPressed: viewModel.isBusy
+                                            ? null
+                                            : () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (ctx) => AlertDialog(
+                                                    title: const Text('Set As Primary Card'),
+                                                    content: const Text(
+                                                      'Make this your primary card? Your primary card is the one shared by default.',
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(ctx),
+                                                        child: const Text('Cancel'),
+                                                      ),
+                                                      ElevatedButton(
+                                                        onPressed: () async {
+                                                          Navigator.pop(ctx);
+                                                          await viewModel.handleSetPrimaryCard();
+                                                        },
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor: const Color(0xFF4F46E5),
+                                                          foregroundColor: Colors.white,
+                                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                                        ),
+                                                        child: Text(
+                                                          viewModel.isBusy ? 'Updating...' : 'Set Primary',
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () => Navigator.pop(ctx),
-                                                      child: const Text('Cancel'),
-                                                    ),
-                                                    ElevatedButton(
-                                                      onPressed: () async {
-                                                        Navigator.pop(ctx);
-                                                        await viewModel.handleSetPrimaryCard();
-                                                      },
-                                                      style: ElevatedButton.styleFrom(
-                                                        backgroundColor: const Color(0xFF4F46E5),
-                                                        foregroundColor: Colors.white,
-                                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                                      ),
-                                                      child: Text(
-                                                        viewModel.isBusy ? 'Updating...' : 'Set Primary',
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                      icon: const Icon(Icons.star_outline, size: 18),
-                                      label: Text(viewModel.isBusy ? 'Updating...' : 'Make Primary'),
+                                                );
+                                              },
+                                        icon: const Icon(Icons.star_outline, size: 18),
+                                        label: Text(viewModel.isBusy ? 'Updating...' : 'Make Primary'),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
-
-                                // 2. Bottom: Suspend & Delete Text Links
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    _buildSuspendButton(context, viewModel, asLink: true),
-                                    if (viewModel.canDeleteSelectedCard)
-                                      _buildDeleteButton(context, viewModel, asLink: true),
+                                    const SizedBox(height: 12),
                                   ],
-                                ),
-                              ],
+
+                                  // 2. Bottom: Suspend & Delete Text Links
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildSuspendButton(context, viewModel, asLink: true),
+                                      if (viewModel.canDeleteSelectedCard)
+                                        _buildDeleteButton(context, viewModel, asLink: true),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
                           const SizedBox(height: 32),
                         ],
                       ),
@@ -1369,125 +1435,6 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
         ),
       ),
     ),
-    );
-  }
-}
-
-class _YoutubePreviewWidget extends StatefulWidget {
-  final String url;
-  const _YoutubePreviewWidget({required this.url});
-
-  @override
-  State<_YoutubePreviewWidget> createState() => _YoutubePreviewWidgetState();
-}
-
-class _YoutubePreviewWidgetState extends State<_YoutubePreviewWidget> {
-  YoutubePlayerController? _controller;
-  bool _isValid = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _initController(widget.url);
-  }
-
-  String? _extractVideoId(String url) {
-    url = url.trim();
-    if (url.isEmpty) return null;
-
-    // Custom regex that handles shorts, youtu.be, and regular URLs with query params like ?si=
-    RegExp regExp = RegExp(
-      r'(?:https?:\/\/)?(?:www\.|m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))((\w|-){11})',
-      caseSensitive: false,
-      multiLine: false,
-    );
-
-    Match? match = regExp.firstMatch(url);
-    if (match != null && match.groupCount >= 1) {
-      return match.group(1);
-    }
-
-    return YoutubePlayerController.convertUrlToId(url);
-  }
-
-  void _initController(String url) {
-    final videoId = _extractVideoId(url);
-    if (videoId == null) {
-      _isValid = false;
-    } else {
-      _isValid = true;
-      _controller = YoutubePlayerController.fromVideoId(
-        videoId: videoId,
-        autoPlay: false,
-        params: const YoutubePlayerParams(
-          showControls: true,
-          showFullscreenButton: true,
-        ),
-      );
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _YoutubePreviewWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.url != widget.url) {
-      final videoId = YoutubePlayerController.convertUrlToId(widget.url);
-      if (videoId == null) {
-        setState(() {
-          _isValid = false;
-        });
-      } else {
-        setState(() {
-          _isValid = true;
-          if (_controller != null) {
-            _controller!.loadVideoById(videoId: videoId);
-          } else {
-            _controller = YoutubePlayerController.fromVideoId(
-              videoId: videoId,
-              autoPlay: false,
-              params: const YoutubePlayerParams(
-                showControls: true,
-                showFullscreenButton: true,
-              ),
-            );
-          }
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller?.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_isValid || _controller == null) {
-      return Container(
-        height: 200,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: const Color(0xFF2C2C2C),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(
-          child: Text(
-            'Invalid YouTube URL',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
-    }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        key: ValueKey(widget.url),
-        height: 200,
-        width: double.infinity,
-        child: YoutubePlayer(controller: _controller!),
-      ),
     );
   }
 }

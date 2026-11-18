@@ -17,7 +17,7 @@ import '../widgets/statistics_grid.dart';
 import '../widgets/recent_activity_list.dart';
 import '../widgets/recent_messages_list.dart';
 import '../../core/state/app_loading_service.dart';
-import '../widgets/common_drawer.dart';
+import '../widgets/profile_menu_bottom_sheet.dart';
 import '../widgets/lottie_loader.dart';
 import 'smart_scanner_screen.dart';
 import 'profile_screen.dart';
@@ -34,11 +34,11 @@ import '../../core/utils/responsive.dart';
 import '../widgets/auto_loop_carousel.dart';
 import '../../viewmodels/subscription_viewmodel.dart';
 import '../widgets/premium_upgrade_dialog.dart';
-import '../widgets/circular_profile_avatar.dart';
-
-import '../../core/utils/upload_url_resolver.dart';
-
 import 'package:share_plus/share_plus.dart';
+
+import '../../providers/contact_provider.dart';
+import '../../core/services/reactive_contact_sync_service.dart';
+import '../../core/services/app_update_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -48,9 +48,10 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  // ignore: unused_element
   Future<void> _handleCreateNewCard() async {
     final authUser = context.read<AuthViewModel>().currentUser;
     final cardVm = context.read<CardViewModel>();
@@ -80,14 +81,57 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _checkForAppUpdate({bool forceCheck = false}) async {
+    if (!mounted) return;
+    try {
+      await AppUpdateService.checkAndShowUpdateDialog(context, forceCheck: forceCheck);
+    } catch (e) {
+      debugPrint('HomeScreen _checkForAppUpdate error: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       if (widget.initialIndex != 0) {
         context.read<DashboardViewModel>().setIndex(widget.initialIndex);
       }
+      try {
+        ReactiveContactSyncService().initialize(
+          contactProvider: context.read<ContactProvider>(),
+          contactViewModel: context.read<ContactViewModel>(),
+          dashboardViewModel: context.read<DashboardViewModel>(),
+        );
+      } catch (e) {
+        debugPrint('ReactiveContactSyncService init error: $e');
+      }
+      _checkForAppUpdate();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      try {
+        ReactiveContactSyncService().handleDatabaseChange(
+          contactProvider: context.read<ContactProvider>(),
+          contactViewModel: context.read<ContactViewModel>(),
+          dashboardViewModel: context.read<DashboardViewModel>(),
+        );
+      } catch (e) {
+        debugPrint('AppLifecycle sync error: $e');
+      }
+      _checkForAppUpdate();
+    }
   }
 
   @override
@@ -98,32 +142,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final List<Widget> pages = [
       _HomeBody(
-        onProfileTap: () => dashboardViewModel.setIndex(3),
+        onProfileTap: () => ProfileMenuBottomSheet.show(context),
         onScanTap: () => dashboardViewModel.setIndex(1),
         onShareTap: () async {
           final cardVm = context.read<CardViewModel>();
           final profileVm = context.read<ProfileViewModel>();
           final currentCard = cardVm.currentCard;
+          final targetUserId = profileVm.user?.id ?? currentCard?.accountUserId.toString() ?? '';
           if (currentCard != null) {
             final url = currentCard.qrData.isNotEmpty ? currentCard.qrData : 'https://thesmartcards.in/profile/${currentCard.userId}';
             await Share.share(url);
-            profileVm.incrementShareCount(currentCard.accountUserId.toString());
+            profileVm.incrementShareCount(targetUserId);
           } else if (cardVm.cards.isNotEmpty) {
             final card = cardVm.cards.first;
             final url = card.qrData.isNotEmpty ? card.qrData : 'https://thesmartcards.in/profile/${card.userId}';
             await Share.share(url);
-            profileVm.incrementShareCount(card.accountUserId.toString());
+            profileVm.incrementShareCount(targetUserId);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('No card available to share.')),
             );
           }
         },
-        onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
         isActive: dashboardViewModel.currentIndex == 0,
       ),
       const SmartScannerScreen(),
-      const new_manage_cards.ManageCardsScreen(isTab: true),
+      const SmartCardListScreen(isTab: true),
       const ProfileBody(),
       const ContactsScreen(),
       const MessagesScreen(),
@@ -131,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const SettingsScreen(),
       const AboutScreen(),
       const my_cards_list.MyCardsScreen(isStandalone: false),
-      const SmartCardListScreen(isTab: true),
+      const new_manage_cards.ManageCardsScreen(isTab: true),
     ];
 
     return WillPopScope(
@@ -145,32 +189,15 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         key: _scaffoldKey,
         backgroundColor: colors.backgroundStart,
-        drawer: CommonDrawer(
-          currentTabIndex: dashboardViewModel.currentIndex,
-          currentRoute: dashboardViewModel.currentIndex == 0 ? 'Dashboard' : (dashboardViewModel.currentIndex == 2 ? 'Manage Card' : null),
-          onTabChanged: (index) => dashboardViewModel.setIndex(index),
-        ),
         // Dynamic AppBar based on selected tab
-        appBar: (dashboardViewModel.currentIndex == 2 || dashboardViewModel.currentIndex == 3)
+        appBar: (dashboardViewModel.currentIndex == 3)
             ? null
             : MasterAppBar(
                 titleText: _getTitle(dashboardViewModel.currentIndex),
                 style: MasterHeaderStyle.gradient,
                 showBackButton: false,
-                onProfileTap: () => dashboardViewModel.setIndex(3),
-                extraActions: dashboardViewModel.currentIndex == 2
-                    ? [
-                        IconButton(
-                          icon: const Icon(Icons.search, color: Colors.white),
-                          onPressed: () {},
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                          onPressed: _handleCreateNewCard,
-                        ),
-                        const SizedBox(width: 8),
-                      ]
-                    : null,
+                showThemeToggle: false,
+                onProfileTap: () => ProfileMenuBottomSheet.show(context),
               ),
         body: IndexedStack(
           index: dashboardViewModel.currentIndex,
@@ -192,14 +219,14 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (index) {
       case 0: return 'Dashboard';
       case 1: return 'Scan';
-      case 2: return 'My Business Cards';
+      case 2: return 'MY CARDS';
       case 3: return 'My Profile';
       case 4: return 'Contacts';
       case 5: return 'Messages';
       case 6: return 'Support';
       case 7: return 'Settings';
       case 8: return 'About';
-      case 9: return 'SHARE CARD';
+      case 9: return 'Share Card';
       case 10:
         return 'MY CARDS';
       default:
@@ -212,14 +239,12 @@ class _HomeBody extends StatefulWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onScanTap;
   final VoidCallback onShareTap;
-  final VoidCallback onOpenDrawer;
   final bool isActive;
 
   const _HomeBody({
     required this.onProfileTap,
     required this.onScanTap,
     required this.onShareTap,
-    required this.onOpenDrawer,
     required this.isActive,
   });
 
@@ -330,7 +355,7 @@ class _HomeBodyState extends State<_HomeBody> {
                       label: 'Manage Card',
                       colors: colors,
                       onTap: () {
-                        context.read<DashboardViewModel>().setIndex(10);
+                        context.read<DashboardViewModel>().setIndex(2);
                       },
                       isPrimary: false,
                     ),
@@ -423,17 +448,14 @@ class _HomeBodyState extends State<_HomeBody> {
                         },
                         itemBuilder: (context, realIndex, virtualIndex) {
                           final card = cardViewModel.cards[realIndex];
-                          return GestureDetector(
-                            onTap: () {
-                              profileViewModel.incrementCardViews(card.accountUserId.toString());
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const my_cards_list.MyCardsScreen(),
-                                ),
-                              );
-                            },
-                            child: PremiumCardWidget(card: card),
+                          void handleCardTap() {
+                            profileViewModel.incrementCardViews(card.accountUserId.toString());
+                            cardViewModel.setCurrentIndex(realIndex);
+                            context.read<DashboardViewModel>().setIndex(9); // Navigate to Shared Card Screen
+                          }
+                          return PremiumCardWidget(
+                            card: card,
+                            onTap: handleCardTap,
                           );
                         },
                       ),
@@ -476,6 +498,7 @@ class _HomeBodyState extends State<_HomeBody> {
               ),
               const SizedBox(height: 16),
               StatisticsGrid(
+                userId: profile?.id,
                 totalCards: cardViewModel.cards.length,
                 totalViews: profile?.cardViews ?? 0,
                 sharedCards: profile?.shareCount ?? 0,
@@ -721,7 +744,6 @@ class _QuickActionCard extends StatelessWidget {
   final bool isPrimary;
 
   const _QuickActionCard({
-    super.key,
     required this.icon,
     required this.label,
     required this.colors,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,11 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../../core/utils/responsive.dart';
-import '../widgets/master_app_bar.dart';
+import '../widgets/otp_channel_banner.dart';
+import '../widgets/otp_input_field.dart';
+import '../widgets/international_phone_input.dart';
+import '../../core/utils/international_phone_helper.dart';
+import '../../core/services/otp_autofill_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,12 +27,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String _error = '';
   String _message = '';
 
-  // Step 1: Phone
+  // Step 1: Phone & WhatsApp Mode
   final _phoneController = TextEditingController();
+  bool _isWhatsAppMode = false;
+  String _selectedCountryCode = '+91';
+  String _selectedCountryFlag = '🇮🇳';
   
   // Step 2: OTP
   final _otpController = TextEditingController();
   String _sentToMask = '';
+  Timer? _resendTimer;
+  int _resendSecondsLeft = 0;
+  static const int _resendCooldown = 30;
 
   // Step 3: Personal Details
   final _firstNameController = TextEditingController();
@@ -69,8 +80,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
         .join(' ');
   }
 
+  void _startOtpListener() {
+    OtpAutofillService().startListening(
+      onCodeReceived: (receivedCode) {
+        if (!mounted) return;
+        final cleanCode = receivedCode.replaceAll(RegExp(r'\D'), '');
+        if (cleanCode.length >= 6) {
+          final otp6 = cleanCode.substring(0, 6);
+          setState(() {
+            _otpController.text = otp6;
+          });
+          OtpAutofillService().markAutofillInitialized();
+          _handleVerifyOtp();
+        }
+      },
+      onTimeout: () {
+        debugPrint('⏰ [RegisterScreen] OTP autofill listening timed out');
+      },
+    );
+  }
+
+  void _stopOtpListener() {
+    OtpAutofillService().stopListening();
+  }
+
   @override
   void dispose() {
+    _resendTimer?.cancel();
+    _stopOtpListener();
     _pincodeController.removeListener(_onPincodeChanged);
     _phoneController.dispose();
     _otpController.dispose();
@@ -128,37 +165,128 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
-  void _handleSendOtp() async {
+  void _goBackToPhoneStep() {
+    _stopOtpListener();
+    _resendTimer?.cancel();
+    _otpController.clear();
+    setState(() {
+      _step = 1;
+      _error = '';
+      _message = '';
+      _resendSecondsLeft = 0;
+    });
+  }
+
+  void _startResendTimer() {
+    _resendTimer?.cancel();
+    setState(() {
+      _resendSecondsLeft = _resendCooldown;
+    });
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return timer.cancel();
+      setState(() {
+        _resendSecondsLeft = _resendSecondsLeft - 1;
+        if (_resendSecondsLeft <= 0) {
+          _resendTimer?.cancel();
+          _resendSecondsLeft = 0;
+        }
+      });
+    });
+  }
+
+  Future<void> _sendRegOtp({
+    required bool useWhatsApp,
+    required bool checkAvailability,
+    bool showSnack = false,
+  }) async {
     _clearFeedback();
-    if (_phoneController.text.length != 10) {
-      setState(() => _error = 'Please enter a valid 10-digit mobile number');
+    final phone = _phoneController.text.trim();
+
+    final validationError = InternationalPhoneHelper.validatePhoneNumber(
+      phone: phone,
+      countryCode: _selectedCountryCode,
+      isWhatsApp: useWhatsApp,
+    );
+    if (validationError != null) {
+      setState(() => _error = validationError);
       return;
     }
 
     final authViewModel = context.read<AuthViewModel>();
+    final previousWhatsApp = _isWhatsAppMode;
 
-    // 1. Check if phone is available
-    final available = await authViewModel.checkPhone(
-      _phoneController.text.trim(),
-    );
-    if (!available) {
-      setState(
-        () => _error = authViewModel.errorMessage ?? 'Phone already registered',
+    if (checkAvailability) {
+      final available = await authViewModel.checkPhone(
+        phone,
+        countryCode: _selectedCountryCode,
       );
-      return;
+      if (!mounted) return;
+      if (!available) {
+        setState(
+          () => _error = authViewModel.errorMessage ?? 'Phone already registered',
+        );
+        return;
+      }
     }
 
-    // 2. Send OTP
-    final success = await authViewModel.sendRegistrationOtp(_phoneController.text.trim());
+    if (_isWhatsAppMode != useWhatsApp) {
+      setState(() => _isWhatsAppMode = useWhatsApp);
+    }
+
+    final success = await authViewModel.sendRegistrationOtp(
+      phone,
+      channel: useWhatsApp ? 'whatsapp' : 'phone',
+      countryCode: _selectedCountryCode,
+    );
+
+    if (!mounted) return;
 
     if (!success) {
-      setState(() => _error = authViewModel.error);
-    } else {
       setState(() {
-        _sentToMask = '*****${_phoneController.text.substring(6)}';
+        _isWhatsAppMode = previousWhatsApp;
+        _error = authViewModel.error;
+      });
+    } else {
+      _otpController.clear();
+      setState(() {
+        _sentToMask = '$_selectedCountryFlag $_selectedCountryCode $phone';
+        _message = useWhatsApp
+            ? 'OTP sent successfully. Check your WhatsApp.'
+            : 'OTP sent successfully. Check your SMS.';
         _step = 2;
       });
+      _startResendTimer();
+      _startOtpListener();
+
+      if (showSnack) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              useWhatsApp ? 'OTP sent via WhatsApp' : 'OTP sent via SMS',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: const Color(0xFF15803D),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
+  }
+
+  void _handleSendOtp() async {
+    await _sendRegOtp(
+      useWhatsApp: _isWhatsAppMode,
+      checkAvailability: true,
+    );
+  }
+
+  void _handleResendOtp() async {
+    if (_resendSecondsLeft > 0) return;
+    await _sendRegOtp(
+      useWhatsApp: _isWhatsAppMode,
+      checkAvailability: false,
+      showSnack: true,
+    );
   }
 
   void _handleVerifyOtp() async {
@@ -172,6 +300,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final success = await authViewModel.verifyRegistrationOtp(_otpController.text.trim());
 
     if (success) {
+      _stopOtpListener();
+      OtpAutofillService().markAutofillInitialized();
       setState(() {
         _step = 3;
       });
@@ -203,7 +333,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final registrationData = {
       'verification_token': authViewModel.verificationToken,
-      'phone': _phoneController.text.trim(),
+      'phone': InternationalPhoneHelper.formatForBackend(
+        phone: _phoneController.text.trim(),
+        countryCode: _selectedCountryCode,
+      ),
+      'country_code': _selectedCountryCode,
+      'full_phone': InternationalPhoneHelper.toE164(
+        phone: _phoneController.text.trim(),
+        countryCode: _selectedCountryCode,
+      ),
+      'preferred_otp_method': _isWhatsAppMode ? 'whatsapp' : 'phone',
+      'delivery_method': _isWhatsAppMode ? 'whatsapp' : 'phone',
       'first_name': capitalizeWords(_firstNameController.text.trim()),
       'last_name': capitalizeWords(_lastNameController.text.trim()),
       'email': _emailController.text.trim(),
@@ -225,7 +365,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       Future.delayed(const Duration(seconds: 2), () {
-        if (context.mounted) {
+        if (mounted) {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen(initialIndex: 0)),
@@ -244,44 +384,80 @@ class _RegisterScreenState extends State<RegisterScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Registration progress',
+          'REGISTRATION PROGRESS',
           style: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: 11.5,
             fontWeight: FontWeight.w700,
-            color: colors.text,
+            letterSpacing: 0.6,
+            color: const Color(0xFF1F2937),
           ),
         ),
         const SizedBox(height: 8),
-        Stack(
-          children: [
-            Container(
-              height: 4,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: colors.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: 4,
-              width:
-                  MediaQuery.of(context).size.width *
-                  (_step / 4) *
-                  0.7, // Approx width
-              decoration: BoxDecoration(
-                color: AppColors.primaryRed,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                Container(
+                  height: 5,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE5E7EB),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  height: 5,
+                  width: constraints.maxWidth * (_step / 4),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFDC2626),
+                        Color(0xFF9E1C24),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 8),
         Text(
           'Step $_step of 4',
-          style: GoogleFonts.inter(color: colors.muted, fontSize: 12),
+          style: GoogleFonts.inter(
+            color: colors.muted,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBackPillButton(VoidCallback onPressed) {
+    const crimson = Color(0xFF9E1C24);
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: crimson,
+          side: const BorderSide(color: crimson, width: 1.2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(26),
+          ),
+        ),
+        child: Text(
+          'Back',
+          style: GoogleFonts.inter(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
     );
   }
 
@@ -292,16 +468,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
     switch (_step) {
       case 1:
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CustomTextField(
-              label: 'Mobile number',
-              hintText: 'Enter your phone',
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
+            InternationalPhoneInput(
+              phoneController: _phoneController,
+              isWhatsAppMode: false,
+              selectedCountryCode: '+91',
+              allowSeparateWhatsApp: false,
+              showModeSelector: false,
+              disableCountryPicker: true,
+              showChannelStatusBanner: false,
+              enabled: !busy,
+              onWhatsAppModeChanged: (val) {
+                setState(() {
+                  _isWhatsAppMode = val;
+                  if (!val) {
+                    _selectedCountryCode = '+91';
+                    _selectedCountryFlag = '🇮🇳';
+                  }
+                  _clearFeedback();
+                });
+              },
+              onCountryCodeChanged: (cData) {
+                setState(() {
+                  _selectedCountryCode = cData.code;
+                  _selectedCountryFlag = cData.flag;
+                  _clearFeedback();
+                });
+              },
+              onChanged: (_) => _clearFeedback(),
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 14),
+            Text(
+              'Enter your mobile number to create your SmartCards account.',
+              style: GoogleFonts.inter(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 22),
             PrimaryButton(
-              text: busy ? 'Sending...' : 'Send OTP',
+              text: busy ? 'Sending...' : 'SEND OTP',
               isLoading: busy,
               onPressed: _handleSendOtp,
             ),
@@ -311,41 +520,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Code sent to $_sentToMask',
-              style: GoogleFonts.inter(color: colors.muted, fontSize: 12),
+            OtpChannelBanner(
+              isWhatsAppMode: _isWhatsAppMode,
+              phoneDisplay: _sentToMask,
+              onChangePressed: _goBackToPhoneStep,
+            ),
+            const SizedBox(height: 18),
+            OTPInputField(
+              controller: _otpController,
+              length: 6,
+              accentColor: const Color(0xFFA81C24),
+              onChanged: (code) {
+                if (_error.isNotEmpty) {
+                  setState(() => _error = '');
+                }
+              },
+              onCompleted: (code) {
+                if (code.length == 6) {
+                  _handleVerifyOtp();
+                }
+              },
             ),
             const SizedBox(height: 16),
-            CustomTextField(
-              label: 'OTP code',
-              hintText: 'Enter 6-digit OTP',
-              controller: _otpController,
-              keyboardType: TextInputType.number,
+            OtpStatusNotice(
+              statusMessage: _message,
+              errorMessage: _error,
+              isWhatsAppMode: false,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Row(
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _step = 1),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryRed,
-                      side: const BorderSide(color: AppColors.primaryRed),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Back',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
+                Expanded(child: _buildBackPillButton(_goBackToPhoneStep)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: PrimaryButton(
-                    text: busy ? 'Verifying...' : 'Verify OTP',
+                    text: busy ? 'Verifying...' : 'VERIFY OTP',
                     isLoading: busy,
                     onPressed: _handleVerifyOtp,
                   ),
@@ -432,21 +641,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _step = 2),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryRed,
-                      side: const BorderSide(color: AppColors.primaryRed),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Back',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  child: _buildBackPillButton(() => setState(() => _step = 2)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -579,21 +774,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => setState(() => _step = 3),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.primaryRed,
-                      side: const BorderSide(color: AppColors.primaryRed),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      'Back',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  child: _buildBackPillButton(() => setState(() => _step = 3)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -614,13 +795,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.watch<ThemeViewModel>().colors;
+    final busy = context.watch<AuthViewModel>().isLoading;
+    const crimson = Color(0xFF9E1C24);
+
     return Scaffold(
-      backgroundColor: Colors.white, // Pure white theme canvas background
-      appBar: const MasterAppBar(
-        titleText: 'REGISTER',
-        style: MasterHeaderStyle.gradient,
-        showProfile: false,
-      ),
+      backgroundColor: Colors.transparent,
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -630,96 +810,171 @@ class _RegisterScreenState extends State<RegisterScreen> {
             fit: BoxFit.cover,
           ),
         ),
-        child: ResponsiveCenter(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Image.asset(
-                      'assets/images/smartlogo.png',
-                      height: 90,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Form Card in Clean White styling with Red Shadow Glow
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFFFA0000).withValues(alpha: 0.15)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFA0000).withValues(alpha: 0.15),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(28),
+        child: SafeArea(
+          child: Stack(
+            children: [
+              ResponsiveCenter(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildProgressBar(),
+                        Center(
+                          child: Image.asset(
+                            'assets/images/smartlogo.png',
+                            height: 90,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(height: 44),
+
+                        Text(
+                          'USER ACCESS',
+                          style: GoogleFonts.inter(
+                            color: AppColors.primaryRedHover,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Register',
+                          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                                fontWeight: FontWeight.w300,
+                                color: colors.text,
+                              ),
+                        ),
+                        const SizedBox(height: 15),
+
+                        // Luxury elevated white card matching Login aesthetics
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              width: 1.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 28,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_step > 1) ...[
+                                _buildProgressBar(),
+                                const SizedBox(height: 18),
+                              ],
+                              if (_step != 2) ...[
+                                if (_message.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 14.0),
+                                    child: Text(
+                                      _message,
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFF15803D),
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                if (_error.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 14.0),
+                                    child: Text(
+                                      _error,
+                                      style: GoogleFonts.inter(
+                                        color: Colors.red[600],
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 280),
+                                child: _buildStepContent(),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 24),
 
-                        if (_message.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Text(
-                              _message,
-                              style: GoogleFonts.inter(
-                                color: Colors.redAccent,
-                                fontSize: 14,
+                        // Footer Actions
+                        Center(
+                          child: TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: TextButton.styleFrom(
+                              foregroundColor: crimson,
+                              textStyle: GoogleFonts.inter(
                                 fontWeight: FontWeight.w600,
+                                fontSize: 14.5,
+                                letterSpacing: 0.2,
+                                decoration: TextDecoration.underline,
+                                decorationColor: crimson,
                               ),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                             ),
+                            child: const Text('Back to login'),
                           ),
-                        if (_error.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: Text(
-                              _error,
-                              style: GoogleFonts.inter(
-                                color: Colors.red[600],
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          child: _buildStepContent(),
                         ),
+                        if (_step == 2)
+                          Center(
+                            child: TextButton(
+                              onPressed: (busy || _resendSecondsLeft > 0)
+                                  ? null
+                                  : _handleResendOtp,
+                              style: TextButton.styleFrom(
+                                foregroundColor: crimson,
+                                disabledForegroundColor: const Color(0xFF1F2937),
+                                textStyle: GoogleFonts.inter(
+                                  fontWeight: _resendSecondsLeft > 0
+                                      ? FontWeight.w500
+                                      : FontWeight.w700,
+                                  fontSize: 13.5,
+                                ),
+                              ),
+                              child: Text(
+                                _resendSecondsLeft > 0
+                                    ? 'Resend OTP in ${_resendSecondsLeft}s'
+                                    : 'Resend OTP',
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-
-                  // Footer Actions
-                  Center(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryRedHover,
-                        textStyle: GoogleFonts.inter(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                        ),
-                      ),
-                      child: const Text('Back to login'),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                top: 8,
+                left: 8,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 18,
+                    color: Color(0xFF1F2937),
+                  ),
+                  onPressed: () {
+                    if (_step == 2) {
+                      _goBackToPhoneStep();
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),

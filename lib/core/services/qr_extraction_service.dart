@@ -56,8 +56,8 @@ class QrExtractionService {
           return ScannedContactModel(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             name: titleName.isNotEmpty ? titleName : 'SmartCard Contact',
-            company: 'Unknown Company',
-            designation: 'Professional',
+            company: '',
+            designation: '',
             phone: '',
             email: '',
             website: trimmed,
@@ -79,8 +79,8 @@ class QrExtractionService {
       return ScannedContactModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: 'QR Contact',
-        company: 'Unknown Company',
-        designation: 'Professional',
+        company: '',
+        designation: '',
         phone: '',
         email: trimmed.substring(7).split('?').first,
         website: '',
@@ -94,8 +94,8 @@ class QrExtractionService {
       return ScannedContactModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: 'QR Contact',
-        company: 'Unknown Company',
-        designation: 'Professional',
+        company: '',
+        designation: '',
         phone: trimmed.substring(4).trim(),
         email: '',
         website: '',
@@ -105,7 +105,45 @@ class QrExtractionService {
       );
     }
 
-    return ContactParser.parseQrCode(trimmed);
+    var parsed = ContactParser.parseQrCode(trimmed);
+    final isSmartUrl =
+        parsed.website.isNotEmpty && _isSmartCardDomain(parsed.website);
+    final hasPhoto = parsed.profileImage != null &&
+        parsed.profileImage!.trim().isNotEmpty &&
+        parsed.profileImage!.trim().toLowerCase() != 'null';
+    final isCompactInlinePhoto =
+        parsed.profileImage?.trim().startsWith('data:') ?? false;
+
+    if (isSmartUrl && (!hasPhoto || isCompactInlinePhoto)) {
+      final fromApi = await _fetchFromApi(parsed.website);
+      if (fromApi != null) {
+        final apiPhoto = fromApi.matchedProfileImage ?? fromApi.profileImage;
+        final mergedPhoto = (apiPhoto != null &&
+                apiPhoto.trim().isNotEmpty &&
+                apiPhoto.trim().toLowerCase() != 'null')
+            ? apiPhoto
+            : parsed.profileImage;
+        return parsed.copyWith(
+          profileImage: mergedPhoto,
+          companyLogo: fromApi.companyLogo ?? parsed.companyLogo,
+          matchedProfileImage: mergedPhoto,
+          cardUrl: parsed.cardUrl ?? parsed.website,
+          isMatched: parsed.isMatched || fromApi.isMatched || (mergedPhoto != null && mergedPhoto.isNotEmpty),
+          matchedUserId: parsed.matchedUserId ?? fromApi.matchedUserId,
+          socialLinks: fromApi.socialLinks.isNotEmpty ? fromApi.socialLinks : parsed.socialLinks,
+          address: parsed.address.isNotEmpty ? parsed.address : fromApi.address,
+        );
+      }
+    }
+
+    if (isSmartUrl && parsed.cardUrl == null) {
+      parsed = parsed.copyWith(
+        cardUrl: parsed.website,
+        matchedProfileImage: parsed.matchedProfileImage ??
+            (hasPhoto ? parsed.profileImage : null),
+      );
+    }
+    return parsed;
   }
 
   static bool _isUrl(String value) {
@@ -132,8 +170,8 @@ class QrExtractionService {
     return ScannedContactModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: 'WhatsApp Contact',
-      company: 'Unknown Company',
-      designation: 'Professional',
+      company: '',
+      designation: '',
       phone: phone,
       whatsApp: phone,
       email: '',
@@ -226,15 +264,37 @@ class QrExtractionService {
           data['pincode']?.toString(),
         ].where((s) => s != null && s.trim().isNotEmpty).join(', ');
 
-        final rawProfileImg = (data['profile_image'] ?? data['profileImage'] ?? data['user_image'] ?? data['image'] ?? data['avatar'])?.toString();
-        final rawCompanyLogo = (data['company_logo'] ?? data['logo'] ?? data['companyLogo'])?.toString();
+        final userMap = data['user'] is Map ? data['user'] as Map : null;
+        final cardMap = data['card'] is Map ? data['card'] as Map : null;
+        final rawProfileImg = (data['profile_image'] ??
+                data['profileImage'] ??
+                data['profile_image_name'] ??
+                data['profileImageName'] ??
+                data['user_image'] ??
+                data['userImage'] ??
+                data['user_photo'] ??
+                data['userPhoto'] ??
+                data['photo'] ??
+                data['image'] ??
+                data['avatar'] ??
+                cardMap?['profile_image'] ??
+                cardMap?['profileImageName'] ??
+                userMap?['profile_image'] ??
+                userMap?['image'])
+            ?.toString();
+        final rawCompanyLogo = (data['company_logo'] ??
+                data['logo'] ??
+                data['companyLogo'] ??
+                cardMap?['company_logo'] ??
+                cardMap?['logo'])
+            ?.toString();
 
         return ScannedContactModel(
           id: data['contact_user_id']?.toString() ??
               DateTime.now().millisecondsSinceEpoch.toString(),
           name: (data['name'] ?? data['full_name'] ?? 'QR Contact').toString(),
-          company: (data['company'] ?? data['company_name'] ?? 'Unknown Company').toString(),
-          designation: (data['designation'] ?? data['title'] ?? 'Professional').toString(),
+          company: (data['company'] ?? data['company_name'] ?? '').toString(),
+          designation: (data['designation'] ?? data['title'] ?? '').toString(),
           phone: (data['phone'] ?? data['mobile'] ?? data['phone_number'] ?? '').toString(),
           alternativePhone: (data['alternate_phone'] ?? data['alt_phone'])?.toString(),
           whatsApp: cleanWhatsapp,

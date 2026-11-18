@@ -7,9 +7,10 @@ import '../../../core/constants/app_colors.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
 import '../../../viewmodels/card_viewmodel.dart';
 import '../../../viewmodels/theme_viewmodel.dart';
-import '../../widgets/common_drawer.dart';
+import '../../widgets/profile_menu_bottom_sheet.dart';
 import '../../widgets/customize_flow_widgets.dart';
 import '../../widgets/global_bottom_nav.dart';
+import '../../../core/utils/card_expansion_route.dart';
 import 'customize_ai_screen.dart';
 import 'customize_theme_screen.dart';
 class CustomizeMenuScreen extends StatefulWidget {
@@ -51,9 +52,20 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
   }
 
   void _navigateTo(Widget page) {
+    final cardVm = context.read<CardViewModel>();
+    if (cardVm.currentCard?.isOrganization == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Visual customizations for Organization cards are managed by your Organization Administrator.'),
+          backgroundColor: Color(0xFF0284C7),
+        ),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => page),
+      CardExpansionPageRoute(page: page),
     );
   }
 
@@ -61,8 +73,6 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
   Widget build(BuildContext context) {
     final themeVm = context.watch<ThemeViewModel>();
     final colors = themeVm.colors;
-    final cardVm = context.watch<CardViewModel>();
-    final currentCard = cardVm.currentCard;
     final initials = context.read<AuthViewModel>().currentUser == null
         ? 'U'
         : [
@@ -80,7 +90,7 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
     final optionCardStyle = BoxDecoration(
       color: usesDarkSurface ? const Color(0xFF1F2A3A) : const Color(0xFFF8FAFC),
       borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: colors.border),
+      border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.1),
@@ -96,12 +106,11 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const CommonDrawer(),
       backgroundColor: colors.backgroundStart,
       appBar: SmartCardsFlowAppBar(
-        onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+        onMenuTap: () {},
         initials: initials.isNotEmpty ? initials : 'U',
-        onProfileTap: () {},
+        onProfileTap: () => ProfileMenuBottomSheet.show(context),
       ),
       bottomNavigationBar: const GlobalBottomNav(),
       body: Container(
@@ -122,16 +131,7 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                Text(
-                  'Card Settings',
-                  style: GoogleFonts.inter(
-                    color: colors.text,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 16),
+
                 Center(
                   child: Lottie.asset(
                     'assets/lottie/profile_user_card.json',
@@ -151,7 +151,7 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
                   title: 'AI Customization',
                   subtitle: 'Upload logo and pick overlay colors automatically',
                   subtitleColor: optionMuted,
-                  trailingColor: colors.text,
+                  trailingColor: AppColors.primaryRed,
                   titleColor: colors.text,
                   icon: Icons.auto_awesome_outlined,
                   onTap: () => _navigateTo(const CustomizeAiScreen()),
@@ -164,7 +164,7 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
                   title: 'Theme',
                   subtitle: 'Choose template and card design',
                   subtitleColor: optionMuted,
-                  trailingColor: colors.text,
+                  trailingColor: AppColors.primaryRed,
                   titleColor: colors.text,
                   icon: Icons.view_quilt_outlined,
                   onTap: () => _navigateTo(const CustomizeThemeScreen()),
@@ -249,7 +249,7 @@ class _OptionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right_rounded, color: trailingColor, size: 28),
+            const Icon(Icons.chevron_right_rounded, color: Color(0xFFE53935), size: 28),
           ],
         ),
       ),

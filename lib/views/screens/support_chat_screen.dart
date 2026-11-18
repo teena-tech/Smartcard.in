@@ -8,7 +8,6 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/support_viewmodel.dart';
 import '../../data/models/message_model.dart';
 import '../widgets/common_app_bar.dart';
-import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
 import 'home_screen.dart';
 import 'support_agent_screen.dart';
@@ -312,7 +311,6 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       resizeToAvoidBottomInset: true,
       backgroundColor: colors.backgroundStart,
       bottomNavigationBar: const GlobalBottomNav(),
-      drawer: const CommonDrawer(backTitle: 'Back to Support'),
       appBar: CommonAppBar(
         titleText: 'SUPPORT CHAT',
         showProfile: true,

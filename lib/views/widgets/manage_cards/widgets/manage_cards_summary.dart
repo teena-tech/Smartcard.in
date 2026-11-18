@@ -4,6 +4,18 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 
+IconData? _getSectionIcon(String t) {
+  final lower = t.toLowerCase();
+  if (lower.contains('personal')) return Icons.person_outline;
+  if (lower.contains('company')) return Icons.business_outlined;
+  if (lower.contains('contact')) return Icons.contact_phone_outlined;
+  if (lower.contains('social')) return Icons.share_outlined;
+  if (lower.contains('about')) return Icons.description_outlined;
+  if (lower.contains('video')) return Icons.video_collection_outlined;
+  if (lower.contains('gallery')) return Icons.photo_library_outlined;
+  return null;
+}
+
 Widget buildSummaryCard({
     required String title,
     required bool hasContent,
@@ -14,66 +26,140 @@ Widget buildSummaryCard({
     Color? customButtonBg,
     Color? customButtonTextCol,
     IconData? customButtonIcon,
+    bool isEditable = true,
+    Widget? footerWidget,
   }) {
+    final sectionIcon = _getSectionIcon(title);
+
     return Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.primaryRed.withValues(alpha: 0.15), width: 0.5),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-            ],
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isEditable
+              ? const Color(0xFFE5E7EB)
+              : const Color(0xFFBAE6FD),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title.toUpperCase(),
-                style: GoogleFonts.inter(
-                  color: colors.muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (sectionIcon != null) ...[
+                    Icon(
+                      sectionIcon,
+                      size: 15,
+                      color: isEditable ? AppColors.primaryRed : const Color(0xFF0284C7),
+                    ),
+                    const SizedBox(width: 7),
+                  ],
+                  Text(
+                    title.toUpperCase(),
+                    style: GoogleFonts.inter(
+                      color: isEditable ? colors.muted : const Color(0xFF0369A1),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
               ),
-              GestureDetector(
-                onTap: onEdit,
-                child: Container(
+              if (isEditable)
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onEdit,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: customButtonBg ?? const Color(0xFFFCF0F0),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: (customButtonTextCol ?? AppColors.primaryRed).withValues(alpha: 0.25),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          (customButtonIcon == null ||
+                                  customButtonIcon == Icons.edit_outlined ||
+                                  customButtonIcon == Icons.edit)
+                              ? Image.asset(
+                                  'assets/images/edit.png',
+                                  width: 12,
+                                  height: 12,
+                                  color: customButtonTextCol ?? AppColors.primaryRed,
+                                )
+                              : Icon(
+                                  customButtonIcon,
+                                  color: customButtonTextCol ?? AppColors.primaryRed,
+                                  size: 13,
+                                ),
+                          const SizedBox(width: 4),
+                          Text(
+                            customButtonText ?? (hasContent ? 'Edit' : 'Add'),
+                            style: GoogleFonts.inter(
+                              color: customButtonTextCol ?? AppColors.primaryRed,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else
+                Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
+                    horizontal: 8,
+                    vertical: 3.5,
                   ),
                   decoration: BoxDecoration(
-                    color: customButtonBg ?? const Color(0xFFFCF0F0),
+                    color: const Color(0xFFF0F9FF),
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFBAE6FD), width: 0.8),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      (customButtonIcon == null || customButtonIcon == Icons.edit_outlined || customButtonIcon == Icons.edit)
-                          ? Image.asset(
-                              'assets/images/edit.png',
-                              width: 12,
-                              height: 12,
-                              color: customButtonTextCol ?? AppColors.primaryRed,
-                            )
-                          : Icon(customButtonIcon, color: customButtonTextCol ?? AppColors.primaryRed, size: 12),
+                      const Icon(Icons.lock_rounded, size: 11, color: Color(0xFF0284C7)),
                       const SizedBox(width: 4),
                       Text(
-                        customButtonText ?? (hasContent ? 'Edit' : 'Add'),
+                        'Locked',
                         style: GoogleFonts.inter(
-                          color: customButtonTextCol ?? AppColors.primaryRed,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF0369A1),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -81,13 +167,19 @@ Widget buildSummaryCard({
             child
           else
             Text(
-              'No $title added yet. Tap the button to add.',
+              isEditable
+                  ? 'No $title added yet. Tap the button to add.'
+                  : 'No $title specified by organization.',
               style: GoogleFonts.inter(
                 color: colors.muted,
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
               ),
             ),
+          if (footerWidget != null) ...[
+            const SizedBox(height: 8),
+            footerWidget,
+          ],
         ],
       ),
     );
@@ -176,7 +268,7 @@ Widget buildFieldRow({
             ],
           ),
         ),
-        const Icon(Icons.chevron_right, color: Color(0xFFCCCCCC), size: 18),
+        const Icon(Icons.chevron_right, color: Color(0xFFE53935), size: 18),
       ],
     ),
   );

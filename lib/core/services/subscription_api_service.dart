@@ -74,7 +74,7 @@ class SubscriptionApiService {
         ApiConfig.subscriptionFailure(userId),
         data: {
           'error_reason': reason ?? 'Payment failed',
-          if (amount != null) 'total_amount': amount,
+          'total_amount': ?amount,
           'payment_for': 'subscription',
         },
       );

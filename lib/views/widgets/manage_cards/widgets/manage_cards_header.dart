@@ -42,8 +42,9 @@ Widget buildProfileHeader(
     CardProfileDetails details,
     AppColors colors,
     String Function(String?, String, String) resolveImgUrl,
-    Function(BuildContext, String) showEditSheet,
-  ) {
+    Function(BuildContext, String) showEditSheet, {
+    bool isOrganization = false,
+  }) {
     final initials =
         '${details.firstName.isNotEmpty ? details.firstName[0] : ""}${details.lastName.isNotEmpty ? details.lastName[0] : ""}'
             .toUpperCase();
@@ -117,32 +118,33 @@ Widget buildProfileHeader(
                     ),
                   ),
                 ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: GestureDetector(
-                    onTap: () => showEditSheet(context, 'section-profile-image'),
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.primaryRed, width: 2),
-                      ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: AppColors.primaryRed,
-                        size: 14,
+                if (!isOrganization)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () => showEditSheet(context, 'section-profile-image'),
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primaryRed, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: AppColors.primaryRed,
+                          size: 14,
+                        ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 8),
             GestureDetector(
-              onTap: () => showEditSheet(context, 'section-personal'),
+              onTap: isOrganization ? null : () => showEditSheet(context, 'section-personal'),
               child: Column(
                 children: [
                   Text(
@@ -157,9 +159,11 @@ Widget buildProfileHeader(
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    details.designation.isEmpty ? 'Add designation' : details.designation,
+                    details.designation.isEmpty
+                        ? (isOrganization ? 'Official Representative' : 'Add designation')
+                        : details.designation,
                     style: GoogleFonts.inter(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 13,
                     ),
                   ),

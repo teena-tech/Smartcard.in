@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'video_item.dart';
 
 class CardModel {
   final int userId; // matches card.user_id (which is work_profile_id)
@@ -24,9 +25,12 @@ class CardModel {
   final String? opacity;
   final String? profileImageName;
   final bool isSuspended;
+  final bool isOrganization;
   final String? profileUrl; // Computed profile link from backend (CARD_BASE_URL/profile/{id})
   final String? templateId;
   final String? templateKey;
+
+  bool get isCorporate => isOrganization;
 
   /// The URL to encode into the QR code and display/share.
   /// Reads directly from database `qr_code` field (e.g., https://thesmartcards.com/?sc=...) 
@@ -69,6 +73,7 @@ class CardModel {
     this.opacity,
     this.profileImageName,
     this.isSuspended = false,
+    this.isOrganization = false,
     this.profileUrl,
     this.templateId,
     this.templateKey,
@@ -83,13 +88,33 @@ class CardModel {
       return fallback;
     }
 
-    final workProfileId = parseInt(json['work_profile_id'], parseInt(json['card_id'], parseInt(json['user_id'], parseInt(json['id'], 0))));
+    final workProfileId = parseInt(json['work_profile_id'], parseInt(json['card_id'], parseInt(json['id'], 0)));
     final cardId = parseInt(json['card_id'], workProfileId);
-    final accountUserId = parseInt(json['account_user_id'], parseInt(json['accountUserId'], parseInt(json['owner_user_id'], fallbackUserId)));
+    final accountUserId = parseInt(
+      json['account_user_id'],
+      parseInt(
+        json['accountUserId'],
+        parseInt(
+          json['owner_user_id'],
+          parseInt(json['user_id'], fallbackUserId),
+        ),
+      ),
+    );
     
     final companyName = json['company_name']?.toString() ?? '';
     final name = json['name']?.toString() ?? '';
     final cardNo = parseInt(json['card_no'], index + 1);
+
+    final bool isOrg = json['is_organization'] == true ||
+        json['is_organization'] == 1 ||
+        json['is_organization'] == '1' ||
+        json['is_corporate'] == true ||
+        json['is_corporate'] == 1 ||
+        json['is_corporate'] == '1' ||
+        json['isOrganization'] == true ||
+        json['isCorporate'] == true ||
+        json['card_type']?.toString().toLowerCase() == 'organization' ||
+        json['card_type']?.toString().toLowerCase() == 'corporate';
 
     // Tab label logic
     String tabLabel = companyName.trim().isNotEmpty 
@@ -123,6 +148,7 @@ class CardModel {
       opacity: json['opacity']?.toString(),
       profileImageName: json['profile_image']?.toString() ?? json['image']?.toString(),
       isSuspended: json['is_suspended'] == 1 || json['is_suspended'] == true || json['is_suspended'] == '1',
+      isOrganization: isOrg,
       profileUrl: json['profile_url']?.toString(),
     );
   }
@@ -151,6 +177,7 @@ class CardModel {
     String? opacity,
     String? profileImageName,
     bool? isSuspended,
+    bool? isOrganization,
     String? profileUrl,
     String? templateId,
     String? templateKey,
@@ -179,6 +206,7 @@ class CardModel {
       opacity: opacity ?? this.opacity,
       profileImageName: profileImageName == '' ? '' : (profileImageName ?? this.profileImageName),
       isSuspended: isSuspended ?? this.isSuspended,
+      isOrganization: isOrganization ?? this.isOrganization,
       profileUrl: profileUrl ?? this.profileUrl,
       templateId: templateId ?? this.templateId,
       templateKey: templateKey ?? this.templateKey,
@@ -222,7 +250,15 @@ class CardProfileDetails {
   String xLink;
   List<Map<String, String>> website; // website links: name/url
   String aboutCompany;
-  List<String> youtubeLinks;
+  List<VideoItem> videos;
+  List<String> get youtubeLinks => videos.map((v) => v.url).toList();
+  set youtubeLinks(List<String> links) {
+    final existingMap = {for (var v in videos) v.url: v};
+    videos = links
+        .where((l) => l.trim().isNotEmpty)
+        .map((l) => existingMap[l] ?? VideoItem.fromUrl(l))
+        .toList();
+  }
   List<String> existingPhotos;
   String profileImageName;
   String companyLogoName;
@@ -262,13 +298,18 @@ class CardProfileDetails {
     this.xLink = '',
     this.website = const [],
     this.aboutCompany = '',
-    this.youtubeLinks = const [],
+    List<String> youtubeLinks = const [],
+    List<VideoItem>? videos,
     this.existingPhotos = const [],
     this.profileImageName = '',
     this.companyLogoName = '',
     this.qrLink = '',
     this.isSuspended = false,
-  });
+  }) : videos = videos ??
+            youtubeLinks
+                .where((l) => l.trim().isNotEmpty)
+                .map((l) => VideoItem.fromUrl(l))
+                .toList();
 
   factory CardProfileDetails.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>? ?? {};
@@ -366,7 +407,20 @@ class CardProfileDetails {
       xLink: work['twitter_link']?.toString() ?? '',
       website: parseWebsites(work['website']),
       aboutCompany: work['description']?.toString() ?? '',
-      youtubeLinks: parseList(work['youtube_links']).isNotEmpty ? parseList(work['youtube_links']) : const [''],
+      videos: () {
+        if (work['videos'] is List && (work['videos'] as List).isNotEmpty) {
+          return (work['videos'] as List).map((e) {
+            if (e is Map<String, dynamic>) return VideoItem.fromJson(e);
+            if (e is Map) return VideoItem.fromJson(Map<String, dynamic>.from(e));
+            return VideoItem.fromUrl(e.toString());
+          }).toList();
+        }
+        final rawLinks = parseList(work['youtube_links']);
+        return rawLinks
+            .where((l) => l.trim().isNotEmpty)
+            .map((l) => VideoItem.fromUrl(l))
+            .toList();
+      }(),
       existingPhotos: const [], // Loaded later or defaulted
       profileImageName: work['profile_image']?.toString() ?? user['image']?.toString() ?? '',
       companyLogoName: work['logo']?.toString() ?? '',
@@ -409,7 +463,7 @@ class CardProfileDetails {
       xLink: xLink,
       website: website.map((e) => Map<String, String>.from(e)).toList(),
       aboutCompany: aboutCompany,
-      youtubeLinks: List.from(youtubeLinks),
+      videos: videos.map((e) => e.clone()).toList(),
       existingPhotos: List.from(existingPhotos),
       profileImageName: profileImageName,
       companyLogoName: companyLogoName,

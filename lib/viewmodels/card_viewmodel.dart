@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/card_model.dart';
+import '../models/video_item.dart';
 import '../models/user_model.dart';
 import '../repositories/card_repository.dart';
 import '../repositories/user_repository.dart';
@@ -28,6 +30,7 @@ class CardViewModel extends ChangeNotifier {
   String _fallbackName = '';
   String _fallbackPhone = '';
   String? _fallbackEmail;
+  String _activeUserId = '';
 
   List<CardModel> get cards => _cards;
   int get currentIndex => _currentIndex;
@@ -54,6 +57,9 @@ class CardViewModel extends ChangeNotifier {
     String? fallbackPhone,
     String? fallbackEmail,
   }) async {
+    if (userId.isNotEmpty) {
+      _activeUserId = userId;
+    }
     if (fallbackName != null && fallbackName.isNotEmpty) {
       _fallbackName = fallbackName;
     }
@@ -66,7 +72,8 @@ class CardViewModel extends ChangeNotifier {
 
     _isLoading = true;
     _errorMessage = null;
-    notifyListeners();
+    // Only notify while loading if we have no cards yet (avoid empty flash during refresh)
+    if (_cards.isEmpty) notifyListeners();
 
     try {
       _cards = await _cardRepository.getCards(
@@ -91,12 +98,21 @@ class CardViewModel extends ChangeNotifier {
               if (galleryData != null) {
                 final rawData = galleryData['data'] is Map ? galleryData['data'] as Map : galleryData;
                 final photosList = rawData['photos'] ?? rawData['gallery'] ?? rawData['images'] ?? [];
+                final videosList = rawData['videos'];
                 final youtubeList = rawData['youtube_links'] ?? rawData['youtube'] ?? [];
                 if (photosList is List) {
                   details.existingPhotos = photosList.map((e) => e.toString()).toList();
                 }
-                if (youtubeList is List) {
-                  details.youtubeLinks = youtubeList.map((e) => e.toString()).toList();
+                if (videosList is List && videosList.isNotEmpty) {
+                  details.videos = videosList.map((e) {
+                    if (e is Map<String, dynamic>) return VideoItem.fromJson(e);
+                    if (e is Map) return VideoItem.fromJson(Map<String, dynamic>.from(e));
+                    return VideoItem.fromUrl(e.toString());
+                  }).toList();
+                } else if (youtubeList is List) {
+                  final urls = youtubeList.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+                  final existingMap = {for (var v in details.videos) v.url: v};
+                  details.videos = urls.map((u) => existingMap[u] ?? VideoItem.fromUrl(u)).toList();
                 }
               }
             }
@@ -177,6 +193,12 @@ class CardViewModel extends ChangeNotifier {
         workProfileId: card.workProfileId,
       );
       if (details != null) {
+        // Load cached videos for immediate offline & fast availability
+        final cached = await _loadCachedVideos(targetUserId, card.workProfileId);
+        if (cached != null && cached.isNotEmpty) {
+          details.videos = cached;
+        }
+
         try {
           final galleryData = await _userRepository.getUserGallery(
             targetUserId,
@@ -185,6 +207,7 @@ class CardViewModel extends ChangeNotifier {
           if (galleryData != null) {
             final rawData = galleryData['data'] is Map ? galleryData['data'] as Map : galleryData;
             final photosList = rawData['photos'] ?? rawData['gallery'] ?? rawData['images'] ?? [];
+            final videosList = rawData['videos'];
             final youtubeList = rawData['youtube_links'] ?? rawData['youtube'] ?? [];
             if (photosList is List) {
               details.existingPhotos = photosList.map((e) => e.toString()).toList();
@@ -198,18 +221,19 @@ class CardViewModel extends ChangeNotifier {
                 if (photosList.isNotEmpty) details.existingPhotos = [photosList];
               }
             }
-            if (youtubeList is List) {
-              details.youtubeLinks = youtubeList.map((e) => e.toString()).toList();
-            } else if (youtubeList is String) {
-              try {
-                final decoded = jsonDecode(youtubeList);
-                if (decoded is List) {
-                  details.youtubeLinks = decoded.map((e) => e.toString()).toList();
-                }
-              } catch (_) {
-                if (youtubeList.isNotEmpty) details.youtubeLinks = [youtubeList];
-              }
+            if (videosList is List && videosList.isNotEmpty) {
+              details.videos = videosList.map((e) {
+                if (e is Map<String, dynamic>) return VideoItem.fromJson(e);
+                if (e is Map) return VideoItem.fromJson(Map<String, dynamic>.from(e));
+                return VideoItem.fromUrl(e.toString());
+              }).toList();
+            } else if (youtubeList is List) {
+              final urls = youtubeList.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+              final existingMap = {for (var v in details.videos) v.url: v};
+              details.videos = urls.map((u) => existingMap[u] ?? VideoItem.fromUrl(u)).toList();
             }
+            // Update cache with freshest videos
+            await _cacheVideosLocally(targetUserId, card.workProfileId, details.videos);
           }
         } catch (_) {}
         _selectedCardDetails = details;
@@ -258,6 +282,9 @@ class CardViewModel extends ChangeNotifier {
     required String fallbackPhone,
     String? fallbackEmail,
   }) async {
+    if (userId.isNotEmpty) {
+      _activeUserId = userId;
+    }
     _fallbackName = fallbackName;
     _fallbackPhone = fallbackPhone;
     _fallbackEmail = fallbackEmail;
@@ -287,7 +314,15 @@ class CardViewModel extends ChangeNotifier {
   bool get canDeleteSelectedCard => _cards.length > 1 && !isPrimaryCardSelected;
   bool get isPrimaryCardSelected => currentCard?.isPrimary ?? false;
   bool get isSuspended => currentCard?.isSuspended ?? false;
-  String get userId => currentCard?.accountUserId.toString() ?? (_cards.isNotEmpty ? _cards.first.accountUserId.toString() : '');
+  String get userId {
+    if (currentCard != null && currentCard!.accountUserId > 0) {
+      return currentCard!.accountUserId.toString();
+    }
+    for (final c in _cards) {
+      if (c.accountUserId > 0) return c.accountUserId.toString();
+    }
+    return _activeUserId;
+  }
 
   void clearMessages() {
     _errorMessage = null;
@@ -712,7 +747,13 @@ class CardViewModel extends ChangeNotifier {
         await _userRepository.updateYoutubeLinks(
           userId,
           _selectedCardDetails!.youtubeLinks,
+          videos: _selectedCardDetails!.videos.map((v) => v.toJson()).toList(),
           workProfileId: currentCard!.workProfileId,
+        );
+        await _cacheVideosLocally(
+          userId,
+          currentCard!.workProfileId,
+          _selectedCardDetails!.videos,
         );
         _successMessage = 'Card updated successfully!';
       }
@@ -862,6 +903,9 @@ class CardViewModel extends ChangeNotifier {
         photo,
         workProfileId: currentCard!.workProfileId,
       );
+      if (_selectedCardDetails != null) {
+        _selectedCardDetails!.existingPhotos.remove(photo);
+      }
       _successMessage = 'Image removed successfully!';
       await fetchCards(userId);
     } catch (e) {
@@ -893,6 +937,162 @@ class CardViewModel extends ChangeNotifier {
     );
     _cards[_currentIndex] = updatedCard;
     notifyListeners();
+  }
+
+  // --- Video Collection Management & Local Persistence ---
+
+  String _videoCacheKey(String uid, int? workProfileId) {
+    return 'card_videos_${uid}_${workProfileId ?? 0}';
+  }
+
+  Future<void> _cacheVideosLocally(
+    String uid,
+    int? workProfileId,
+    List<VideoItem> videos,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(videos.map((v) => v.toJson()).toList());
+      await prefs.setString(_videoCacheKey(uid, workProfileId), encoded);
+    } catch (_) {}
+  }
+
+  Future<List<VideoItem>?> _loadCachedVideos(
+    String uid,
+    int? workProfileId,
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedStr = prefs.getString(_videoCacheKey(uid, workProfileId));
+      if (cachedStr != null && cachedStr.isNotEmpty) {
+        final decoded = jsonDecode(cachedStr);
+        if (decoded is List) {
+          return decoded
+              .map((e) => VideoItem.fromJson(Map<String, dynamic>.from(e as Map)))
+              .toList();
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Adds a new video to the currently selected card
+  Future<bool> addVideo(VideoItem video) async {
+    if (_selectedCardDetails == null) return false;
+    final cleanUrl = video.url.trim();
+    if (cleanUrl.isEmpty) return false;
+
+    // Duplicate check
+    final exists = _selectedCardDetails!.videos.any(
+      (v) => v.url.toLowerCase() == cleanUrl.toLowerCase(),
+    );
+    if (exists) {
+      _errorMessage = 'This video link has already been added to your collection.';
+      notifyListeners();
+      return false;
+    }
+
+    final updated = List<VideoItem>.from(_selectedCardDetails!.videos);
+    updated.add(video);
+    _selectedCardDetails!.videos = updated;
+    notifyListeners();
+
+    final targetUserId = currentCard != null && currentCard!.accountUserId > 0
+        ? currentCard!.accountUserId.toString()
+        : userId;
+    final wpId = currentCard?.workProfileId;
+
+    // Cache locally immediately
+    await _cacheVideosLocally(targetUserId, wpId, updated);
+
+    // Sync to backend
+    try {
+      await _userRepository.updateYoutubeLinks(
+        targetUserId,
+        updated.map((v) => v.url).toList(),
+        videos: updated.map((v) => v.toJson()).toList(),
+        workProfileId: wpId,
+      );
+      _successMessage = 'Video added successfully!';
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      // Kept locally if backend network fails
+      _errorMessage = 'Video saved locally';
+      notifyListeners();
+      return true;
+    }
+  }
+
+  /// Updates an existing video in the collection (e.g. edited title or URL)
+  Future<bool> updateVideo(int index, VideoItem updatedVideo) async {
+    if (_selectedCardDetails == null) return false;
+    if (index < 0 || index >= _selectedCardDetails!.videos.length) return false;
+
+    final updated = List<VideoItem>.from(_selectedCardDetails!.videos);
+    updated[index] = updatedVideo;
+    _selectedCardDetails!.videos = updated;
+    notifyListeners();
+
+    final targetUserId = currentCard != null && currentCard!.accountUserId > 0
+        ? currentCard!.accountUserId.toString()
+        : userId;
+    final wpId = currentCard?.workProfileId;
+
+    await _cacheVideosLocally(targetUserId, wpId, updated);
+
+    try {
+      await _userRepository.updateYoutubeLinks(
+        targetUserId,
+        updated.map((v) => v.url).toList(),
+        videos: updated.map((v) => v.toJson()).toList(),
+        workProfileId: wpId,
+      );
+      _successMessage = 'Video updated successfully!';
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Updated locally';
+      notifyListeners();
+      return true;
+    }
+  }
+
+  /// Removes a video by index
+  Future<bool> removeVideo(int index) async {
+    if (_selectedCardDetails == null) return false;
+    if (index < 0 || index >= _selectedCardDetails!.videos.length) return false;
+
+    final updated = List<VideoItem>.from(_selectedCardDetails!.videos);
+    updated.removeAt(index);
+    _selectedCardDetails!.videos = updated;
+    notifyListeners();
+
+    final targetUserId = currentCard != null && currentCard!.accountUserId > 0
+        ? currentCard!.accountUserId.toString()
+        : userId;
+    final wpId = currentCard?.workProfileId;
+
+    await _cacheVideosLocally(targetUserId, wpId, updated);
+
+    try {
+      await _userRepository.updateYoutubeLinks(
+        targetUserId,
+        updated.map((v) => v.url).toList(),
+        videos: updated.map((v) => v.toJson()).toList(),
+        workProfileId: wpId,
+      );
+      _successMessage = 'Video removed successfully!';
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Removed locally';
+      notifyListeners();
+      return true;
+    }
   }
 }
 

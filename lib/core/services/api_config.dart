@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'dart:io' show Platform;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
   static String get _liveApiBaseUrl =>
-      dotenv.env['API_URL'] ?? 'https://api.thesmartcards.in';
+      dotenv.env['API_URL'] ?? 'https://api.thesmartcards.com';
   // Public accessor for the API base URL used throughout the app.
 
 
@@ -35,6 +34,10 @@ class ApiConfig {
   static String userProfileImage(String userId) => '/api/v1/users/$userId/profile-image';
   static String companyLogo(String userId) => '/api/v1/users/$userId/company-logo';
   static String deleteUserAccount(String userId) => '/api/v1/users/$userId';
+  static String deleteUserAccountPost(String userId) => '/api/v1/users/$userId/delete';
+  static const String deleteUserAccountMe = '/api/v1/users/me';
+  static const String deleteUserAccountMePost = '/api/v1/users/me/delete';
+  static const String deleteUserAccountConvenience = '/api/v1/users/delete-account';
 
   // Support
   static String supportContext(String userId) => '/api/v1/users/$userId/support/context';
@@ -48,6 +51,7 @@ class ApiConfig {
 
   // Gallery Management
   static String galleryImages(String userId) => '/api/v1/users/$userId/gallery/images';
+  static String deleteGalleryImage(String userId) => '/api/v1/users/$userId/gallery/images/delete';
   static String galleryYoutubeLinks(String userId) => '/api/v1/users/$userId/gallery/youtube-links';
 
   // Additional cards
@@ -127,7 +131,7 @@ class ApiConfig {
   // Set this to 'false' to connect to the LIVE server.
   // Set this to 'true' to connect to your LOCAL backend server.
   static bool get useLocalBackend =>
-      (dotenv.env['USE_LOCAL_BACKEND']?.toLowerCase() ?? 'true') == 'true';
+      (dotenv.env['USE_LOCAL_BACKEND']?.toLowerCase() ?? 'false') == 'true';
 
   static String get baseUrl {
     if (!useLocalBackend) {
@@ -155,9 +159,10 @@ class ApiConfig {
   // Uploads directory mapping
   static String get sharedUploadsUrl => useLocalBackend
       ? '$baseUrl/shared-uploads'
-      : (dotenv.env['SHARED_UPLOADS_URL'] ?? 'https://api.thesmartcards.in/shared-uploads');
+      : (dotenv.env['SHARED_UPLOADS_URL'] ?? 'https://thesmartcards.com/shared-uploads');
 
   // Required only for /api/v1/agents/* routes because server uses CARD_API_KEY.
   static String get cardApiKey =>
-      dotenv.env['CARD_API_KEY'] ?? 'SET_PRODUCTION_CARD_API_KEY';
+      dotenv.env['CARD_API_KEY'] ??
+      'BSOEYKz2/TPMwJP0ZV2p0Vzn4MxP6CaXyEClHf9BFecAHJGwSxfTFalLTF5P8mkioTxld8ETM073UlIjeJ/Eww==';
 }

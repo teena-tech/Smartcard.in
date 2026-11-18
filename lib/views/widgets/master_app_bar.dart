@@ -10,6 +10,8 @@ import '../../models/user_model.dart';
 import 'circular_profile_avatar.dart';
 import 'rotating_profile_avatar_ring.dart';
 import 'smart_cards_logo.dart';
+import 'theme_toggle_switch.dart';
+import 'profile_menu_bottom_sheet.dart';
 import '../../core/utils/upload_url_resolver.dart';
 
 enum MasterHeaderStyle {
@@ -29,6 +31,9 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onBackTap;
   final List<Widget>? extraActions;
   final Color? backgroundColor;
+  final Widget? leading;
+  final bool? showThemeToggle;
+  final bool? showModeToggle;
 
   const MasterAppBar({
     super.key,
@@ -42,6 +47,9 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onBackTap,
     this.extraActions,
     this.backgroundColor,
+    this.leading,
+    this.showThemeToggle,
+    this.showModeToggle,
   });
 
   @override
@@ -96,6 +104,9 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
       resolvedBgColor ??= colors.menuBg;
     }
 
+    final effectiveProfileTap = onProfileTap ?? () => ProfileMenuBottomSheet.show(context);
+    final shouldShowThemeToggle = showThemeToggle ?? (!canPop && !isProfilePage);
+
     final appBarWidget = AppBar(
       backgroundColor: resolvedBgColor,
       elevation: 0,
@@ -103,45 +114,25 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
       flexibleSpace: flexibleDecoration != null
           ? Container(decoration: flexibleDecoration)
           : null,
-      leading: canPop
-          ? IconButton(
-              icon: Icon(Icons.arrow_back, color: headerTextColor),
-              onPressed: onBackTap ?? () => Navigator.pop(context),
-            )
-          : Builder(
-              builder: (context) {
-                if (isProfilePage) {
-                  return IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(Icons.menu, color: AppColors.primaryRed, size: 20),
-                    ),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                  );
-                }
-                return IconButton(
-                  icon: Icon(Icons.menu, color: headerTextColor),
-                  onPressed: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                );
-              },
-            ),
+      leadingWidth: leading != null ? null : (shouldShowThemeToggle ? 86 : null),
+      leading: leading ??
+          (canPop
+              ? IconButton(
+                  icon: Icon(Icons.arrow_back, color: headerTextColor),
+                  onPressed: onBackTap ?? () => Navigator.pop(context),
+                )
+              : (shouldShowThemeToggle
+                  ? const Padding(
+                      padding: EdgeInsets.only(left: 12.0),
+                      child: Center(child: ThemeToggleSwitch()),
+                    )
+                  : null)),
       title: title ??
           (titleText != null
               ? Text(
                   titleText!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(
                     color: headerTextColor,
                     fontSize: 16,
@@ -156,8 +147,8 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: isProfilePage
-                ? _buildProfileIconWithText(onProfileTap, user, cardImage)
-                : _buildSimpleProfileIcon(onProfileTap, user, cardImage),
+                ? _buildProfileIconWithText(effectiveProfileTap, user, cardImage)
+                : _buildSimpleProfileIcon(effectiveProfileTap, user, cardImage),
           ),
       ],
     );

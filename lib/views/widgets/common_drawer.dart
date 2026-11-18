@@ -11,6 +11,7 @@ import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 import 'circular_profile_avatar.dart';
 import '../../core/utils/upload_url_resolver.dart';
+import '../../core/services/dio_client.dart';
 
 class CommonDrawer extends StatelessWidget {
   final int? currentTabIndex;
@@ -41,17 +42,6 @@ class CommonDrawer extends StatelessWidget {
         (route) => false,
       );
     }
-  }
-
-  void _navigateToScreen(BuildContext context, Widget screen) {
-    Navigator.pop(context);
-    if (context.widget.runtimeType == screen.runtimeType) {
-      return;
-    }
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
   }
 
   @override
@@ -152,7 +142,7 @@ class CommonDrawer extends StatelessWidget {
                             (user?.email?.isNotEmpty == true ? user!.email : null) ?? 
                             'Update Profile',
                             style: GoogleFonts.inter(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 14,
                             ),
                           ),
@@ -207,9 +197,9 @@ class CommonDrawer extends StatelessWidget {
                   'Manage Card',
                   colors,
                   () {
-                    _navigateToTab(context, 10);
+                    _navigateToTab(context, 2);
                   },
-                  isSelected: currentRoute == 'Manage Card' || currentTabIndex == 10,
+                  isSelected: currentRoute == 'Manage Card' || currentTabIndex == 2,
                 ),
                 _DrawerItem(
                   Icons.contact_phone_outlined,
@@ -304,15 +294,40 @@ class CommonDrawer extends StatelessWidget {
                       height: 44,
                       child: ElevatedButton.icon(
                         onPressed: () async {
-                          // Stop polling before logout to prevent unauthenticated requests
-                          context.read<MessageViewModel>().stopPolling();
-                          await context.read<AuthViewModel>().logout();
-                          if (context.mounted) {
-                            Navigator.pushAndRemoveUntil(
-                              context,
+                          final navigator = Navigator.of(context, rootNavigator: true);
+                          final messageVm = context.read<MessageViewModel>();
+                          final authVm = context.read<AuthViewModel>();
+                          final profileVm = context.read<ProfileViewModel>();
+                          final cardVm = context.read<CardViewModel>();
+
+                          Navigator.of(context).pop(); // Close drawer
+
+                          try {
+                            messageVm.stopPolling();
+                          } catch (_) {}
+
+                          try {
+                            await authVm.logout();
+                          } catch (_) {}
+
+                          try {
+                            profileVm.clearUser();
+                          } catch (_) {}
+
+                          try {
+                            cardVm.clearMessages();
+                          } catch (_) {}
+
+                          try {
+                            navigator.pushAndRemoveUntil(
                               MaterialPageRoute(
                                 builder: (context) => const LoginScreen(),
                               ),
+                              (route) => false,
+                            );
+                          } catch (_) {
+                            DioClient.navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                              '/login',
                               (route) => false,
                             );
                           }
@@ -356,7 +371,6 @@ class _DrawerItem extends StatelessWidget {
     this.title,
     this.colors,
     this.onTap, {
-    super.key,
     this.isSelected = false,
   });
 
@@ -376,7 +390,7 @@ class _DrawerItem extends StatelessWidget {
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: isSelected ? AppColors.primaryRed.withValues(alpha: 0.15) : colors.muted.withValues(alpha: 0.15),
+          color: isSelected ? AppColors.primaryRed : AppColors.primaryRed.withValues(alpha: 0.5),
           size: 12,
         ),
         dense: true,
@@ -394,9 +408,8 @@ class _ThemeButton extends StatelessWidget {
   const _ThemeButton(
     this.title,
     this.isSelected,
-    this.mode, {
-    super.key,
-  });
+    this.mode,
+  );
 
   @override
   Widget build(BuildContext context) {

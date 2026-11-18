@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
 import '../core/state/app_loading_service.dart';
+import '../core/utils/international_phone_helper.dart';
 
 enum ProfileState { initial, loading, loaded, error }
 
@@ -59,7 +62,47 @@ class ProfileViewModel extends ChangeNotifier {
     _setState(ProfileState.loading);
     try {
       final userData = await _repository.getUserProfile(userId);
-      _user = userData;
+      if (userData != null) {
+        int shareCount = userData.shareCount ?? 0;
+
+        // 1. If backend returned 0 or null, check local storage & Keychain
+        if (shareCount <= 0) {
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            const storage = FlutterSecureStorage();
+            shareCount = prefs.getInt('stats_shared_cards_$userId') ??
+                prefs.getInt('stats_shared_cards') ??
+                0;
+            if (shareCount <= 0) {
+              final secVal = await storage.read(key: 'stats_shared_cards_$userId') ??
+                  await storage.read(key: 'stats_shared_cards');
+              if (secVal != null) {
+                shareCount = int.tryParse(secVal) ?? 0;
+              }
+            }
+          } catch (_) {}
+        }
+
+        // 2. Ensure it NEVER shows 0 ("orikalum 0 enna kannnikan padilla")
+        if (shareCount <= 0) {
+          final views = userData.cardViews ?? 0;
+          shareCount = views > 0 ? (views * 0.35).round().clamp(18, 9999) : 18;
+        }
+
+        // 3. Persist to storage and iOS Keychain
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          const storage = FlutterSecureStorage();
+          await prefs.setInt('stats_shared_cards_$userId', shareCount);
+          await prefs.setInt('stats_shared_cards', shareCount);
+          await storage.write(key: 'stats_shared_cards_$userId', value: shareCount.toString());
+          await storage.write(key: 'stats_shared_cards', value: shareCount.toString());
+        } catch (_) {}
+
+        _user = userData.copyWith(shareCount: shareCount);
+      } else {
+        _user = userData;
+      }
       _setState(ProfileState.loaded);
     } catch (e) {
       _setState(ProfileState.error, error: e.toString());
@@ -102,14 +145,28 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   Future<void> incrementShareCount(String userId) async {
-    if (_user == null) return;
-    final currentShares = _user!.shareCount ?? 0;
-    _user = _user!.copyWith(shareCount: currentShares + 1);
-    notifyListeners();
+    final effectiveUserId = (_user?.id != null && _user!.id!.isNotEmpty) ? _user!.id! : userId;
+    final currentShares = (_user?.shareCount != null && _user!.shareCount! > 0) ? _user!.shareCount! : 18;
+    final newShares = currentShares + 1;
+
+    if (_user != null) {
+      _user = _user!.copyWith(shareCount: newShares);
+      notifyListeners();
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      const storage = FlutterSecureStorage();
+      await prefs.setInt('stats_shared_cards_$effectiveUserId', newShares);
+      await prefs.setInt('stats_shared_cards', newShares);
+      await storage.write(key: 'stats_shared_cards_$effectiveUserId', value: newShares.toString());
+      await storage.write(key: 'stats_shared_cards', value: newShares.toString());
+    } catch (_) {}
+
     try {
       await _repository.updateUserProfile(
-        userId,
-        {'share_count': currentShares + 1, 'shares': currentShares + 1},
+        effectiveUserId,
+        {'share_count': newShares, 'shares': newShares},
       );
     } catch (_) {}
   }
@@ -210,10 +267,37 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   // ── OTP flow ───────────────────────────────────────────────
-  Future<bool> sendProfileOtp(String userId, String phone) async {
+  Future<bool> sendProfileOtp(
+    String userId,
+    String phone, {
+    String channel = 'phone',
+    String countryCode = '+91',
+    String? whatsappNumber,
+  }) async {
+    final isWhatsApp = channel.toLowerCase() == 'whatsapp';
+    final targetNumber = (isWhatsApp && whatsappNumber != null && whatsappNumber.trim().isNotEmpty)
+        ? whatsappNumber
+        : phone;
+
+    final validationError = InternationalPhoneHelper.validatePhoneNumber(
+      phone: targetNumber,
+      countryCode: countryCode,
+      isWhatsApp: isWhatsApp,
+    );
+    if (validationError != null) {
+      _setState(ProfileState.error, error: validationError);
+      return false;
+    }
+
     _setState(ProfileState.loading);
     try {
-      final res = await _repository.sendProfileOtp(userId, phone);
+      final res = await _repository.sendProfileOtp(
+        userId,
+        phone,
+        channel: channel,
+        countryCode: countryCode,
+        whatsappNumber: whatsappNumber,
+      );
       if (res != null) {
         // Check for explicit failure flags
         if (res['success'] == false || res['error'] != null) {
@@ -230,7 +314,10 @@ class ProfileViewModel extends ChangeNotifier {
                 res['data']?['otp_request_id'])
             ?.toString();
         _otpRequestId = reqId;
-        _setState(ProfileState.loaded, success: 'OTP sent successfully.');
+        final successMsg = isWhatsApp
+            ? 'OTP sent successfully to your WhatsApp.'
+            : 'OTP sent successfully. Check your SMS.';
+        _setState(ProfileState.loaded, success: successMsg);
         return true;
       }
       _setState(ProfileState.error, error: 'Failed to send OTP');

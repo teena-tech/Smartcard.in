@@ -16,9 +16,13 @@ import '../../core/utils/business_card_validator.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
 import '../widgets/card_tracker_overlay.dart';
 import '../widgets/image_cropper_widget.dart';
-import '../widgets/qr_contact_sheet.dart';
 import '../widgets/scanner_overlay.dart';
 import '../../features/scanner/services/image_processing_service.dart';
+import '../../core/utils/top_to_bottom_slide_route.dart';
+import '../../viewmodels/contact_viewmodel.dart';
+import '../../viewmodels/profile_viewmodel.dart';
+import '../../providers/contact_provider.dart';
+import '../widgets/duplicate_scan_popup_dialog.dart';
 import 'contact_preview_screen.dart';
 
 /// Instant QR scanner + business card edge detection (auto + manual).
@@ -46,6 +50,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
   bool _cardLocked = false;
   String? _lastQr;
   bool _isDisposed = false;
+  bool _isSavingPreview = false;
   DashboardViewModel? _dashboardViewModel;
 
   @override
@@ -61,17 +66,46 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       _runCardDetection();
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) return;
       _dashboardViewModel = Provider.of<DashboardViewModel>(context, listen: false);
       _dashboardViewModel?.addListener(_onTabChanged);
-      if (_dashboardViewModel?.currentIndex == 1) {
-        _requestPermissions();
-      } else {
-        setState(() {
-          _permissionChecked = true;
-          _hasPermission = false;
-        });
+
+      if (kIsWeb) {
+        if (mounted) {
+          setState(() {
+            _permissionChecked = true;
+            _hasPermission = true;
+          });
+          if (_dashboardViewModel?.currentIndex == 1) {
+            _handleCameraLifecycle();
+          }
+        }
+        return;
+      }
+
+      try {
+        final status = await Permission.camera.status;
+        if (mounted) {
+          setState(() {
+            _permissionChecked = true;
+            _hasPermission = status.isGranted;
+          });
+          if (_dashboardViewModel?.currentIndex == 1) {
+            if (status.isGranted) {
+              _handleCameraLifecycle();
+            } else {
+              _requestPermissions();
+            }
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _permissionChecked = true;
+            _hasPermission = false;
+          });
+        }
       }
     });
   }
@@ -181,6 +215,14 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
   }
 
   void _onTabChanged() {
+    if (context.mounted) {
+      _lastQr = null;
+      _isProcessingQr = false;
+      _cardLocked = false;
+      _detectedCardRect = null;
+      _lastCapturedImagePath = null;
+      context.read<ScanBloc>().add(ResetScanState());
+    }
     _handleCameraLifecycle();
   }
 
@@ -279,48 +321,6 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
     }
   }
 
-  void _showCameraStartErrorDialog(String details) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E2E),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: const Row(children: [Icon(Icons.camera_alt_outlined, color: Colors.white), SizedBox(width: 8), Text('Camera Error')]),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('The camera failed to start. Details:', style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 8),
-            Text(details, style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 12),
-            const Text('Troubleshooting steps:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text('â€¢ Ensure camera permission is allowed.', style: Theme.of(context).textTheme.bodyMedium),
-            Text('â€¢ On Android emulator use a Google Play image or test on a physical device.', style: Theme.of(context).textTheme.bodyMedium),
-            Text('â€¢ If using local backend preview, ensure API host is reachable (emulatorâ†’host uses 10.0.2.2).', style: Theme.of(context).textTheme.bodyMedium),
-            Text('â€¢ Restart the app or toggle camera in scanner UI.', style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await _qrController?.start();
-              } catch (e) {
-                debugPrint('Retry camera start failed: $e');
-              }
-            },
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showCameraPermissionDeniedDialog() {
     showDialog(
@@ -444,28 +444,143 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
     context.read<ScanBloc>().add(ProcessQrCode(qrValue: code));
   }
 
+  int _getAndroidSdkVersion() {
+    try {
+      final match = RegExp(r'API\s*(\d+)', caseSensitive: false).firstMatch(Platform.operatingSystemVersion);
+      if (match != null) {
+        return int.tryParse(match.group(1)!) ?? 33;
+      }
+      final verMatch = RegExp(r'^(\d+)').firstMatch(Platform.operatingSystemVersion);
+      if (verMatch != null) {
+        final osVer = int.tryParse(verMatch.group(1)!);
+        if (osVer != null) {
+          if (osVer >= 13) return 33;
+          if (osVer == 12) return 31;
+          if (osVer == 11) return 30;
+          if (osVer == 10) return 29;
+          return osVer;
+        }
+      }
+    } catch (_) {}
+    return 33;
+  }
+
   Future<void> _pickGallery() async {
     // permission_handler is not supported on web; skip checks
     if (!kIsWeb) {
-      PermissionStatus status;
-      if (await Permission.photos.isGranted || await Permission.storage.isGranted) {
-        status = PermissionStatus.granted;
-      } else {
-        status = await Permission.photos.request();
-        if (!status.isGranted) {
-          status = await Permission.storage.request();
+      bool isGranted = false;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final sdk = _getAndroidSdkVersion();
+        if (sdk >= 33) {
+          // Android 13+ (API 33+) native Photo Picker requires zero runtime storage permissions
+          isGranted = true;
+        } else {
+          // Android <= 12 (API <= 32) requires READ_EXTERNAL_STORAGE (Permission.storage)
+          final storageStatus = await Permission.storage.status;
+          if (storageStatus.isGranted) {
+            isGranted = true;
+          } else if (storageStatus.isPermanentlyDenied) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text("Storage permission is required to select card images. Please enable it in Settings."),
+                  backgroundColor: Colors.redAccent,
+                  action: SnackBarAction(
+                    label: "Settings",
+                    textColor: Colors.white,
+                    onPressed: () => openAppSettings(),
+                  ),
+                ),
+              );
+            }
+            return;
+          } else {
+            final resStorage = await Permission.storage.request();
+            if (resStorage.isGranted) {
+              isGranted = true;
+            } else if (resStorage.isPermanentlyDenied) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text("Storage permission is required to select card images. Please enable it in Settings."),
+                    backgroundColor: Colors.redAccent,
+                    action: SnackBarAction(
+                      label: "Settings",
+                      textColor: Colors.white,
+                      onPressed: () => openAppSettings(),
+                    ),
+                  ),
+                );
+              }
+              return;
+            } else {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Storage permission is required to select images."),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+              return;
+            }
+          }
         }
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final photoStatus = await Permission.photos.status;
+        if (photoStatus.isGranted || photoStatus.isLimited) {
+          isGranted = true;
+        } else if (photoStatus.isPermanentlyDenied || photoStatus.isRestricted) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text("Photo library permission is required to select card images. Please enable it in Settings."),
+                backgroundColor: Colors.redAccent,
+                action: SnackBarAction(
+                  label: "Settings",
+                  textColor: Colors.white,
+                  onPressed: () => openAppSettings(),
+                ),
+              ),
+            );
+          }
+          return;
+        } else {
+          final res = await Permission.photos.request();
+          if (res.isGranted || res.isLimited) {
+            isGranted = true;
+          } else if (res.isPermanentlyDenied || res.isRestricted) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text("Photo library permission is required to select card images. Please enable it in Settings."),
+                  backgroundColor: Colors.redAccent,
+                  action: SnackBarAction(
+                    label: "Settings",
+                    textColor: Colors.white,
+                    onPressed: () => openAppSettings(),
+                  ),
+                ),
+              );
+            }
+            return;
+          } else {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Photo library permission is required to select images."),
+                  backgroundColor: Colors.redAccent,
+                ),
+              );
+            }
+            return;
+          }
+        }
+      } else {
+        isGranted = true;
       }
 
-      if (!status.isGranted) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Gallery permission is required to select images."),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
+      if (!isGranted) {
         return;
       }
     }
@@ -476,14 +591,6 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       imageQuality: 92,
     );
     if (picked != null && context.mounted) {
-      // Immediately show card processing UI with picked gallery image
-      context.read<ScanBloc>().add(
-        ProcessGalleryImage(
-          imagePath: picked.path,
-          manualEdgeAdjust: false,
-        ),
-      );
-
       // 1. Auto-detect card quad boundary & perspective warp
       String autoPath = picked.path;
       try {
@@ -511,6 +618,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
         }
       }
     } else if (context.mounted) {
+      context.read<ScanBloc>().add(ResetScanState());
       _handleCameraLifecycle();
     }
   }
@@ -545,63 +653,107 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
     }
   }
 
-  Future<void> _switchCamera() async {
-    try {
-      await _qrController?.switchCamera();
-    } catch (_) {}
-    if (context.mounted) {
-      setState(() {});
-    }
-  }
-
-  void _showQrSheet(ScanSuccess state) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF1A1A2E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (ctx) => QrContactSheet(
-        contact: state.contact,
-        onSave: () {
-          Navigator.pop(ctx);
-          _saveAndPreview(state);
-        },
-        onScanAgain: () {
-          Navigator.pop(ctx);
-          _resetQrScanner();
-        },
-      ),
-    ).then((_) {
-      if (_isProcessingQr) {
-        _resetQrScanner();
-      }
-    });
-  }
 
   Future<void> _saveAndPreview(ScanSuccess state) async {
-    if (!context.mounted) return;
+    if (!context.mounted || _isSavingPreview) return;
+    _isSavingPreview = true;
     try {
-      await _qrController?.stop();
-    } catch (_) {}
+      try {
+        await _qrController?.stop();
+      } catch (_) {}
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ContactPreviewScreen(
-          contact: state.contact,
-          imagePath: state.imagePath,
+      final contactVm = context.read<ContactViewModel>();
+      final contactProvider = context.read<ContactProvider>();
+      await contactVm.recordScan();
+
+      try {
+        final profileVm = context.read<ProfileViewModel>();
+        final uid = profileVm.user?.id;
+        if (uid != null && uid.isNotEmpty) {
+          profileVm.incrementScanCount(uid);
+        }
+      } catch (_) {}
+
+      final duplicateCheck = contactVm.checkCardDuplicate(
+        state.contact,
+        phoneContacts: contactProvider.contacts,
+      );
+
+      final bool isDuplicateFound = (duplicateCheck.isDuplicate ||
+          duplicateCheck.isSameNumberDifferentCard ||
+          duplicateCheck.existingContact != null) &&
+          duplicateCheck.existingContact != null;
+
+      // When duplicate phone/contact is detected, show the 10-second transparent popup with the big swipe button
+      if (isDuplicateFound && mounted) {
+        final action = await DuplicateScanPopupDialog.show(
+          context: context,
+          incoming: state.contact,
+          existing: duplicateCheck.existingContact!,
+        );
+
+        if (!mounted) return;
+
+        if (action == DuplicateScanAction.update) {
+          final saved = await Navigator.of(context).push(
+            TopToBottomSlideRoute(
+              page: ContactPreviewScreen(
+                contact: state.contact,
+                existingContact: duplicateCheck.existingContact,
+                imagePath: state.imagePath,
+              ),
+            ),
+          );
+          if (saved == true && mounted) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop(true);
+            } else {
+              _dashboardViewModel?.setIndex(4);
+            }
+            return;
+          }
+          _resetQrScanner();
+        } else if (action == DuplicateScanAction.exit) {
+          _resetQrScanner();
+          _dashboardViewModel?.setIndex(0);
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          // Continue Scan: close alert, keep scanner active, do not save duplicate
+          _resetQrScanner();
+        }
+        return;
+      }
+
+      // Unique phone number -> open preview directly
+      final saved = await Navigator.of(context).push(
+        TopToBottomSlideRoute(
+          page: ContactPreviewScreen(
+            contact: state.contact,
+            imagePath: state.imagePath,
+          ),
         ),
-      ),
-    );
-    _resetQrScanner();
+      );
+      if (saved == true && mounted) {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(true);
+        } else {
+          _dashboardViewModel?.setIndex(4);
+        }
+        return;
+      }
+      _resetQrScanner();
+    } finally {
+      _isSavingPreview = false;
+    }
   }
 
   void _resetQrScanner() {
     _lastQr = null;
     _isProcessingQr = false;
+    _isSavingPreview = false;
     _cardLocked = false;
     _detectedCardRect = null;
+    _lastCapturedImagePath = null;
     if (context.mounted) {
       setState(() {});
       context.read<ScanBloc>().add(ResetScanState());
@@ -721,6 +873,13 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
           } else if (state is ScanSaveResult) {
             if (context.mounted) {
               _showSaveResultSnackBar(state);
+              if (state.phoneSaved || state.apiSaved) {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop(true);
+                } else {
+                  _dashboardViewModel?.setIndex(4);
+                }
+              }
             }
           }
         },
@@ -826,7 +985,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -961,7 +1120,7 @@ class CardProcessingOverlay extends StatelessWidget {
                   if (hasFile)
                     Image.file(
                       File(imagePath!),
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                     )
                   else
                     Container(

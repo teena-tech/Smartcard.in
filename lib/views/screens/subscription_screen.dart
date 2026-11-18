@@ -8,9 +8,7 @@ import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/subscription_viewmodel.dart';
 import '../../viewmodels/card_viewmodel.dart';
 import '../../core/constants/app_colors.dart';
-import '../widgets/common_drawer.dart';
 import '../../core/utils/responsive.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
 import '../widgets/global_bottom_nav.dart';
 import '../widgets/circular_profile_avatar.dart';
 import '../widgets/master_app_bar.dart';
@@ -498,76 +496,88 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _couponController,
-                                      decoration: InputDecoration(
-                                        hintText: 'DISCOUNT COUPON CODE (OPTIONAL)',
-                                        hintStyle: GoogleFonts.inter(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey.shade400,
-                                        ),
-                                        border: InputBorder.none,
-                                      ),
-                                      textCapitalization: TextCapitalization.characters,
-                                    ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 44,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: AppColors.primaryRed, width: 1.2),
                                   ),
-                                  Container(
-                                    margin: const EdgeInsets.symmetric(vertical: 6),
-                                    child: ElevatedButton(
-                                      onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
-                                          ? null
-                                          : () async {
-                                              final userId = context.read<AuthViewModel>().currentUser?.id;
-                                              if (userId != null && _couponController.text.trim().isNotEmpty) {
-                                                await vm.applyCoupon(userId, _couponController.text.trim());
-                                                if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {
-                                                  if (!vm.isSubscriptionDurationCoupon) {
-                                                    await vm.createPaymentOrder(userId);
-                                                  }
-                                                }
+                                  alignment: Alignment.centerLeft,
+                                  child: TextField(
+                                    controller: _couponController,
+                                    decoration: InputDecoration(
+                                      hintText: 'DISCOUNT COUPON CODE (OPTIONAL)',
+                                      hintStyle: GoogleFonts.inter(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                      border: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textCapitalization: TextCapitalization.characters,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              SizedBox(
+                                height: 44,
+                                child: ElevatedButton(
+                                  onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
+                                      ? null
+                                      : () async {
+                                          final userId = context.read<AuthViewModel>().currentUser?.id;
+                                          if (userId != null && _couponController.text.trim().isNotEmpty) {
+                                            await vm.applyCoupon(userId, _couponController.text.trim());
+                                            if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {
+                                              if (!vm.isSubscriptionDurationCoupon) {
+                                                await vm.createPaymentOrder(userId);
                                               }
-                                            },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFFB85450),
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      ),
-                                      child: vm.status == SubscriptionStatus.loading
-                                          ? const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white,
-                                              ),
-                                            )
-                                          : Text(
-                                              'APPLY',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
+                                            }
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryRed,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 18),
                                   ),
-                                ],
+                                  child: vm.status == SubscriptionStatus.loading
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : Text(
+                                          'APPLY',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                ),
                               ),
-                            ),
+                            ],
+                          ),
                             // Inline error message
                             if (vm.errorMessage != null && vm.errorMessage!.isNotEmpty)
                               Padding(
@@ -718,7 +728,6 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     return Scaffold(
       backgroundColor: colors.backgroundStart,
-      drawer: const CommonDrawer(),
       appBar: MasterAppBar(
         titleText: 'Subscription',
         style: MasterHeaderStyle.gradient,
@@ -751,6 +760,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -846,6 +856,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.05),
@@ -888,7 +899,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF3F4F6),
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.05),
@@ -900,68 +911,80 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          // Promo Code Row
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey.shade300),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Row(
-                              children: [
-                                Expanded(
+                          // Promo Code Row (Independent Input Box & APPLY Button with 5px spacing)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  height: 44,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: AppColors.primaryRed, width: 1.2),
+                                  ),
+                                  alignment: Alignment.centerLeft,
                                   child: TextField(
                                     controller: _couponController,
                                     decoration: InputDecoration(
-                                      hintText: 'HAVE A PROMO CODE? APPLY HERE (OPTIONAL)',
+                                      hintText: 'HAVE A PROMO CODE? APPLY HERE',
                                       hintStyle: GoogleFonts.inter(
-                                        fontSize: 10,
+                                        fontSize: 10.5,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey,
+                                        color: Colors.grey.shade500,
                                       ),
                                       border: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                     textCapitalization: TextCapitalization.characters,
                                   ),
                                 ),
-                                Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 4),
-                                  child: ElevatedButton(
-                                    onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
-                                        ? null
-                                        : () async {
-                                            final userId = context.read<AuthViewModel>().currentUser?.id;
-                                            if (userId != null && _couponController.text.trim().isNotEmpty) {
-                                              await vm.applyCoupon(userId, _couponController.text.trim());
-                                               if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {
-                                                 if (!vm.isSubscriptionDurationCoupon) {
-                                                   _openCheckoutModal(preserveCoupon: true);
-                                                   await vm.createPaymentOrder(userId);
-                                                 }
-                                               }
+                              ),
+                              const SizedBox(width: 5), // 5px spacing
+                              SizedBox(
+                                height: 44,
+                                child: ElevatedButton(
+                                  onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
+                                      ? null
+                                      : () async {
+                                          final userId = context.read<AuthViewModel>().currentUser?.id;
+                                          if (userId != null && _couponController.text.trim().isNotEmpty) {
+                                            await vm.applyCoupon(userId, _couponController.text.trim());
+                                            if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {
+                                              if (!vm.isSubscriptionDurationCoupon) {
+                                                _openCheckoutModal(preserveCoupon: true);
+                                                await vm.createPaymentOrder(userId);
+                                              }
                                             }
-                                          },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primaryRed,
-                                      foregroundColor: Colors.white,
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryRed,
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Text(
-                                      'APPLY',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                                  ),
+                                  child: Text(
+                                    'APPLY',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
 
@@ -1009,6 +1032,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.grey.withValues(alpha: 0.1),
@@ -1148,7 +1172,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),

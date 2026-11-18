@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rive/rive.dart' hide Image, LinearGradient;
+import 'package:rive/rive.dart' hide File;
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/theme_viewmodel.dart';
 import 'home_screen.dart';
@@ -24,21 +24,24 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    await Future<void>.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-
     final authViewModel = context.read<AuthViewModel>();
     await authViewModel.checkAuthStatus();
+
+    // Allow splash Rive animation to play smoothly
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
 
-    final Widget nextPage = authViewModel.isAuthenticated
-        ? const HomeScreen(initialIndex: 0)
-        : const LandingScreen();
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => nextPage),
-    );
+    if (authViewModel.isAuthenticated) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LandingScreen()),
+      );
+    }
   }
 
   @override
@@ -59,9 +62,18 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             // Full-screen Rive animation background
             Positioned.fill(
-              child: RiveAnimation.asset(
-                "assets/rive/splash_screen_animation_2.riv",
-                fit: BoxFit.cover,
+              child: RiveWidgetBuilder(
+                fileLoader: FileLoader.fromAsset(
+                  "assets/rive/splash_screen_animation_2.riv",
+                  riveFactory: Factory.rive,
+                ),
+                builder: (context, state) => switch (state) {
+                  RiveLoaded(controller: final controller) => RiveWidget(
+                      controller: controller,
+                      fit: Fit.cover,
+                    ),
+                  _ => const SizedBox.shrink(),
+                },
               ),
             ),
           ],

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'core/constants/app_theme.dart';
 import 'providers/app_providers.dart';
 import 'views/screens/splash_screen.dart';
+import 'core/database/hive_scan_database.dart';
 import 'core/database/sqlite_database.dart';
 import 'core/database/local_data_source/profile_local_data_source.dart';
 import 'core/database/local_data_source/sync_queue_data_source.dart';
@@ -21,6 +22,8 @@ import 'viewmodels/theme_viewmodel.dart';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:rive/rive.dart' hide File;
+import 'package:firebase_core/firebase_core.dart';
 import 'bloc/scan_bloc.dart';
 import 'bloc/sync_bloc.dart';
 
@@ -34,12 +37,40 @@ void main() async {
   // Ensure Flutter engine bindings are fully initialized before native code execution
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables safely
   try {
-    await dotenv.load(fileName: ".env");
+    await Firebase.initializeApp();
+    debugPrint('🔥 Firebase initialized successfully');
   } catch (e) {
-    debugPrint('⚠️ Warning loading .env file: $e');
+    debugPrint('⚠️ Firebase initialization error: $e');
   }
+
+  try {
+    await RiveNative.init();
+  } catch (e) {
+    debugPrint('RiveNative init: $e');
+  }
+
+  // Lock orientation to Portrait only
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Load environment variables (.env_live preferred for live release, fallback to .env)
+  try {
+    await dotenv.load(fileName: ".env_live");
+    debugPrint('✅ Environment loaded from .env_live');
+  } catch (_) {
+    try {
+      await dotenv.load(fileName: ".env");
+      debugPrint('ℹ️ Environment loaded from .env');
+    } catch (e) {
+      debugPrint('⚠️ Warning loading environment file: $e');
+    }
+  }
+
+  // Initialize persistent Hive storage & boxes before repositories are accessed
+  await HiveScanDatabase.init();
 
   // Initialize dynamic local storage
   await SqliteDatabase.init();
@@ -130,8 +161,9 @@ class ThemeWrapper extends StatelessWidget {
     final bgImageEnabled = context.select<CustomizationController, bool>((c) => c.bgImageEnabled);
     final bgImagePath = context.select<CustomizationController, String?>((c) => c.backgroundImagePath);
 
+    final Widget themedContent;
     if (bgImageEnabled && bgImagePath != null && bgImagePath.isNotEmpty) {
-      return Container(
+      themedContent = Container(
         decoration: BoxDecoration(
           image: DecorationImage(
             image: FileImage(File(bgImagePath)),
@@ -140,21 +172,23 @@ class ThemeWrapper extends StatelessWidget {
         ),
         child: child,
       );
+    } else {
+      themedContent = Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [bgStart, bgEnd],
+          ),
+          image: const DecorationImage(
+            image: AssetImage('assets/images/login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: child,
+      );
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [bgStart, bgEnd],
-        ),
-        image: const DecorationImage(
-          image: AssetImage('assets/images/login.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: child,
-    );
+    return themedContent;
   }
 }

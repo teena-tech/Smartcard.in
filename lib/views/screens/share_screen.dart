@@ -1,63 +1,12 @@
+export 'digital_card_share_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../core/constants/app_colors.dart';
-import '../../core/utils/responsive.dart';
-import '../widgets/common_drawer.dart';
-import '../widgets/global_bottom_nav.dart';
-import '../widgets/master_app_bar.dart';
+import 'mycards.dart';
 
 class ShareScreen extends StatelessWidget {
   const ShareScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      drawer: const CommonDrawer(),
-      appBar: const MasterAppBar(
-        titleText: 'Share Card',
-        style: MasterHeaderStyle.transparent,
-      ),
-      bottomNavigationBar: const GlobalBottomNav(),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/login.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: ResponsiveCenter(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.share, size: 80, color: AppColors.primaryRed.withValues(alpha: 0.15)),
-              const SizedBox(height: 24),
-              Text(
-                'Share Screen',
-                style: GoogleFonts.inter(
-                  color: colors.text,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Share your card with others',
-                style: GoogleFonts.inter(
-                  color: colors.muted,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return const MyCardsScreen(isStandalone: true);
   }
 }

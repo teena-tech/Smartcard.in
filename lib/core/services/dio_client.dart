@@ -5,7 +5,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'api_config.dart';
-import '../state/app_loading_service.dart';
 import '../../viewmodels/message_viewmodel.dart';
 
 class DioClient {
@@ -24,8 +23,9 @@ class DioClient {
         'Accept': 'application/json',
         if (!kIsWeb) 'User-Agent': 'SmartCardFlutterApp/1.0',
       },
-      connectTimeout: const Duration(seconds: 7),
-      receiveTimeout: const Duration(seconds: 7),
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      sendTimeout: const Duration(seconds: 30),
     ));
 
     // ── Global loading interceptor removed ─────────────────────────────────

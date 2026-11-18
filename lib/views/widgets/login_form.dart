@@ -2,15 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:sms_autofill/sms_autofill.dart';
 import 'package:lottie/lottie.dart';
 import '../../main.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/state/app_loading_service.dart';
+import '../../core/services/otp_autofill_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
-import 'custom_text_field.dart';
+import 'otp_channel_banner.dart';
 import 'otp_input_field.dart';
 import 'primary_button.dart';
+import 'international_phone_input.dart';
+import '../../core/utils/international_phone_helper.dart';
 import '../screens/register_screen.dart';
 import '../screens/home_screen.dart';
 
@@ -21,7 +22,7 @@ class LoginForm extends StatefulWidget {
   State<LoginForm> createState() => _LoginFormState();
 }
 
-class _LoginFormState extends State<LoginForm> with CodeAutoFill {
+class _LoginFormState extends State<LoginForm> {
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   final _otpController = TextEditingController();
@@ -30,28 +31,51 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
   int _resendSecondsLeft = 0;
   static const int _resendCooldown = 30; // seconds
 
-  // Brute-force protection
   int _failedOtpAttempts = 0;
   static const int _maxOtpAttempts = 3;
   static const int _lockoutDurationSeconds = 5 * 60; // 5 minutes
   Timer? _lockoutTimer;
   int _lockoutSecondsLeft = 0;
   bool get _isLockedOut => _lockoutSecondsLeft > 0;
+  bool _isVerifyingOtp = false;
+
+  bool _isWhatsAppMode = false;
+  String _selectedCountryCode = '+91';
+  String _selectedCountryFlag = '🇮🇳';
 
   @override
-  void codeUpdated() {
-    if (code != null && code!.length == 6) {
-      setState(() {
-        _otpController.text = code!;
-      });
-      // Automatically verify when code is filled
-      _handleVerifyOtp();
-    }
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && context.read<AuthViewModel>().showOtp) {
+        _startOtpListener();
+      }
+    });
+  }
+
+  void _startOtpListener() {
+    OtpAutofillService().startListening(
+      onCodeReceived: (otp6) {
+        if (!mounted) return;
+        setState(() {
+          _otpController.text = otp6;
+        });
+        // Automatically verify when code is filled
+        _handleVerifyOtp();
+      },
+      onTimeout: () {
+        debugPrint('⏰ [LoginForm] OTP autofill listening timed out');
+      },
+    );
+  }
+
+  void _stopOtpListener() {
+    OtpAutofillService().stopListening();
   }
 
   @override
   void dispose() {
-    unregisterListener();
+    _stopOtpListener();
     _identifierController.dispose();
     _passwordController.dispose();
     _otpController.dispose();
@@ -61,6 +85,8 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
   }
 
   void _handleLoginSuccess() {
+    _stopOtpListener();
+    OtpAutofillService().markAutofillInitialized();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -91,7 +117,7 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
     );
 
     Future.delayed(const Duration(milliseconds: 1500), () {
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const HomeScreen()),
         (route) => false,
@@ -102,25 +128,23 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
   Future<void> _handleLogin() async {
     final phone = _identifierController.text.trim();
     
-    // Validate phone number
-    if (phone.isEmpty) {
-      _showErrorDialog(
-        'Invalid Phone',
-        'Please enter a phone number.',
-      );
-      return;
-    }
-    
-    if (phone.length < 10) {
-      _showErrorDialog(
-        'Invalid Phone',
-        'Please enter a valid 10-digit phone number.',
-      );
+    final validationError = InternationalPhoneHelper.validatePhoneNumber(
+      phone: phone,
+      countryCode: _selectedCountryCode,
+      isWhatsApp: _isWhatsAppMode,
+    );
+    if (validationError != null) {
+      _showErrorDialog('Invalid Number', validationError);
       return;
     }
     
     final authViewModel = context.read<AuthViewModel>();
-    final ok = await authViewModel.sendLoginOtp(phone);
+    final channel = _isWhatsAppMode ? 'whatsapp' : 'phone';
+    final ok = await authViewModel.sendLoginOtp(
+      phone,
+      channel: channel,
+      countryCode: _selectedCountryCode,
+    );
     
     if (!context.mounted) return;
     
@@ -130,7 +154,7 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
         _failedOtpAttempts = 0;
       });
       _startResendTimer();
-      listenForCode(); // Start listening for SMS code autofill
+      _startOtpListener();
     } else {
       // Failed to send OTP
       final errorMessage = authViewModel.errorMessage ?? 'Failed to send OTP. Please try again.';
@@ -139,8 +163,8 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
   }
 
   Future<void> _handleVerifyOtp() async {
-    if (_isLockedOut) return;
-    
+    if (_isLockedOut || _isVerifyingOtp) return;
+
     final authViewModel = context.read<AuthViewModel>();
     if (authViewModel.isLoading) return;
     if (_otpController.text.trim().length != 6) {
@@ -151,32 +175,42 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
       return;
     }
 
-    final otp = _otpController.text.trim();
-    
-    // Call OTP verification
-    final success = await authViewModel.verifyLoginOtp(otp);
-    
-    if (!context.mounted) return;
-    
-    if (success) {
-      // OTP verified successfully - navigate to home screen
-      _handleLoginSuccess();
-    } else {
-      // OTP verification failed - show error dialog
-      final errorMessage = authViewModel.errorMessage ?? 'Invalid OTP. Please try again.';
-      _showErrorDialog('Invalid OTP', errorMessage);
-      
-      // Clear OTP input field for user to retry
-      _otpController.clear();
-      
-      // Update brute-force protection
-      setState(() {
-        _failedOtpAttempts++;
-      });
-      
-      if (_failedOtpAttempts >= _maxOtpAttempts) {
-        _startLockoutTimer();
+    _isVerifyingOtp = true;
+    try {
+      final otp = _otpController.text.trim();
+
+      // Call OTP verification
+      final success = await authViewModel.verifyLoginOtp(otp);
+
+      if (!context.mounted) return;
+
+      if (success) {
+        // OTP verified successfully - stop listener and navigate to home screen
+        _stopOtpListener();
+        _handleLoginSuccess();
+      } else {
+        // OTP verification failed - show error dialog
+        final errorMessage = authViewModel.errorMessage ?? 'Invalid OTP. Please try again.';
+        _showErrorDialog('Invalid OTP', errorMessage);
+
+        // Clear OTP input field for user to retry
+        _otpController.clear();
+
+        // Update brute-force protection
+        setState(() {
+          _failedOtpAttempts++;
+        });
+
+        if (_failedOtpAttempts >= _maxOtpAttempts) {
+          _stopOtpListener();
+          _startLockoutTimer();
+        } else {
+          // Restart listener for user retry
+          _startOtpListener();
+        }
       }
+    } finally {
+      _isVerifyingOtp = false;
     }
   }
 
@@ -247,49 +281,71 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
     });
   }
 
-  Future<void> _handleResendOtp() async {
-    if (_resendSecondsLeft > 0) return;
-    
+  Future<void> _dispatchLoginOtp({
+    required bool useWhatsApp,
+    required String snackText,
+  }) async {
     final authViewModel = context.read<AuthViewModel>();
     if (authViewModel.isLoading) return;
-    
+
     final phone = _identifierController.text.trim();
-    if (phone.isEmpty) {
-      _showErrorDialog(
-        'Error',
-        'Please enter your phone number.',
-      );
+    final validationError = InternationalPhoneHelper.validatePhoneNumber(
+      phone: phone,
+      countryCode: _selectedCountryCode,
+      isWhatsApp: useWhatsApp,
+    );
+    if (validationError != null) {
+      _showErrorDialog('Error', validationError);
       return;
     }
-    
+
+    final previousWhatsApp = _isWhatsAppMode;
+    setState(() {
+      _isWhatsAppMode = useWhatsApp;
+    });
     _otpController.clear();
-    
-    final ok = await authViewModel.sendLoginOtp(phone);
-    
-    if (!context.mounted) return;
-    
+
+    final channel = useWhatsApp ? 'whatsapp' : 'phone';
+    final ok = await authViewModel.sendLoginOtp(
+      phone,
+      channel: channel,
+      countryCode: _selectedCountryCode,
+    );
+
+    if (!mounted) return;
+
     if (ok) {
       setState(() {
         _failedOtpAttempts = 0;
       });
       _startResendTimer();
-      listenForCode(); // Start listening for SMS code autofill
-      
-      // Show success message
+      _startOtpListener();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'OTP sent successfully',
+            snackText,
             style: GoogleFonts.inter(fontWeight: FontWeight.w500),
           ),
-          backgroundColor: Colors.green[600],
+          backgroundColor: const Color(0xFF15803D),
           duration: const Duration(seconds: 2),
         ),
       );
     } else {
-      final errorMessage = authViewModel.errorMessage ?? 'Failed to resend OTP. Please try again.';
+      setState(() {
+        _isWhatsAppMode = previousWhatsApp;
+      });
+      final errorMessage = authViewModel.errorMessage ?? 'Failed to send OTP. Please try again.';
       _showErrorDialog('Error', errorMessage);
     }
+  }
+
+  Future<void> _handleResendOtp() async {
+    if (_resendSecondsLeft > 0) return;
+    await _dispatchLoginOtp(
+      useWhatsApp: _isWhatsAppMode,
+      snackText: 'OTP sent successfully',
+    );
   }
 
   void _startResendTimer() {
@@ -322,45 +378,94 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
   Widget build(BuildContext context) {
     final authViewModel = context.watch<AuthViewModel>();
     
+    // Automatically ensure listener is cleaned up if showOtp resets to false
+    if (!authViewModel.showOtp && OtpAutofillService().isListening) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !authViewModel.showOtp) {
+          _stopOtpListener();
+        }
+      });
+    }
+
     final primaryButtonText = authViewModel.showOtp
         ? (authViewModel.isLoading ? 'Verifying OTP...' : 'Verify OTP')
-        : (authViewModel.isLoading ? 'Sending OTP...' : 'Send OTP');
+        : (authViewModel.isLoading
+            ? (_isWhatsAppMode ? 'Sending via WhatsApp...' : 'Sending OTP...')
+            : (_isWhatsAppMode ? 'SEND OTP VIA WHATSAPP' : 'SEND OTP'));
 
     return Column(
       children: [
         Container(
           decoration: BoxDecoration(
-            color: AppColors.cardBackground,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.black.withValues(alpha: 0.05),
+              width: 1.0,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CustomTextField(
-                label: 'Mobile Number',
-                hintText: 'Enter 10-digit mobile number',
-                controller: _identifierController,
-                keyboardType: TextInputType.phone,
-                autofocus: true,
-                onChanged: (_) => authViewModel.clearMessages(),
-              ),
-              const SizedBox(height: 24),
-              
-              if (authViewModel.showOtp)
+              if (!authViewModel.showOtp)
+                InternationalPhoneInput(
+                  phoneController: _identifierController,
+                  isWhatsAppMode: false,
+                  selectedCountryCode: '+91',
+                  allowSeparateWhatsApp: false,
+                  showModeSelector: false,
+                  disableCountryPicker: true,
+                  showChannelStatusBanner: false,
+                  enabled: !authViewModel.isLoading,
+                  onWhatsAppModeChanged: (val) {
+                    setState(() {
+                      _isWhatsAppMode = val;
+                      if (!val) {
+                        _selectedCountryCode = '+91';
+                        _selectedCountryFlag = '🇮🇳';
+                      }
+                      authViewModel.clearMessages();
+                    });
+                  },
+                  onCountryCodeChanged: (cData) {
+                    setState(() {
+                      _selectedCountryCode = cData.code;
+                      _selectedCountryFlag = cData.flag;
+                      authViewModel.clearMessages();
+                    });
+                  },
+                  onChanged: (_) => authViewModel.clearMessages(),
+                )
+              else
+                OtpChannelBanner(
+                  isWhatsAppMode: _isWhatsAppMode,
+                  phoneDisplay:
+                      '$_selectedCountryFlag $_selectedCountryCode ${_identifierController.text.trim()}',
+                  onChangePressed: () {
+                    _stopOtpListener();
+                    authViewModel.resetOtpState();
+                  },
+                ),
+              const SizedBox(height: 18),
+
+              if (authViewModel.showOtp) ...[
                 AbsorbPointer(
                   absorbing: _isLockedOut,
                   child: Opacity(
                     opacity: _isLockedOut ? 0.4 : 1.0,
                     child: OTPInputField(
                       controller: _otpController,
+                      accentColor: _isWhatsAppMode
+                          ? const Color(0xFF15803D)
+                          : const Color(0xFFA81C24),
                       onChanged: (code) {
                         authViewModel.clearMessages();
                       },
@@ -372,42 +477,8 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
                     ),
                   ),
                 ),
-
-              const SizedBox(height: 16),
-              
-              if (authViewModel.message.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Text(
-                    authViewModel.message,
-                    style: GoogleFonts.inter(
-                      color: Colors.green[600],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                
-              if (!_isLockedOut && authViewModel.error.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red[600], size: 16),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          authViewModel.error,
-                          style: GoogleFonts.inter(
-                            color: Colors.red[600],
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: 16),
+              ],
 
               // Lockout banner
               if (_isLockedOut)
@@ -449,29 +520,62 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
                   ),
                 ),
 
-              if (!_isLockedOut)
+              if (!_isLockedOut && authViewModel.showOtp) ...[
+                OtpStatusNotice(
+                  statusMessage: authViewModel.message,
+                  errorMessage: authViewModel.error,
+                  isWhatsAppMode: false,
+                ),
+                const SizedBox(height: 16),
+              ] else if (!_isLockedOut) ...[
+                if (authViewModel.error.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red[600], size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            authViewModel.error,
+                            style: GoogleFonts.inter(
+                              color: Colors.red[600],
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Text(
-                  !authViewModel.showOtp
-                      ? 'Secure access to your user control center.'
-                      : 'Enter the 6-digit OTP sent to your mobile number.',
+                  _isWhatsAppMode
+                      ? '6-digit OTP will be delivered directly to your WhatsApp.'
+                      : 'Secure access to your user control center.',
                   style: GoogleFonts.inter(
                     color: AppColors.textSecondary,
                     fontSize: 12,
                     height: 1.5,
                   ),
                 ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 22),
+              ],
+
               PrimaryButton(
                 text: _isLockedOut ? 'Login Blocked' : primaryButtonText,
                 isLoading: authViewModel.isLoading,
-                onPressed: (_isLockedOut || authViewModel.isLoading) ? null : () { authViewModel.showOtp ? _handleVerifyOtp() : _handleLogin(); },
+                onPressed: (_isLockedOut || authViewModel.isLoading)
+                    ? null
+                    : () {
+                        authViewModel.showOtp ? _handleVerifyOtp() : _handleLogin();
+                      },
               ),
             ],
           ),
         ),
-        
-        const SizedBox(height: 32),
-        
+
+        const SizedBox(height: 24),
+
         // Footer Actions
         Column(
           children: [
@@ -483,22 +587,34 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
                 );
               }),
             ],
-            
+
             if (authViewModel.showOtp)
-              _buildFooterLink('Back to login', authViewModel.resetOtpState),
+              _buildFooterLink('Back to login', () {
+                _stopOtpListener();
+                authViewModel.resetOtpState();
+              }),
 
             if (authViewModel.showOtp)
               Center(
                 child: TextButton(
-                  onPressed: (authViewModel.isLoading || _resendSecondsLeft > 0) ? null : _handleResendOtp,
+                  onPressed: (authViewModel.isLoading || _resendSecondsLeft > 0)
+                      ? null
+                      : _handleResendOtp,
                   style: TextButton.styleFrom(
-                    foregroundColor: _resendSecondsLeft > 0 ? Colors.grey : Colors.green[600],
+                    foregroundColor: const Color(0xFF9E1C24),
+                    disabledForegroundColor: const Color(0xFF1F2937),
                     textStyle: GoogleFonts.inter(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
+                      fontWeight: _resendSecondsLeft > 0
+                          ? FontWeight.w500
+                          : FontWeight.w700,
+                      fontSize: 13.5,
                     ),
                   ),
-                  child: Text(_resendSecondsLeft > 0 ? 'Resend in ${_resendSecondsLeft}s' : 'Resend OTP'),
+                  child: Text(
+                    _resendSecondsLeft > 0
+                        ? 'Resend OTP in ${_resendSecondsLeft}s'
+                        : 'Resend OTP',
+                  ),
                 ),
               ),
           ],
@@ -508,18 +624,20 @@ class _LoginFormState extends State<LoginForm> with CodeAutoFill {
   }
 
   Widget _buildFooterLink(String text, VoidCallback onPressed) {
-    final bool isRegister = text.toLowerCase() == 'register';
+    const crimson = Color(0xFF9E1C24);
     return Center(
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          foregroundColor: isRegister ? const Color(0xFFFA0000) : Colors.white,
+          foregroundColor: crimson,
           textStyle: GoogleFonts.inter(
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
-            letterSpacing: 0.5,
+            fontWeight: FontWeight.w600,
+            fontSize: 14.5,
+            letterSpacing: 0.2,
+            decoration: TextDecoration.underline,
+            decorationColor: crimson,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         ),
         child: Text(text),
       ),

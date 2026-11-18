@@ -9,7 +9,6 @@ import '../../viewmodels/support_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../widgets/common_app_bar.dart';
 import '../../core/constants/app_colors.dart';
-import '../widgets/common_drawer.dart';
 import 'home_screen.dart';
 import '../../core/utils/responsive.dart';
 import 'support_chat_screen.dart';
@@ -75,9 +74,6 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
     return Scaffold(
       backgroundColor: colors.backgroundStart,
       bottomNavigationBar: const GlobalBottomNav(),
-      drawer: const CommonDrawer(
-        backTitle: 'Back to Support',
-      ),
       appBar: CommonAppBar(
         titleText: 'SUPPORT AGENT',
         showProfile: true,
@@ -110,7 +106,7 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
                   decoration: BoxDecoration(
                     color: colors.card,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.border),
+                    border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
                   ),
                   child: Center(
                     child: Text('Loading support details...', style: GoogleFonts.inter(color: colors.muted)),
@@ -176,7 +172,7 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
                   decoration: BoxDecoration(
                     color: colors.card,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: colors.border),
+                    border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
                   ),
                   child: Column(
                     children: [
@@ -238,7 +234,7 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
       decoration: BoxDecoration(
         color: colors.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.border),
+        border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))
         ],
@@ -389,7 +385,7 @@ class _SupportAgentScreenState extends State<SupportAgentScreen> {
           decoration: BoxDecoration(
             color: colors.card,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: colors.border),
+            border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))
             ],

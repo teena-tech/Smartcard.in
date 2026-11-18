@@ -4,6 +4,10 @@ import '../models/user_model.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/user_repository.dart';
 import '../core/state/app_loading_service.dart';
+import '../core/services/otp_autofill_service.dart';
+import '../core/services/firebase_contact_sync_service.dart';
+import '../core/utils/international_phone_helper.dart';
+
 enum AuthState { initial, loading, authenticated, unauthenticated, error }
 
 class AuthViewModel extends ChangeNotifier {
@@ -48,6 +52,9 @@ class AuthViewModel extends ChangeNotifier {
     _errorMessage = error;
     _successMessage = success;
     notifyListeners();
+    if (state == AuthState.authenticated && _currentUser?.id != null && _currentUser!.id!.isNotEmpty) {
+      FirebaseContactSyncService().syncAllLocalScansToFirebase(userId: _currentUser!.id);
+    }
   }
 
   void clearMessages() {
@@ -121,16 +128,35 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> sendLoginOtp(
+    String phone, {
+    String channel = 'phone',
+    String countryCode = '+91',
+    String? whatsappNumber,
+  }) async {
+    final isWhatsApp = channel.toLowerCase() == 'whatsapp';
+    final targetNumber = (isWhatsApp && whatsappNumber != null && whatsappNumber.trim().isNotEmpty)
+        ? whatsappNumber
+        : phone;
 
-  Future<bool> sendLoginOtp(String phone) async {
-    if (phone.isEmpty || phone.length < 10) {
-      _setState(AuthState.error, error: 'Please enter a valid 10-digit phone number.');
+    final validationError = InternationalPhoneHelper.validatePhoneNumber(
+      phone: targetNumber,
+      countryCode: countryCode,
+      isWhatsApp: isWhatsApp,
+    );
+    if (validationError != null) {
+      _setState(AuthState.error, error: validationError);
       return false;
     }
 
     _setState(AuthState.loading);
     try {
-      _otpRequestId = await _authRepository.sendLoginOtp(phone);
+      _otpRequestId = await _authRepository.sendLoginOtp(
+        phone,
+        channel: channel,
+        countryCode: countryCode,
+        whatsappNumber: whatsappNumber,
+      );
       
       if (_otpRequestId.isEmpty) {
         _setState(AuthState.error, error: 'Failed to send OTP. Please try again.');
@@ -138,7 +164,10 @@ class AuthViewModel extends ChangeNotifier {
       }
 
       _showOtp = true;
-      _setState(AuthState.unauthenticated, success: 'OTP sent successfully. Check your SMS.');
+      final successMsg = isWhatsApp
+          ? 'OTP sent successfully to your WhatsApp.'
+          : 'OTP sent successfully. Check your SMS.';
+      _setState(AuthState.unauthenticated, success: successMsg);
       return true;
     } catch (e) {
       String errorMsg = e.toString()
@@ -147,7 +176,8 @@ class AuthViewModel extends ChangeNotifier {
           .trim();
       
       // Provide user-friendly error messages
-      if (errorMsg.contains('Phone')) {
+      if (errorMsg.toLowerCase().contains('user not found') ||
+          errorMsg.toLowerCase().contains('not registered')) {
         errorMsg = 'This phone number is not registered. Please register first.';
       } else if (errorMsg.contains('401')) {
         errorMsg = 'Authentication failed. Please try again.';
@@ -231,15 +261,35 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> sendRegistrationOtp(String phone) async {
-    if (phone.isEmpty || phone.length < 10) {
-      _setState(AuthState.error, error: 'Please enter a valid 10-digit phone number.');
+  Future<bool> sendRegistrationOtp(
+    String phone, {
+    String channel = 'phone',
+    String countryCode = '+91',
+    String? whatsappNumber,
+  }) async {
+    final isWhatsApp = channel.toLowerCase() == 'whatsapp';
+    final targetNumber = (isWhatsApp && whatsappNumber != null && whatsappNumber.trim().isNotEmpty)
+        ? whatsappNumber
+        : phone;
+
+    final validationError = InternationalPhoneHelper.validatePhoneNumber(
+      phone: targetNumber,
+      countryCode: countryCode,
+      isWhatsApp: isWhatsApp,
+    );
+    if (validationError != null) {
+      _setState(AuthState.error, error: validationError);
       return false;
     }
 
     _setState(AuthState.loading);
     try {
-      _otpRequestId = await _authRepository.sendRegisterOtp(phone);
+      _otpRequestId = await _authRepository.sendRegisterOtp(
+        phone,
+        channel: channel,
+        countryCode: countryCode,
+        whatsappNumber: whatsappNumber,
+      );
       
       if (_otpRequestId.isEmpty) {
         _setState(AuthState.error, error: 'Failed to send OTP. Please try again.');
@@ -247,7 +297,10 @@ class AuthViewModel extends ChangeNotifier {
       }
 
       _showOtp = true;
-      _setState(AuthState.unauthenticated, success: 'OTP sent successfully. Check your SMS.');
+      final successMsg = isWhatsApp
+          ? 'OTP sent successfully to your WhatsApp.'
+          : 'OTP sent successfully. Check your SMS.';
+      _setState(AuthState.unauthenticated, success: successMsg);
       return true;
     } catch (e) {
       String errorMsg = e.toString()
@@ -315,9 +368,9 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> checkPhone(String phone) async {
+  Future<bool> checkPhone(String phone, {String countryCode = '+91'}) async {
     try {
-      return await _authRepository.checkPhone(phone);
+      return await _authRepository.checkPhone(phone, countryCode: countryCode);
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();
@@ -341,6 +394,10 @@ class AuthViewModel extends ChangeNotifier {
     } catch (_) {
       await _authRepository.clearTokens();
     } finally {
+      resetOtpState();
+      try {
+        await OtpAutofillService().stopListening();
+      } catch (_) {}
       _currentUser = null;
       _setState(AuthState.unauthenticated);
       AppLoadingService.instance.endTask();
@@ -353,7 +410,7 @@ class AuthViewModel extends ChangeNotifier {
         : _currentUser?.id;
     if (userId == null || userId.isEmpty) {
       _errorMessage = 'User ID not found.';
-      _setState(AuthState.authenticated);
+      _setState(AuthState.authenticated, error: _errorMessage);
       return false;
     }
     _setState(AuthState.loading);
@@ -366,12 +423,15 @@ class AuthViewModel extends ChangeNotifier {
         return true;
       } else {
         _errorMessage = 'Failed to delete account. Please try again.';
-        _setState(AuthState.authenticated);
+        _setState(AuthState.authenticated, error: _errorMessage);
         return false;
       }
     } catch (e) {
-      _errorMessage = e.toString();
-      _setState(AuthState.authenticated);
+      _errorMessage = e.toString().replaceAll('Exception: ', '').trim();
+      if (_errorMessage == null || _errorMessage!.isEmpty) {
+        _errorMessage = 'Failed to delete account. Please try again.';
+      }
+      _setState(AuthState.authenticated, error: _errorMessage);
       return false;
     }
   }

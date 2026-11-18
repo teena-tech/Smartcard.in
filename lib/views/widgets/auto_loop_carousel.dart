@@ -81,7 +81,7 @@ class _AutoLoopCarouselState extends State<AutoLoopCarousel> {
     if (!widget.autoScroll) return;
     _stopAutoPlay();
     _inactivityTimer?.cancel();
-    _inactivityTimer = Timer(const Duration(seconds: 30), () {
+    _inactivityTimer = Timer(const Duration(seconds: 3), () {
       _startAutoPlay();
     });
   }

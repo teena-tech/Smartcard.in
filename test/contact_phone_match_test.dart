@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/models/scanned_contact_model.dart';
 
 void main() {
   group('ScannedContactModel & Phone Match Unit Tests', () {

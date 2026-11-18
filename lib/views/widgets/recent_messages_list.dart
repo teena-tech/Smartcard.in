@@ -68,9 +68,9 @@ class RecentMessagesList extends StatelessWidget {
         padding: const EdgeInsets.all(32),
         margin: const EdgeInsets.symmetric(horizontal: 24.0),
         decoration: BoxDecoration(
-          color: colors.card,
+          color: Colors.white.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
+          border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
         ),
         child: Column(
           children: [
@@ -126,9 +126,9 @@ class RecentMessagesList extends StatelessWidget {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 24.0),
           decoration: BoxDecoration(
-            color: colors.card,
+            color: Colors.white.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colors.border),
+            border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),

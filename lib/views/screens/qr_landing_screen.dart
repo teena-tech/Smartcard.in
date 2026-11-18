@@ -8,7 +8,6 @@ import 'full_card_view_screen.dart';
 import '../../../core/utils/upload_url_resolver.dart';
 import 'package:provider/provider.dart';
 import '../../../viewmodels/profile_viewmodel.dart';
-import '../widgets/common_drawer.dart';
 import '../widgets/global_bottom_nav.dart';
 import '../widgets/master_app_bar.dart';
 
@@ -69,7 +68,6 @@ class _QrLandingScreenState extends State<QrLandingScreen> {
     final scannedContact = widget.scannedContact;
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F1A),
-      drawer: const CommonDrawer(),
       appBar: const MasterAppBar(
         style: MasterHeaderStyle.transparent,
       ),

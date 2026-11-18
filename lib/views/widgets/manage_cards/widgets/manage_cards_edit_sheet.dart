@@ -7,6 +7,8 @@ import '../../../../viewmodels/theme_viewmodel.dart';
 import '../../../../models/card_model.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../rich_text_editor_widget.dart';
+import 'manage_cards_video_widget.dart';
+import '../../../../models/video_item.dart';
 
 class SectionEditSheet extends StatefulWidget {
   final String sectionId;
@@ -29,6 +31,8 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
   final _formKey = GlobalKey<FormState>();
 
   late Map<String, dynamic> _controllers;
+  List<TextEditingController> _videoControllers = [];
+  List<TextEditingController> _videoTitleControllers = [];
 
   // Pincode lookup variables
   List<dynamic> _offices = [];
@@ -66,14 +70,22 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
     _controllers['companyState'] = TextEditingController(text: details.companyState);
     _controllers['companyDistrict'] = TextEditingController(text: details.companyDistrict);
 
-    // Personal Address
-    _controllers['address'] = TextEditingController(text: details.address);
-    _controllers['pincode'] = TextEditingController(text: details.pincode);
-    _controllers['cityId'] = details.cityId;
-    _controllers['stateId'] = details.stateId;
-    _controllers['city'] = TextEditingController(text: details.city);
-    _controllers['state'] = TextEditingController(text: details.state);
-    _controllers['district'] = TextEditingController(text: details.district);
+    // Personal / Professional Address
+    final effectiveAddress = details.address.isNotEmpty ? details.address : details.companyAddress;
+    final effectivePincode = details.pincode.isNotEmpty ? details.pincode : details.companyPincode;
+    final effectiveCityId = details.cityId.isNotEmpty ? details.cityId : details.companyCityId;
+    final effectiveStateId = details.stateId.isNotEmpty ? details.stateId : details.companyStateId;
+    final effectiveCity = details.city.isNotEmpty ? details.city : details.companyCity;
+    final effectiveState = details.state.isNotEmpty ? details.state : details.companyState;
+    final effectiveDistrict = details.district.isNotEmpty ? details.district : details.companyDistrict;
+
+    _controllers['address'] = TextEditingController(text: effectiveAddress);
+    _controllers['pincode'] = TextEditingController(text: effectivePincode);
+    _controllers['cityId'] = effectiveCityId;
+    _controllers['stateId'] = effectiveStateId;
+    _controllers['city'] = TextEditingController(text: effectiveCity);
+    _controllers['state'] = TextEditingController(text: effectiveState);
+    _controllers['district'] = TextEditingController(text: effectiveDistrict);
 
     // Dynamic lists
     final emails = details.companyEmails.isEmpty ? [''] : details.companyEmails;
@@ -96,9 +108,17 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
       'url': TextEditingController(text: w['url'] ?? ''),
     }).toList();
 
-    // About & YouTube
+    // About & Videos
     _controllers['about'] = TextEditingController(text: details.aboutCompany);
-    final youtubeLink = details.youtubeLinks.isEmpty ? '' : details.youtubeLinks[0];
+    final validVideos = details.videos;
+    if (validVideos.isEmpty) {
+      _videoControllers = [TextEditingController()];
+      _videoTitleControllers = [TextEditingController()];
+    } else {
+      _videoControllers = validVideos.map((v) => TextEditingController(text: v.url)).toList();
+      _videoTitleControllers = validVideos.map((v) => TextEditingController(text: v.title)).toList();
+    }
+    final youtubeLink = _videoControllers.isEmpty ? '' : _videoControllers[0].text;
     _controllers['youtube'] = TextEditingController(text: youtubeLink);
 
     // Auto Pincode Lookups
@@ -201,7 +221,7 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
       case 'section-company-contact': return 'Contact Details';
       case 'section-social': return 'Social Media';
       case 'section-about': return 'About';
-      case 'section-youtube': return 'YouTube Video';
+      case 'section-youtube': return 'My Videos';
       case 'section-gallery': return 'Gallery';
       default: return 'Edit Details';
     }
@@ -562,7 +582,175 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
         return RichTextEditorWidget(controller: _controllers['about']);
 
       case 'section-youtube':
-        return _buildTextFormField(_controllers['youtube'], 'YouTube Video Link', colors, keyboardType: TextInputType.url);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 18, color: Colors.blueGrey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Paste video links from YouTube, Instagram Reels, Facebook, TikTok, Vimeo, or direct video URLs.',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.blueGrey.shade800,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            ..._videoControllers.asMap().entries.map((entry) {
+              final index = entry.key;
+              final controller = entry.value;
+              final detectedInfo = controller.text.trim().isNotEmpty
+                  ? VideoPlatformHelper.detect(controller.text)
+                  : null;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: detectedInfo != null
+                        ? detectedInfo.brandColor.withValues(alpha: 0.35)
+                        : Colors.grey.shade300,
+                    width: 1.2,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Video ${index + 1}',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (_videoControllers.length > 1)
+                          InkWell(
+                            onTap: () {
+                              setState(() {
+                                final removed = _videoControllers.removeAt(index);
+                                removed.dispose();
+                                if (index < _videoTitleControllers.length) {
+                                  final removedTitle = _videoTitleControllers.removeAt(index);
+                                  removedTitle.dispose();
+                                }
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.delete_outline, size: 15, color: Colors.redAccent),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    'Remove',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.redAccent,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: controller,
+                      keyboardType: TextInputType.url,
+                      onChanged: (_) => setState(() {}),
+                      style: GoogleFonts.inter(fontSize: 13.5),
+                      decoration: InputDecoration(
+                        hintText: 'https://youtube.com/watch?v=... or reel link',
+                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 12.5),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        prefixIcon: const Icon(Icons.link, size: 18, color: Colors.grey),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: index < _videoTitleControllers.length
+                          ? _videoTitleControllers[index]
+                          : TextEditingController(),
+                      style: GoogleFonts.inter(fontSize: 13.5),
+                      decoration: InputDecoration(
+                        hintText: 'Video Title (e.g. Flutter Tutorial, My Portfolio)',
+                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 12.5),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        prefixIcon: const Icon(Icons.title, size: 18, color: Colors.grey),
+                      ),
+                    ),
+                    if (detectedInfo != null) ...[
+                      const SizedBox(height: 8),
+                      VideoPlatformBadge(info: detectedInfo),
+                    ],
+                  ],
+                ),
+              );
+            }),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryRed,
+                side: const BorderSide(color: AppColors.primaryRed, width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              onPressed: () {
+                setState(() {
+                  _videoControllers.add(TextEditingController());
+                  _videoTitleControllers.add(TextEditingController());
+                });
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(
+                'Add Another Video',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            ),
+          ],
+        );
 
       case 'section-gallery':
         final existingPhotos = viewModel.selectedCardDetails?.existingPhotos ?? [];
@@ -714,14 +902,34 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
       details.companyDistrict = _controllers['companyDistrict'].text.trim();
       details.companyOfficeSelected = details.companyPincode.isNotEmpty && details.companyCityId.isNotEmpty;
     } else if (widget.sectionId == 'section-address') {
-      details.address = _controllers['address'].text.trim();
-      details.pincode = _controllers['pincode'].text.trim();
-      details.cityId = _controllers['cityId'] ?? '';
-      details.stateId = _controllers['stateId'] ?? '';
-      details.city = _controllers['city'].text.trim();
-      details.state = _controllers['state'].text.trim();
-      details.district = _controllers['district'].text.trim();
-      details.officeSelected = details.pincode.isNotEmpty && details.cityId.isNotEmpty;
+      final savedAddress = _controllers['address'].text.trim();
+      final savedPincode = _controllers['pincode'].text.trim();
+      final savedCityId = _controllers['cityId'] ?? '';
+      final savedStateId = _controllers['stateId'] ?? '';
+      final savedCity = _controllers['city'].text.trim();
+      final savedState = _controllers['state'].text.trim();
+      final savedDistrict = _controllers['district'].text.trim();
+      final isOfficeSelected = savedPincode.isNotEmpty && savedCityId.isNotEmpty;
+
+      // Update personal address
+      details.address = savedAddress;
+      details.pincode = savedPincode;
+      details.cityId = savedCityId;
+      details.stateId = savedStateId;
+      details.city = savedCity;
+      details.state = savedState;
+      details.district = savedDistrict;
+      details.officeSelected = isOfficeSelected;
+
+      // Synchronize professional / company address so work card profile stays identical
+      details.companyAddress = savedAddress;
+      details.companyPincode = savedPincode;
+      details.companyCityId = savedCityId;
+      details.companyStateId = savedStateId;
+      details.companyCity = savedCity;
+      details.companyState = savedState;
+      details.companyDistrict = savedDistrict;
+      details.companyOfficeSelected = isOfficeSelected;
     } else if (widget.sectionId == 'section-company-contact') {
       details.companyEmails = (_controllers['emails'] as List<TextEditingController>)
           .map((e) => e.text.trim())
@@ -750,7 +958,18 @@ class _SectionEditSheetState extends State<SectionEditSheet> {
     } else if (widget.sectionId == 'section-about') {
       details.aboutCompany = _controllers['about'].text.trim();
     } else if (widget.sectionId == 'section-youtube') {
-      details.youtubeLinks = [_controllers['youtube'].text.trim()];
+      final List<VideoItem> newVideos = [];
+      for (int i = 0; i < _videoControllers.length; i++) {
+        final url = _videoControllers[i].text.trim();
+        if (url.isNotEmpty) {
+          final title = i < _videoTitleControllers.length ? _videoTitleControllers[i].text.trim() : '';
+          newVideos.add(VideoItem.fromUrl(url, title: title.isNotEmpty ? title : null));
+        }
+      }
+      details.videos = newVideos;
+      if (details.youtubeLinks.isNotEmpty && _controllers['youtube'] != null) {
+        _controllers['youtube'].text = details.youtubeLinks[0];
+      }
     }
 
     final success = await viewModel.handleFormSubmit();

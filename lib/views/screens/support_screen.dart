@@ -5,7 +5,6 @@ import 'package:lottie/lottie.dart';
 import '../../viewmodels/theme_viewmodel.dart';
 import 'support_agent_screen.dart';
 import 'contact_company_screen.dart';
-import '../../core/utils/responsive.dart';
 
 class SupportScreen extends StatelessWidget {
   const SupportScreen({super.key});
@@ -100,7 +99,7 @@ class SupportScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: colors.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colors.border),
+          border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
         ),
         child: Row(
           children: [
@@ -123,7 +122,7 @@ class SupportScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: colors.muted),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFFE53935)),
           ],
         ),
       ),

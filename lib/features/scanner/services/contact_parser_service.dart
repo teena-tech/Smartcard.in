@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import '../../../models/app_contact.dart';
 import '../../../models/scanned_contact_model.dart';
 
 class ContactParserService {
@@ -42,6 +42,21 @@ class ContactParserService {
 
     final remainingLines = <String>[];
 
+    final List<String> allDetectedPhones = [];
+    final Set<String> seenPhoneDigits = {};
+    final List<String> additionalPhones = [];
+
+    void addPhoneCandidate(String candidate) {
+      final clean = candidate.replaceAll(RegExp(r'^(mob(ile)?|tel(ephone)?|ph(one)?|cell|p|m|t|alt|f|fax|wa|whatsapp|landline|work|office|contact)\s*[:\-\.]?\s*', caseSensitive: false), '').trim();
+      final digits = clean.replaceAll(RegExp(r'\D'), '');
+      if (digits.length >= 7 && digits.length <= 16) {
+        final norm = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+        if (seenPhoneDigits.add(norm)) {
+          allDetectedPhones.add(clean);
+        }
+      }
+    }
+
     for (final line in lines) {
       final lower = line.toLowerCase();
 
@@ -60,17 +75,27 @@ class ContactParserService {
         }
       }
 
-      // Phone match
-      if (phoneRegex.hasMatch(line) && (lower.contains('tel') || lower.contains('mob') || lower.contains('ph') || lower.contains('+') || line.replaceAll(RegExp(r'\D'), '').length >= 10)) {
-        final digitsOnly = line.replaceAll(RegExp(r'[^\d+]'), '');
-        if (digitsOnly.length >= 8) {
-          if (phone.isEmpty) {
-            phone = line;
-          } else if (altPhone == null && line != phone) {
-            altPhone = line;
+      // Phone match (single number or multiple separated by / , | or)
+      final subChunks = line.split(RegExp(r'[/,|;\\]|\s+(?:or|and|&)\s+')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      bool hasPhoneChunk = false;
+      for (final chunk in subChunks) {
+        final matches = phoneRegex.allMatches(chunk);
+        if (matches.isNotEmpty) {
+          for (final m in matches) {
+            final matchedStr = m.group(0);
+            if (matchedStr != null && matchedStr.isNotEmpty) {
+              addPhoneCandidate(matchedStr);
+              hasPhoneChunk = true;
+            }
           }
-          continue;
+        } else if (chunk.replaceAll(RegExp(r'\D'), '').length >= 8 &&
+            (lower.contains('tel') || lower.contains('mob') || lower.contains('ph') || lower.contains('+') || chunk.replaceAll(RegExp(r'\D'), '').length >= 10)) {
+          addPhoneCandidate(chunk);
+          hasPhoneChunk = true;
         }
+      }
+      if (hasPhoneChunk) {
+        continue;
       }
 
       // Designation match
@@ -91,6 +116,17 @@ class ContactParserService {
       }
 
       remainingLines.add(line);
+    }
+
+    // Assign phone fields from all detected numbers
+    if (allDetectedPhones.isNotEmpty) {
+      phone = allDetectedPhones[0];
+      if (allDetectedPhones.length > 1) {
+        altPhone = allDetectedPhones[1];
+      }
+      if (allDetectedPhones.length > 2) {
+        additionalPhones.addAll(allDetectedPhones.sublist(2));
+      }
     }
 
     // Heuristics for Name & remaining fields
@@ -121,7 +157,7 @@ class ContactParserService {
       name = remainingLines.first;
     }
 
-    final fullAddress = addressParts.join(', ');
+    final fullAddress = ContactAddress.sanitizeAddressString(addressParts.join(', '));
 
     return ScannedContactModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -130,6 +166,7 @@ class ContactParserService {
       designation: designation,
       phone: phone,
       alternativePhone: altPhone,
+      additionalPhones: additionalPhones,
       email: email,
       website: website,
       address: fullAddress,

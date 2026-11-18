@@ -27,9 +27,15 @@ import '../viewmodels/message_viewmodel.dart';
 import '../viewmodels/support_viewmodel.dart';
 import '../viewmodels/customization_controller.dart';
 import '../viewmodels/customize_viewmodel.dart';
+import 'contact_provider.dart';
+import 'group_provider.dart';
+import 'workspace_provider.dart';
 
 class AppProviders {
   static List<dynamic> get providers => [
+    ChangeNotifierProvider<WorkspaceProvider>(
+      create: (_) => WorkspaceProvider(),
+    ),
     // 1. Repositories
     ChangeNotifierProvider<AppLoadingService>.value(value: AppLoadingService.instance),
     Provider<ConnectivityService>(create: (_) => ConnectivityService()),
@@ -76,6 +82,12 @@ class AppProviders {
     ),
     ChangeNotifierProvider<ContactViewModel>(
       create: (_) => ContactViewModel(),
+    ),
+    ChangeNotifierProvider<ContactProvider>(
+      create: (_) => ContactProvider()..initialize(),
+    ),
+    ChangeNotifierProvider<GroupProvider>(
+      create: (_) => GroupProvider()..loadGroups(),
     ),
     ChangeNotifierProvider<DashboardViewModel>(
       create: (_) => DashboardViewModel(),

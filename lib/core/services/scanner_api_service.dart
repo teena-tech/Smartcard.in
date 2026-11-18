@@ -9,16 +9,27 @@ class ScannerApiService {
 
   final Dio _dio = DioClient().dio;
 
-  /// List scanned contacts with pagination and transient retry
-  Future<Map<String, dynamic>> getContacts({int page = 1, int limit = 50}) async {
+  /// List scanned contacts with pagination, high-scale delta sync, and transient retry
+  Future<Map<String, dynamic>> getContacts({
+    int page = 1,
+    int limit = 50,
+    String? since,
+    String? source,
+  }) async {
     int attempts = 0;
     const maxAttempts = 3;
     while (attempts < maxAttempts) {
       attempts++;
       try {
+        final query = <String, dynamic>{
+          'page': page,
+          'limit': limit,
+          if (since != null && since.isNotEmpty) 'since': since,
+          if (source != null && source.isNotEmpty) 'source': source,
+        };
         final response = await _dio.get(
           ApiConfig.qrContacts,
-          queryParameters: {'page': page, 'limit': limit},
+          queryParameters: query,
         );
         return response.data as Map<String, dynamic>;
       } catch (e) {
@@ -91,9 +102,10 @@ class ScannerApiService {
       final response = await _dio.delete(
         ApiConfig.qrDelete(numericId),
         data: {
-          // Always include these — the backend uses them as fallback identifiers
-          if (phone != null && phone.isNotEmpty) 'phone': phone,
-          if (email != null && email.isNotEmpty) 'email': email,
+          'id': contactId,
+          // Only pass phone/email if numericId > 0 so the backend never deletes separate profiles sharing the same phone
+          if (numericId > 0 && phone != null && phone.isNotEmpty) 'phone': phone,
+          if (numericId > 0 && email != null && email.isNotEmpty) 'email': email,
           if (name != null && name.isNotEmpty) 'name': name,
         },
       );

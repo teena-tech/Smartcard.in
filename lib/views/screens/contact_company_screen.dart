@@ -5,7 +5,6 @@ import '../../viewmodels/theme_viewmodel.dart';
 import '../../viewmodels/support_viewmodel.dart';
 import '../../repositories/user_repository.dart';
 import '../widgets/common_app_bar.dart';
-import '../widgets/common_drawer.dart';
 import 'home_screen.dart';
 import '../../core/utils/responsive.dart';
 
@@ -80,9 +79,6 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
     return Scaffold(
       backgroundColor: colors.backgroundStart,
       bottomNavigationBar: const GlobalBottomNav(),
-      drawer: const CommonDrawer(
-        backTitle: 'Back to Support',
-      ),
       appBar: CommonAppBar(
         titleText: 'SUPPORT REQUEST',
         showProfile: true,
@@ -146,7 +142,7 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
       decoration: BoxDecoration(
         color: colors.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.border),
+        border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12, offset: const Offset(0, 4))
         ],
@@ -319,7 +315,7 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
           decoration: BoxDecoration(
             color: colors.card,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: colors.border),
+            border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2))
             ],

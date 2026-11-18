@@ -6,7 +6,6 @@ import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/subscription_viewmodel.dart';
 import 'subscription_screen.dart';
 import '../widgets/circular_profile_avatar.dart';
-import '../../core/utils/responsive.dart';
 import '../../core/utils/upload_url_resolver.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
 
@@ -18,8 +17,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   @override
   void initState() {
     super.initState();
@@ -42,7 +39,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final vibrantRed = const Color(0xFFE30613);
     final darkBlue = const Color(0xFF1E233A);
-    final softPinkishWhite = const Color(0xFFFFF0F2);
     final mutedText = Colors.grey.shade600;
 
     final profileViewModel = context.watch<ProfileViewModel>();
@@ -50,8 +46,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = profileViewModel.user;
     final profileImage = user?.profileImage;
 
-    final isPremium = subscriptionViewModel.subscription?.isActive == true &&
-        subscriptionViewModel.subscription?.membership.toUpperCase() != 'FREE';
+    final isPremium = subscriptionViewModel.isPremium;
 
     return Container(
       width: double.infinity,
@@ -76,18 +71,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+                border: Border.all(color: vibrantRed.withValues(alpha: 0.6), width: 1.2),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  Row(
+                  Stack(
                     children: [
                       GestureDetector(
                         onTap: () {
@@ -104,63 +92,113 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           foregroundColor: Colors.white,
                         ),
                       ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user?.displayName ?? 'User',
-                              style: GoogleFonts.inter(
-                                color: darkBlue,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              user?.email ?? '',
-                              style: GoogleFonts.inter(
-                                color: mutedText,
-                                fontSize: 14,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 6),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: vibrantRed, width: 1.5),
+                      if (isPremium)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: vibrantRed,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 4,
                                 ),
-                                child: Text(
-                                  isPremium ? 'PREMIUM PLAN' : 'UPGRADE TO PREMIUM',
+                              ],
+                            ),
+                            child: const Text('👑', style: TextStyle(fontSize: 12)),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.displayName ?? 'User',
+                          style: GoogleFonts.inter(
+                            color: darkBlue,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (isPremium) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: vibrantRed.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: vibrantRed, width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('👑 ', style: TextStyle(fontSize: 11)),
+                                Text(
+                                  'PREMIUM MEMBER',
                                   style: GoogleFonts.inter(
                                     color: vibrantRed,
-                                    fontSize: 10,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w800,
                                     letterSpacing: 0.5,
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          user?.email ?? '',
+                          style: GoogleFonts.inter(
+                            color: mutedText,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (!isPremium) ...[
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const SubscriptionScreen()),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: vibrantRed,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Text(
+                                'UPGRADE TO PREMIUM',
+                                style: GoogleFonts.inter(
+                                  color: vibrantRed,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-
                 ],
               ),
             ),
@@ -209,6 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }) {
     final darkBlue = const Color(0xFF1E233A);
     final mutedText = Colors.grey.shade600;
+    final vibrantRed = const Color(0xFFE30613);
 
     return InkWell(
       onTap: onTap,
@@ -218,21 +257,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: Border.all(color: vibrantRed.withValues(alpha: 0.6), width: 1.2),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Colors.grey.shade100.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: darkBlue, size: 24),
@@ -263,34 +295,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
+            Icon(Icons.arrow_forward_ios, size: 16, color: vibrantRed),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, Color darkBlue, Color vibrantRed) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            color: darkBlue,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }

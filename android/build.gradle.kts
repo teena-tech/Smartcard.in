@@ -3,6 +3,7 @@ allprojects {
         google()
         mavenCentral()
         maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
+        maven { url = uri("https://jitpack.io") }
     }
     configurations.all {
         resolutionStrategy {
@@ -17,12 +18,17 @@ allprojects {
 
 subprojects {
     afterEvaluate {
-        if (plugins.hasPlugin("com.android.library") || plugins.hasPlugin("com.android.application")) {
+        if (plugins.hasPlugin("com.android.library") && project.name != "app") {
             extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.apply {
                 defaultConfig {
                     ndk {
                         abiFilters.clear()
                         abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+                    }
+                    externalNativeBuild {
+                        cmake {
+                            arguments("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
+                        }
                     }
                 }
                 compileOptions {

@@ -5,7 +5,12 @@ import 'package:provider/provider.dart';
 import '../../../core/services/qr_extraction_service.dart';
 import '../../../models/scanned_contact_model.dart';
 import '../../../viewmodels/contact_viewmodel.dart';
+import '../../../viewmodels/dashboard_viewmodel.dart';
+import '../../../viewmodels/profile_viewmodel.dart';
+import '../../../providers/contact_provider.dart';
 import '../../../views/screens/contact_preview_screen.dart';
+import '../../../views/widgets/duplicate_scan_popup_dialog.dart';
+import '../../../core/services/firebase_contact_sync_service.dart';
 import '../models/scan_type.dart';
 import '../models/scanner_state.dart';
 import '../models/qr_result.dart';
@@ -55,14 +60,76 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     if (!mounted) return;
 
     try {
-      // Step 1: Database match & API profile extraction
+      // Step 1: Extract contact from QR
       final ScannedContactModel scannedContact = await QrExtractionService.extract(rawValue);
 
-      // Step 2: Save to ViewModel / Hive database
-      if (mounted) {
-        await context.read<ContactViewModel>().addScannedContact(scannedContact);
+      if (!mounted) return;
+
+      final contactVm = context.read<ContactViewModel>();
+      final contactProvider = context.read<ContactProvider>();
+      await contactVm.recordScan();
+
+      try {
+        final profileVm = context.read<ProfileViewModel>();
+        final uid = profileVm.user?.id;
+        if (uid != null && uid.isNotEmpty) {
+          profileVm.incrementScanCount(uid);
+        }
+      } catch (_) {}
+
+      // Step 2: Duplicate check across smart cards and phone contacts
+      final duplicateCheck = contactVm.checkCardDuplicate(
+        scannedContact,
+        phoneContacts: contactProvider.contacts,
+      );
+
+      final isDuplicateFound = (duplicateCheck.isDuplicate ||
+          duplicateCheck.isSameNumberDifferentCard ||
+          duplicateCheck.existingContact != null) &&
+          duplicateCheck.existingContact != null;
+
+      // When duplicate phone/contact is detected, show the 10-second transparent popup with the big swipe button
+      if (isDuplicateFound && mounted) {
+        // Immediately sync existing contact to Firebase Firestore in background so it appears in Firebase console right away
+        FirebaseContactSyncService().syncContactToFirebase(duplicateCheck.existingContact!);
+
+        final action = await DuplicateScanPopupDialog.show(
+          context: context,
+          incoming: scannedContact,
+          existing: duplicateCheck.existingContact!,
+        );
+
+        if (!mounted) return;
+
+        if (action == DuplicateScanAction.update) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => ContactPreviewScreen(
+                contact: scannedContact,
+                existingContact: duplicateCheck.existingContact,
+              ),
+            ),
+          );
+        } else if (action == DuplicateScanAction.exit) {
+          setState(() {
+            _state = ScannerStateEnum.searching;
+            _isProcessing = false;
+          });
+          try {
+            context.read<DashboardViewModel>().setIndex(0);
+          } catch (_) {}
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          // continueScan: keep scanning without saving
+          setState(() {
+            _state = ScannerStateEnum.searching;
+            _isProcessing = false;
+          });
+          try { await _cameraController?.start(); } catch (_) {}
+        }
+        return;
       }
-      // Step 3: Open ContactPreviewScreen with full contact edit UI
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
@@ -84,6 +151,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       );
     }
   }
+
+
 
   void _toggleTorch() async {
     try {

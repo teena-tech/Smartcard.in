@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../controllers/scanner_controller.dart';
 import '../models/scan_type.dart';
 import '../models/scanner_state.dart';
@@ -11,6 +12,11 @@ import '../services/camera_service.dart';
 import '../widgets/scanner_overlay.dart';
 import '../widgets/capture_animation.dart';
 import '../widgets/processing_animation.dart';
+import '../../../viewmodels/contact_viewmodel.dart';
+import '../../../viewmodels/dashboard_viewmodel.dart';
+import '../../../viewmodels/profile_viewmodel.dart';
+import '../../../providers/contact_provider.dart';
+import '../../../views/widgets/duplicate_scan_popup_dialog.dart';
 import '../../../views/screens/contact_preview_screen.dart';
 
 class BusinessCardScannerScreen extends StatefulWidget {
@@ -86,20 +92,73 @@ class _BusinessCardScannerScreenState extends State<BusinessCardScannerScreen> {
       capturedFile = await _cameraService.takePicture();
     }
 
-    if (capturedFile == null) {
-      // Fallback: prompt gallery / pick image
-      capturedFile = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92);
-    }
+    capturedFile ??= await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 92);
 
     if (capturedFile != null && mounted) {
       final parsedContact = await _controller.processCapturedImagePath(capturedFile.path);
 
       if (parsedContact != null && mounted) {
+        final cardImage = _controller.lastCapturedImagePath ?? capturedFile.path;
+        final contactVm = context.read<ContactViewModel>();
+        final contactProvider = context.read<ContactProvider>();
+        await contactVm.recordScan();
+
+        try {
+          final profileVm = context.read<ProfileViewModel>();
+          final uid = profileVm.user?.id;
+          if (uid != null && uid.isNotEmpty) {
+            profileVm.incrementScanCount(uid);
+          }
+        } catch (_) {}
+
+        final duplicateCheck = contactVm.checkCardDuplicate(
+          parsedContact,
+          phoneContacts: contactProvider.contacts,
+        );
+
+        final isDuplicateFound = (duplicateCheck.isDuplicate ||
+            duplicateCheck.isSameNumberDifferentCard ||
+            duplicateCheck.existingContact != null) &&
+            duplicateCheck.existingContact != null;
+
+        // When duplicate phone/contact is detected, show the 10-second transparent popup with the big swipe button
+        if (isDuplicateFound && mounted) {
+          final action = await DuplicateScanPopupDialog.show(
+            context: context,
+            incoming: parsedContact,
+            existing: duplicateCheck.existingContact!,
+          );
+
+          if (!mounted) return;
+
+          if (action == DuplicateScanAction.update) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => ContactPreviewScreen(
+                  contact: parsedContact,
+                  existingContact: duplicateCheck.existingContact,
+                  imagePath: cardImage,
+                ),
+              ),
+            );
+          } else if (action == DuplicateScanAction.exit) {
+            _controller.reset();
+            try {
+              context.read<DashboardViewModel>().setIndex(0);
+            } catch (_) {}
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          } else {
+            // continueScan: reset and continue scanning
+            _controller.reset();
+          }
+          return;
+        }
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (_) => ContactPreviewScreen(
               contact: parsedContact,
-              imagePath: _controller.lastCapturedImagePath ?? capturedFile!.path,
+              imagePath: cardImage,
             ),
           ),
         );

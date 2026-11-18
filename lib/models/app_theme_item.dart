@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../core/utils/upload_url_resolver.dart';
 
 class AppThemeItem {

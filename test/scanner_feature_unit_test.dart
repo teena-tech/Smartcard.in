@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcard_flutter/features/scanner/models/card_corners.dart';
 import 'package:smartcard_flutter/features/scanner/models/qr_result.dart';

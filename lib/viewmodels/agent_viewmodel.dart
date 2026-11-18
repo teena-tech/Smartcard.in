@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/agent_model.dart';
 import '../repositories/agent_repository.dart';
-import '../models/user_model.dart';
 
 class AgentViewModel extends ChangeNotifier {
   final AgentRepository _repository;

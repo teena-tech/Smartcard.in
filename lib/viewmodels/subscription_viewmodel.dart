@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import '../models/subscription_model.dart';
 import '../models/coupon_model.dart';
 import '../models/payment_confirm_model.dart';
@@ -27,6 +28,16 @@ class SubscriptionViewModel extends ChangeNotifier {
   SubscriptionStatus get status => _status;
   PaymentStatus get paymentStatus => _paymentStatus;
   SubscriptionModel? get subscription => _subscription;
+  bool get isPremium {
+    if (_subscription == null) return false;
+    final mem = _subscription!.membership.trim().toUpperCase();
+    if (mem == 'PREMIUM' || mem == 'PRO' || mem.contains('PREMIUM') || mem.contains('PAID')) {
+      return true;
+    }
+    if (_subscription!.isActive) return true;
+    if (_subscription!.daysRemaining > 0 && mem != 'FREE') return true;
+    return false;
+  }
   CouponModel? get appliedCoupon => _appliedCoupon;
   PaymentConfirmModel? get paymentConfirm => _paymentConfirm;
   String? get errorMessage => _errorMessage;
@@ -118,10 +129,20 @@ class SubscriptionViewModel extends ChangeNotifier {
     return str.trim();
   }
 
+  void _safeNotifyListeners() {
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+    } else {
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchSubscription(String userId) async {
     _status = SubscriptionStatus.loading;
     _errorMessage = null;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       final response = await _api.getSubscriptionDetails(userId);
@@ -131,7 +152,7 @@ class SubscriptionViewModel extends ChangeNotifier {
       _errorMessage = _cleanError(e);
       _status = SubscriptionStatus.error;
     } finally {
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
