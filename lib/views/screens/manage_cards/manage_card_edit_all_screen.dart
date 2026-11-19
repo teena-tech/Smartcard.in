@@ -442,7 +442,7 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
       final liveLink = card?.profileUrl ?? 
           ((card?.qrCode != null && card!.qrCode!.isNotEmpty)
               ? card.qrCode!
-              : 'https://thesmartcards.com/profile/${card?.workProfileId ?? viewModel.userId}');
+              : 'https://thesmartcards.in/profile/${card?.workProfileId ?? viewModel.userId}');
 
       try {
         final uri = Uri.parse(liveLink);
