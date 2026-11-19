@@ -43,8 +43,9 @@ class ApiConfig {
     if (rawUrl == null || rawUrl.trim().isEmpty) return publicWebBaseUrl;
     var trimmed = rawUrl.trim();
     // Dynamically normalize legacy .com domain to current .in domain
+    final targetHost = Uri.tryParse(publicWebBaseUrl)?.host ?? 'thesmartcards.in';
     if (trimmed.contains('thesmartcards.com')) {
-      trimmed = trimmed.replaceAll('thesmartcards.com', 'thesmartcards.in');
+      trimmed = trimmed.replaceAll('thesmartcards.com', targetHost);
     }
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       final uri = Uri.tryParse(trimmed);
@@ -113,6 +114,7 @@ class ApiConfig {
 
   // User & Profile
   static String userProfile(String userId) => '/api/v1/users/$userId/profile';
+  static String passwordChange(String userId) => '/api/v1/users/$userId/password-change';
   static String userGallery(String userId) => '/api/v1/users/$userId/gallery';
   static String userProfileImage(String userId) => '/api/v1/users/$userId/profile-image';
   static String companyLogo(String userId) => '/api/v1/users/$userId/company-logo';
@@ -120,6 +122,7 @@ class ApiConfig {
   static String deleteUserAccountPost(String userId) => '/api/v1/users/$userId/delete';
   static const String deleteUserAccountMe = '/api/v1/users/me';
   static const String deleteUserAccountMePost = '/api/v1/users/me/delete';
+  static const String deleteUserAccountConvenience = '/api/v1/users/delete-account';
 
   // Support
   static String supportContext(String userId) => '/api/v1/users/$userId/support/context';
@@ -129,6 +132,7 @@ class ApiConfig {
   // Reports
   static const String userReports = '/api/v1/user-reports';
   static String userReport(String reportId) => '/api/v1/user-reports/$reportId';
+  static String replyUserReport(String reportId) => '/api/v1/user-reports/$reportId/reply';
 
   // Gallery Management
   static String galleryImages(String userId) => '/api/v1/users/$userId/gallery/images';
@@ -246,6 +250,14 @@ class ApiConfig {
       : _readConfig(
           _envSharedUploadsUrl,
           'SHARED_UPLOADS_URL',
-          'https://thesmartcards.in/shared-uploads',
+          '$publicWebBaseUrl/shared-uploads',
         );
+
+  // Required only for /api/v1/agents/* routes because server uses CARD_API_KEY.
+  static String get cardApiKey =>
+      _readConfig(
+        const String.fromEnvironment('CARD_API_KEY'),
+        'CARD_API_KEY',
+        'BSOEYKz2/TPMwJP0ZV2p0Vzn4MxP6CaXyEClHf9BFecAHJGwSxfTFalLTF5P8mkioTxld8ETM073UlIjeJ/Eww==',
+      );
 }

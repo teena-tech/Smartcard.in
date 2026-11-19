@@ -12,6 +12,7 @@ import '../../../viewmodels/auth_viewmodel.dart';
 import '../../../viewmodels/card_viewmodel.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/upload_url_resolver.dart';
+import '../../../core/network/api_config.dart';
 import '../../widgets/master_app_bar.dart';
 import '../../widgets/manage_cards/widgets/manage_cards_video_widget.dart';
 import '../home_screen.dart';
@@ -439,10 +440,11 @@ class _ManageCardEditAllScreenState extends State<ManageCardEditAllScreen> {
 
     if (success) {
       final card = viewModel.currentCard;
-      final liveLink = card?.profileUrl ?? 
-          ((card?.qrCode != null && card!.qrCode!.isNotEmpty)
-              ? card.qrCode!
-              : 'https://thesmartcards.in/profile/${card?.workProfileId ?? viewModel.userId}');
+      final liveLink = ApiConfig.resolveLiveCardUrl(
+        qrCode: card?.qrCode,
+        profileUrl: card?.profileUrl,
+        workProfileId: '${card?.workProfileId ?? viewModel.userId}',
+      );
 
       try {
         final uri = Uri.parse(liveLink);

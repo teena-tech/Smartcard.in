@@ -65,14 +65,14 @@ class VCardPhotoService {
         final base = ApiConfig.baseUrl.replaceFirst(RegExp(r'/+$'), '');
         return '$base/$cleaned';
       } catch (_) {
-        return 'https://thesmartcards.in/$cleaned';
+        return '${ApiConfig.publicWebBaseUrl}/$cleaned';
       }
     }
 
     try {
       return UploadUrlResolver.resolve(cleaned, type: 'profile');
     } catch (_) {
-      return 'https://thesmartcards.in/$cleaned';
+      return '${ApiConfig.publicWebBaseUrl}/$cleaned';
     }
   }
 
