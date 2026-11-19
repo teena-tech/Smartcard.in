@@ -1,27 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart' hide Config;
-import 'package:provider/provider.dart';
 import 'dart:async';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/support_viewmodel.dart';
-import '../../data/models/message_model.dart';
-import '../widgets/common_app_bar.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../../core/providers/app_riverpod_providers.dart';
+import '../../viewmodels/support_viewmodel.dart' show SupportState;
+import '../../models/message_model.dart';
+import '../widgets/master_app_bar.dart';
+import '../widgets/master_bottom_nav.dart';
 import 'home_screen.dart';
 import 'support_agent_screen.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/responsive.dart';
 
-class SupportChatScreen extends StatefulWidget {
+class SupportChatScreen extends ConsumerStatefulWidget {
   const SupportChatScreen({super.key});
 
   @override
-  State<SupportChatScreen> createState() => _SupportChatScreenState();
+  ConsumerState<SupportChatScreen> createState() => _SupportChatScreenState();
 }
 
-class _SupportChatScreenState extends State<SupportChatScreen> {
+class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
@@ -46,8 +45,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
         final maxScroll = _scrollController.position.maxScrollExtent;
         final currentScroll = _scrollController.position.pixels;
         if (maxScroll > 0 && currentScroll >= maxScroll - 200) {
-          final authViewModel = context.read<AuthViewModel>();
-          final supportViewModel = context.read<SupportViewModel>();
+          final authViewModel = ref.read(authViewModelProvider);
+          final supportViewModel = ref.read(supportViewModelProvider);
           final userId = authViewModel.currentUser?.id;
           if (userId != null && !supportViewModel.isLoading) {
             supportViewModel.fetchMessages(userId, loadMore: true);
@@ -58,9 +57,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
     // Start message polling timer (check for new messages every 5 seconds)
     _messagePollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (context.mounted) {
-        final authViewModel = context.read<AuthViewModel>();
-        final supportViewModel = context.read<SupportViewModel>();
+      if (mounted) {
+        final authViewModel = ref.read(authViewModelProvider);
+        final supportViewModel = ref.read(supportViewModelProvider);
         final userId = authViewModel.currentUser?.id;
         if (userId != null) {
           supportViewModel.fetchMessages(userId);
@@ -75,8 +74,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authViewModel = context.read<AuthViewModel>();
-      final supportViewModel = context.read<SupportViewModel>();
+      final authViewModel = ref.read(authViewModelProvider);
+      final supportViewModel = ref.read(supportViewModelProvider);
       final userId = authViewModel.currentUser?.id;
       if (userId != null) {
         supportViewModel.fetchMessages(userId);
@@ -115,8 +114,8 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
-    final authViewModel = context.read<AuthViewModel>();
-    final supportViewModel = context.read<SupportViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
+    final supportViewModel = ref.read(supportViewModelProvider);
     final userId = authViewModel.currentUser?.id;
     if (userId == null) return;
 
@@ -304,14 +303,15 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+    final colors = ref.watch(themeViewModelProvider).colors;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: colors.backgroundStart,
       bottomNavigationBar: const GlobalBottomNav(),
-      appBar: CommonAppBar(
+      appBar: MasterAppBar(
+        style: MasterHeaderStyle.standard,
         titleText: 'SUPPORT CHAT',
         showProfile: true,
         onProfileTap: () {
@@ -336,8 +336,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
           children: [
             /// CHAT LIST
             Expanded(
-              child: Consumer<SupportViewModel>(
-                builder: (context, supportViewModel, child) {
+              child: Builder(
+                builder: (context) {
+                  final supportViewModel = ref.watch(supportViewModelProvider);
                   final messages = supportViewModel.messages;
 
                   // Scroll to bottom only once on initial load
@@ -389,7 +390,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                     MaterialPageRoute(builder: (context) => const SupportAgentScreen()),
                                   );
                                 } else {
-                                  final authViewModel = context.read<AuthViewModel>();
+                                  final authViewModel = ref.read(authViewModelProvider);
                                   final userId = authViewModel.currentUser?.id;
                                   if (userId != null) {
                                     supportViewModel.fetchMessages(userId);
@@ -416,7 +417,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
 
                   return RefreshIndicator(
                     onRefresh: () async {
-                      final authViewModel = context.read<AuthViewModel>();
+                      final authViewModel = ref.read(authViewModelProvider);
                       final userId = authViewModel.currentUser?.id;
                       if (userId != null) {
                         await supportViewModel.fetchMessages(userId);
@@ -803,7 +804,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                 maxLines: null,
                 textInputAction: TextInputAction.newline,
                 style: GoogleFonts.inter(
-                  color: (context.read<ThemeViewModel>().themeMode != AppThemeMode.light)
+                  color: (ref.read(themeViewModelProvider).themeMode != AppThemeMode.light)
                       ? Colors.white
                       : Colors.black,
                   fontSize: 15,

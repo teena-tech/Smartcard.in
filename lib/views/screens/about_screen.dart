@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/theme_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../core/utils/responsive.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   static const List<Map<String, dynamic>> _aboutSections = [
@@ -43,7 +43,7 @@ class AboutScreen extends StatelessWidget {
       {
         'heading': '1. Introduction',
         'paragraphs': [
-          'By accessing or using TheSmartCards.com or its related mobile application, you agree to be bound by these Terms and Conditions. If you disagree, do not use the services. We may revise these terms at any time, and continued use constitutes acceptance of changes.'
+          'By accessing or using TheSmartCards.in or its related mobile application, you agree to be bound by these Terms and Conditions. If you disagree, do not use the services. We may revise these terms at any time, and continued use constitutes acceptance of changes.'
         ]
       },
       {
@@ -107,7 +107,7 @@ class AboutScreen extends StatelessWidget {
       {
         'heading': '10. Contact',
         'paragraphs': [
-          'For questions, contact support@thesmartcards.com or Antzmedia Digital Solutions Pvt Ltd, Shine Road, Vyttila 682019.'
+          'For questions, contact support@thesmartcards.in or Antzmedia Digital Solutions Pvt Ltd, Shine Road, Vyttila 682019.'
         ]
       }
     ]
@@ -115,13 +115,13 @@ class AboutScreen extends StatelessWidget {
 
   static const Map<String, dynamic> _privacyContent = {
     'title': 'Privacy Policy',
-    'subtitle': 'Privacy Policy for TheSmartCards.com and Related Mobile Application',
+    'subtitle': 'Privacy Policy for TheSmartCards.in and Related Mobile Application',
     'updatedAt': '23-07-2026',
     'sections': [
       {
         'heading': '1. Introduction',
         'paragraphs': [
-          'This Privacy Policy explains how TheSmartCards.com and its related mobile application collect, use, store, and protect personal information in line with applicable Indian legal requirements.'
+          'This Privacy Policy explains how TheSmartCards.in and its related mobile application collect, use, store, and protect personal information in line with applicable Indian legal requirements.'
         ]
       },
       {
@@ -313,8 +313,8 @@ class AboutScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final themeViewModel = context.watch<ThemeViewModel>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeViewModel = ref.watch(themeViewModelProvider);
     final colors = themeViewModel.colors;
 
     return Container(

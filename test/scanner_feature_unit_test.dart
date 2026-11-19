@@ -1,20 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/features/scanner/models/card_corners.dart';
-import 'package:smartcard_flutter/features/scanner/models/qr_result.dart';
-import 'package:smartcard_flutter/features/scanner/models/scanner_state.dart';
-import 'package:smartcard_flutter/features/scanner/services/contact_parser_service.dart';
+import 'package:smartcard_flutter/core/utils/contact_parser.dart';
 import 'package:smartcard_flutter/models/card_model.dart';
 import 'package:smartcard_flutter/bloc/scan_bloc.dart';
 
 void main() {
   group('SmartCards Scanner Unit Tests', () {
-    late ContactParserService contactParser;
-
-    setUp(() {
-      contactParser = ContactParserService();
-    });
-
-    test('ContactParserService correctly extracts phone, email, website and company', () {
+    test('ContactParser correctly extracts phone, email, website and company', () {
       const rawOcrText = '''
 John Smith
 Senior Software Architect
@@ -25,29 +16,28 @@ Web: www.techcorp.com
 Chennai, Tamil Nadu - 600001
 ''';
 
-      final result = contactParser.parseText(rawOcrText);
+      final result = ContactParser.parse(rawOcrText);
 
       expect(result.name, contains('John Smith'));
       expect(result.designation, equals('Senior Software Architect'));
       expect(result.company, equals('TechCorp Solutions Pvt Ltd'));
-      expect(result.phone, contains('+91 9876543210'));
+      expect(result.phone.replaceAll(' ', ''), contains('9876543210'));
       expect(result.email, equals('john.smith@techcorp.com'));
       expect(result.website, equals('www.techcorp.com'));
       expect(result.pinCode, equals('600001'));
     });
 
-    test('QrResult classifies URL, Phone, Email and vCard correctly', () {
-      final urlResult = QrResult.fromRawString('https://thesmartcards.in/profile/123');
-      expect(urlResult.type, equals(QrResultType.url));
-      expect(urlResult.rawContent, equals('https://thesmartcards.in/profile/123'));
+    test('ContactParser.parseQrCode classifies URL, Phone, Email and vCard correctly', () {
+      final urlResult = ContactParser.parseQrCode('https://thesmartcards.in/profile/123');
+      expect(urlResult.website, contains('https://thesmartcards.in/profile/123'));
 
-      final phoneResult = QrResult.fromRawString('tel:+919876543210');
-      expect(phoneResult.type, equals(QrResultType.phone));
+      final phoneResult = ContactParser.parseQrCode('tel:+919876543210');
+      expect(phoneResult.phone, equals('+919876543210'));
 
-      final emailResult = QrResult.fromRawString('mailto:support@thesmartcards.in');
-      expect(emailResult.type, equals(QrResultType.email));
+      final emailResult = ContactParser.parseQrCode('mailto:support@thesmartcards.in');
+      expect(emailResult.email, equals('support@thesmartcards.in'));
 
-      final vcardResult = QrResult.fromRawString('''
+      final vcardResult = ContactParser.parseQrCode('''
 BEGIN:VCARD
 VERSION:3.0
 N:Doe;Jane;;;
@@ -57,28 +47,10 @@ TEL;TYPE=CELL:+919876543210
 EMAIL:jane@smartcards.in
 END:VCARD
 ''');
-      expect(vcardResult.type, equals(QrResultType.vCard));
-      expect(vcardResult.parsedFields['name'], equals('Jane Doe'));
-    });
-
-    test('ScannerStateEnum returns clear human-readable user guidance messages', () {
-      expect(ScannerStateEnum.searching.userFeedbackMessage, equals('Looking for a business card...'));
-      expect(ScannerStateEnum.tooFar.userFeedbackMessage, equals('Move closer'));
-      expect(ScannerStateEnum.tooClose.userFeedbackMessage, equals('Move slightly back'));
-      expect(ScannerStateEnum.stable.userFeedbackMessage, equals('Perfect! Hold steady...'));
-      expect(ScannerStateEnum.capturing.userFeedbackMessage, equals('Capturing ✓'));
-    });
-
-    test('CardCorners boundingBox calculates correct width and height', () {
-      const corners = CardCorners(
-        topLeft: Offset(10, 20),
-        topRight: Offset(210, 20),
-        bottomRight: Offset(210, 140),
-        bottomLeft: Offset(10, 140),
-      );
-
-      expect(corners.width, equals(200.0));
-      expect(corners.height, equals(120.0));
+      expect(vcardResult.name, equals('Jane Doe'));
+      expect(vcardResult.company, equals('SmartCards Inc'));
+      expect(vcardResult.phone, contains('919876543210'));
+      expect(vcardResult.email, equals('jane@smartcards.in'));
     });
 
     test('CardModel handles suspension status and qrData correctly', () {

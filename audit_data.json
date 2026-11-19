@@ -1,0 +1,2539 @@
+{
+  "total_lib_files": 169,
+  "total_lib_lines": 66885,
+  "total_assets": 14,
+  "total_asset_size_kb": 1689.18,
+  "total_test_files": 33,
+  "total_test_lines": 5824,
+  "lib_files": [
+    {
+      "path": "lib\\bloc\\scan_bloc.dart",
+      "name": "scan_bloc.dart",
+      "lines": 374,
+      "size_kb": 9.62,
+      "ref_count": 2,
+      "refs": [
+        "main.dart",
+        "scanner_provider.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\constants\\app_colors.dart",
+      "name": "app_colors.dart",
+      "lines": 131,
+      "size_kb": 4.74,
+      "ref_count": 54,
+      "refs": [
+        "app_theme.dart",
+        "avatar_helper.dart",
+        "contact_action_helper.dart",
+        "theme_viewmodel.dart",
+        "about_screen.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart",
+        "home_screen.dart",
+        "landing_screen.dart",
+        "login_screen.dart",
+        "messages_screen.dart",
+        "mycards.dart",
+        "profile_screen.dart",
+        "register_screen.dart",
+        "subscription_screen.dart",
+        "support_agent_screen.dart",
+        "support_chat_screen.dart",
+        "customize_ai_screen.dart",
+        "customize_menu_screen.dart",
+        "customize_theme_screen.dart",
+        "manage_card_screens.dart",
+        "manage_cards_edit_sheet.dart",
+        "manage_cards_header.dart",
+        "manage_cards_summary.dart",
+        "manage_cards_video_widget.dart",
+        "alphabet_scroll_bar.dart",
+        "app_profile_avatar.dart",
+        "app_update_dialog.dart",
+        "circular_profile_avatar.dart",
+        "common_drawer.dart",
+        "contact_list_tile.dart",
+        "contact_tile_helpers.dart",
+        "customize_flow_widgets.dart",
+        "duplicate_field_swipe_widget.dart",
+        "empty_state_widget.dart",
+        "image_confirm_sheet.dart",
+        "image_cropper_widget.dart",
+        "info_card.dart",
+        "login_form.dart",
+        "master_app_bar.dart",
+        "master_bottom_nav.dart",
+        "premium_card_widget.dart",
+        "profile_hero_rect_dialog.dart",
+        "profile_menu_bottom_sheet.dart",
+        "quick_action_bar.dart",
+        "recent_activity_list.dart",
+        "recent_messages_list.dart",
+        "rotating_profile_avatar_ring.dart",
+        "statistics_grid.dart",
+        "theme_toggle_switch.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\constants\\app_theme.dart",
+      "name": "app_theme.dart",
+      "lines": 86,
+      "size_kb": 3.1,
+      "ref_count": 1,
+      "refs": [
+        "main.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\database\\hive_scan_database.dart",
+      "name": "hive_scan_database.dart",
+      "lines": 398,
+      "size_kb": 14.05,
+      "ref_count": 4,
+      "refs": [
+        "main.dart",
+        "firebase_contact_sync_service.dart",
+        "contact_viewmodel.dart",
+        "contact_preview_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\database\\sqlite_database.dart",
+      "name": "sqlite_database.dart",
+      "lines": 770,
+      "size_kb": 27.51,
+      "ref_count": 8,
+      "refs": [
+        "main.dart",
+        "backend_sync_service.dart",
+        "contact_saver_service.dart",
+        "firebase_contact_sync_service.dart",
+        "contact_provider.dart",
+        "contact_viewmodel.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\network\\api_config.dart",
+      "name": "api_config.dart",
+      "lines": 237,
+      "size_kb": 9.66,
+      "ref_count": 23,
+      "refs": [
+        "dio_client.dart",
+        "backend_sync_service.dart",
+        "scanner_api_service.dart",
+        "subscription_api_service.dart",
+        "vcard_photo_service.dart",
+        "contact_action_helper.dart",
+        "upload_url_resolver.dart",
+        "card_model.dart",
+        "auth_repository.dart",
+        "card_repository.dart",
+        "dashboard_repository.dart",
+        "support_repository.dart",
+        "theme_repository.dart",
+        "user_repository.dart",
+        "card_viewmodel.dart",
+        "contact_detail_screen.dart",
+        "home_screen.dart",
+        "landing_screen.dart",
+        "smart_card_list_screen.dart",
+        "customize_ai_screen.dart",
+        "customize_theme_screen.dart",
+        "contact_list_tile.dart",
+        "digital_corporate_card_widget.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\network\\api_exceptions.dart",
+      "name": "api_exceptions.dart",
+      "lines": 30,
+      "size_kb": 0.93,
+      "ref_count": 2,
+      "refs": [
+        "base_repository.dart",
+        "support_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\network\\connectivity_service.dart",
+      "name": "connectivity_service.dart",
+      "lines": 34,
+      "size_kb": 0.96,
+      "ref_count": 2,
+      "refs": [
+        "core_providers.dart",
+        "app_providers.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\network\\dio_client.dart",
+      "name": "dio_client.dart",
+      "lines": 294,
+      "size_kb": 11.11,
+      "ref_count": 15,
+      "refs": [
+        "main.dart",
+        "core_providers.dart",
+        "backend_sync_service.dart",
+        "scanner_api_service.dart",
+        "subscription_api_service.dart",
+        "app_providers.dart",
+        "auth_repository.dart",
+        "base_repository.dart",
+        "card_repository.dart",
+        "support_repository.dart",
+        "theme_repository.dart",
+        "user_repository.dart",
+        "support_viewmodel.dart",
+        "common_drawer.dart",
+        "profile_menu_bottom_sheet.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\providers\\app_riverpod_providers.dart",
+      "name": "app_riverpod_providers.dart",
+      "lines": 126,
+      "size_kb": 4.03,
+      "ref_count": 33,
+      "refs": [
+        "about_screen.dart",
+        "contact_company_screen.dart",
+        "home_screen.dart",
+        "landing_screen.dart",
+        "login_screen.dart",
+        "messages_screen.dart",
+        "mycards.dart",
+        "register_screen.dart",
+        "settings_screen.dart",
+        "smart_card_list_screen.dart",
+        "splash_screen.dart",
+        "subscription_screen.dart",
+        "support_agent_screen.dart",
+        "support_chat_screen.dart",
+        "support_screen.dart",
+        "customize_ai_screen.dart",
+        "customize_menu_screen.dart",
+        "customize_theme_screen.dart",
+        "manage_card_screens.dart",
+        "manage_cards_edit_sheet.dart",
+        "manage_cards_header.dart",
+        "common_drawer.dart",
+        "customize_flow_widgets.dart",
+        "digital_corporate_card_widget.dart",
+        "info_card.dart",
+        "login_form.dart",
+        "master_app_bar.dart",
+        "master_bottom_nav.dart",
+        "profile_menu_bottom_sheet.dart",
+        "recent_activity_list.dart",
+        "recent_messages_list.dart",
+        "statistics_grid.dart",
+        "theme_toggle_switch.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\providers\\core_providers.dart",
+      "name": "core_providers.dart",
+      "lines": 32,
+      "size_kb": 1.08,
+      "ref_count": 1,
+      "refs": [
+        "app_riverpod_providers.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\providers\\scanner_provider.dart",
+      "name": "scanner_provider.dart",
+      "lines": 232,
+      "size_kb": 5.73,
+      "ref_count": 1,
+      "refs": [
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\app_update_service.dart",
+      "name": "app_update_service.dart",
+      "lines": 420,
+      "size_kb": 16.19,
+      "ref_count": 2,
+      "refs": [
+        "home_screen.dart",
+        "app_update_dialog.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\backend_sync_service.dart",
+      "name": "backend_sync_service.dart",
+      "lines": 212,
+      "size_kb": 7.96,
+      "ref_count": 2,
+      "refs": [
+        "main.dart",
+        "contact_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\contact_import_service.dart",
+      "name": "contact_import_service.dart",
+      "lines": 120,
+      "size_kb": 3.98,
+      "ref_count": 1,
+      "refs": [
+        "contact_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\contact_photo_resolver.dart",
+      "name": "contact_photo_resolver.dart",
+      "lines": 197,
+      "size_kb": 6.32,
+      "ref_count": 7,
+      "refs": [
+        "contact_saver_service.dart",
+        "export_service.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart",
+        "contact_list_tile.dart",
+        "duplicate_scan_popup_dialog.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\contact_photo_service.dart",
+      "name": "contact_photo_service.dart",
+      "lines": 134,
+      "size_kb": 4.31,
+      "ref_count": 6,
+      "refs": [
+        "contact_photo_resolver.dart",
+        "contact_saver_service.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart",
+        "contact_list_tile.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\contact_saver_service.dart",
+      "name": "contact_saver_service.dart",
+      "lines": 517,
+      "size_kb": 19.45,
+      "ref_count": 4,
+      "refs": [
+        "device_contact_service.dart",
+        "contact_viewmodel.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\device_contact_service.dart",
+      "name": "device_contact_service.dart",
+      "lines": 230,
+      "size_kb": 7.89,
+      "ref_count": 1,
+      "refs": [
+        "contact_provider.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\edge_detection_service.dart",
+      "name": "edge_detection_service.dart",
+      "lines": 432,
+      "size_kb": 14.02,
+      "ref_count": 3,
+      "refs": [
+        "scan_bloc.dart",
+        "scanner_provider.dart",
+        "scan_processing_service.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\export_service.dart",
+      "name": "export_service.dart",
+      "lines": 102,
+      "size_kb": 3.51,
+      "ref_count": 1,
+      "refs": [
+        "contact_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\firebase_contact_sync_service.dart",
+      "name": "firebase_contact_sync_service.dart",
+      "lines": 334,
+      "size_kb": 12.85,
+      "ref_count": 2,
+      "refs": [
+        "auth_viewmodel.dart",
+        "contact_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\group_service.dart",
+      "name": "group_service.dart",
+      "lines": 139,
+      "size_kb": 4.17,
+      "ref_count": 1,
+      "refs": [
+        "group_provider.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\group_storage.dart",
+      "name": "group_storage.dart",
+      "lines": 145,
+      "size_kb": 4.15,
+      "ref_count": 3,
+      "refs": [
+        "group_service.dart",
+        "contact_provider.dart",
+        "group_provider.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\otp_autofill_service.dart",
+      "name": "otp_autofill_service.dart",
+      "lines": 251,
+      "size_kb": 10.25,
+      "ref_count": 4,
+      "refs": [
+        "auth_viewmodel.dart",
+        "profile_screen.dart",
+        "register_screen.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\qr_extraction_service.dart",
+      "name": "qr_extraction_service.dart",
+      "lines": 344,
+      "size_kb": 12.72,
+      "ref_count": 1,
+      "refs": [
+        "scan_processing_service.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\reactive_contact_sync_service.dart",
+      "name": "reactive_contact_sync_service.dart",
+      "lines": 106,
+      "size_kb": 3.67,
+      "ref_count": 2,
+      "refs": [
+        "contacts_screen.dart",
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\scan_processing_service.dart",
+      "name": "scan_processing_service.dart",
+      "lines": 144,
+      "size_kb": 4.86,
+      "ref_count": 2,
+      "refs": [
+        "scan_bloc.dart",
+        "scanner_provider.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\scanner_api_service.dart",
+      "name": "scanner_api_service.dart",
+      "lines": 141,
+      "size_kb": 5.09,
+      "ref_count": 2,
+      "refs": [
+        "qr_extraction_service.dart",
+        "contact_repository.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\subscription_api_service.dart",
+      "name": "subscription_api_service.dart",
+      "lines": 85,
+      "size_kb": 2.44,
+      "ref_count": 1,
+      "refs": [
+        "subscription_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\services\\vcard_photo_service.dart",
+      "name": "vcard_photo_service.dart",
+      "lines": 288,
+      "size_kb": 9.46,
+      "ref_count": 3,
+      "refs": [
+        "export_service.dart",
+        "contact_model.dart",
+        "mycards.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\state\\app_loading_service.dart",
+      "name": "app_loading_service.dart",
+      "lines": 102,
+      "size_kb": 3.02,
+      "ref_count": 6,
+      "refs": [
+        "app_providers.dart",
+        "auth_viewmodel.dart",
+        "card_viewmodel.dart",
+        "profile_viewmodel.dart",
+        "home_screen.dart",
+        "global_loading_overlay.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\app_haptics.dart",
+      "name": "app_haptics.dart",
+      "lines": 30,
+      "size_kb": 0.91,
+      "ref_count": 5,
+      "refs": [
+        "contact_preview_screen.dart",
+        "smart_card_list_screen.dart",
+        "app_update_dialog.dart",
+        "digital_corporate_card_widget.dart",
+        "master_bottom_nav.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\app_validators.dart",
+      "name": "app_validators.dart",
+      "lines": 33,
+      "size_kb": 1.15,
+      "ref_count": 2,
+      "refs": [
+        "business_card_validator.dart",
+        "contact_parser.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\auth_session_resolver.dart",
+      "name": "auth_session_resolver.dart",
+      "lines": 70,
+      "size_kb": 1.89,
+      "ref_count": 1,
+      "refs": [
+        "firebase_contact_sync_service.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\avatar_helper.dart",
+      "name": "avatar_helper.dart",
+      "lines": 46,
+      "size_kb": 1.65,
+      "ref_count": 4,
+      "refs": [
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "app_profile_avatar.dart",
+        "contact_list_tile.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\business_card_validator.dart",
+      "name": "business_card_validator.dart",
+      "lines": 91,
+      "size_kb": 3.02,
+      "ref_count": 3,
+      "refs": [
+        "qr_extraction_service.dart",
+        "scan_processing_service.dart",
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\card_expansion_route.dart",
+      "name": "card_expansion_route.dart",
+      "lines": 8,
+      "size_kb": 0.32,
+      "ref_count": 3,
+      "refs": [
+        "smart_card_list_screen.dart",
+        "customize_menu_screen.dart",
+        "recent_activity_list.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\company_normalizer.dart",
+      "name": "company_normalizer.dart",
+      "lines": 152,
+      "size_kb": 3.74,
+      "ref_count": 2,
+      "refs": [
+        "contact_provider.dart",
+        "contact_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\contact_action_helper.dart",
+      "name": "contact_action_helper.dart",
+      "lines": 745,
+      "size_kb": 26.71,
+      "ref_count": 3,
+      "refs": [
+        "contact_detail_screen.dart",
+        "contact_list_tile.dart",
+        "quick_action_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\contact_parser.dart",
+      "name": "contact_parser.dart",
+      "lines": 596,
+      "size_kb": 20.63,
+      "ref_count": 2,
+      "refs": [
+        "qr_extraction_service.dart",
+        "scan_processing_service.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\customize_utils.dart",
+      "name": "customize_utils.dart",
+      "lines": 155,
+      "size_kb": 4.73,
+      "ref_count": 1,
+      "refs": [
+        "customize_ai_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\file_downloader.dart",
+      "name": "file_downloader.dart",
+      "lines": 3,
+      "size_kb": 0.14,
+      "ref_count": 1,
+      "refs": [
+        "mycards.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\file_downloader_mobile.dart",
+      "name": "file_downloader_mobile.dart",
+      "lines": 49,
+      "size_kb": 1.52,
+      "ref_count": 1,
+      "refs": [
+        "file_downloader.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\file_downloader_stub.dart",
+      "name": "file_downloader_stub.dart",
+      "lines": 5,
+      "size_kb": 0.17,
+      "ref_count": 1,
+      "refs": [
+        "file_downloader.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\file_downloader_web.dart",
+      "name": "file_downloader_web.dart",
+      "lines": 11,
+      "size_kb": 0.33,
+      "ref_count": 1,
+      "refs": [
+        "file_downloader.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\image_cropper.dart",
+      "name": "image_cropper.dart",
+      "lines": 332,
+      "size_kb": 11.5,
+      "ref_count": 3,
+      "refs": [
+        "contact_form_screen.dart",
+        "manage_card_screens.dart",
+        "image_cropper_widget.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\intent_launcher.dart",
+      "name": "intent_launcher.dart",
+      "lines": 254,
+      "size_kb": 7.48,
+      "ref_count": 7,
+      "refs": [
+        "contact_action_helper.dart",
+        "contact_detail_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart",
+        "contact_list_tile.dart",
+        "digital_corporate_card_widget.dart",
+        "quick_action_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\international_phone_helper.dart",
+      "name": "international_phone_helper.dart",
+      "lines": 344,
+      "size_kb": 8.85,
+      "ref_count": 9,
+      "refs": [
+        "auth_repository.dart",
+        "user_repository.dart",
+        "auth_viewmodel.dart",
+        "profile_viewmodel.dart",
+        "profile_screen.dart",
+        "register_screen.dart",
+        "country_code_dropdown_dialog.dart",
+        "international_phone_input.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\permission_helper.dart",
+      "name": "permission_helper.dart",
+      "lines": 119,
+      "size_kb": 3.6,
+      "ref_count": 2,
+      "refs": [
+        "contact_provider.dart",
+        "contacts_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\phone_normalizer.dart",
+      "name": "phone_normalizer.dart",
+      "lines": 55,
+      "size_kb": 1.9,
+      "ref_count": 6,
+      "refs": [
+        "contact_photo_service.dart",
+        "contact_parser.dart",
+        "contact_provider.dart",
+        "contact_viewmodel.dart",
+        "contact_detail_screen.dart",
+        "contact_list_tile.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\responsive.dart",
+      "name": "responsive.dart",
+      "lines": 62,
+      "size_kb": 1.38,
+      "ref_count": 12,
+      "refs": [
+        "about_screen.dart",
+        "contacts_screen.dart",
+        "contact_company_screen.dart",
+        "home_screen.dart",
+        "login_screen.dart",
+        "messages_screen.dart",
+        "mycards.dart",
+        "profile_screen.dart",
+        "register_screen.dart",
+        "subscription_screen.dart",
+        "support_agent_screen.dart",
+        "support_chat_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\safe_base64.dart",
+      "name": "safe_base64.dart",
+      "lines": 70,
+      "size_kb": 2.4,
+      "ref_count": 5,
+      "refs": [
+        "contact_photo_resolver.dart",
+        "app_contact.dart",
+        "contact_detail_screen.dart",
+        "app_profile_avatar.dart",
+        "circular_profile_avatar.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\top_to_bottom_slide_route.dart",
+      "name": "top_to_bottom_slide_route.dart",
+      "lines": 47,
+      "size_kb": 1.55,
+      "ref_count": 2,
+      "refs": [
+        "card_expansion_route.dart",
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\core\\utils\\upload_url_resolver.dart",
+      "name": "upload_url_resolver.dart",
+      "lines": 118,
+      "size_kb": 4.03,
+      "ref_count": 25,
+      "refs": [
+        "contact_photo_resolver.dart",
+        "vcard_photo_service.dart",
+        "customize_utils.dart",
+        "app_theme_item.dart",
+        "card_viewmodel.dart",
+        "contact_viewmodel.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "landing_screen.dart",
+        "messages_screen.dart",
+        "mycards.dart",
+        "profile_screen.dart",
+        "settings_screen.dart",
+        "subscription_screen.dart",
+        "support_agent_screen.dart",
+        "customize_ai_screen.dart",
+        "manage_card_screens.dart",
+        "app_profile_avatar.dart",
+        "circular_profile_avatar.dart",
+        "common_drawer.dart",
+        "master_app_bar.dart",
+        "premium_card_widget.dart",
+        "profile_hero_rect_dialog.dart",
+        "profile_menu_bottom_sheet.dart",
+        "recent_messages_list.dart"
+      ]
+    },
+    {
+      "path": "lib\\features\\scanner\\services\\document_scanner_service.dart",
+      "name": "document_scanner_service.dart",
+      "lines": 34,
+      "size_kb": 0.83,
+      "ref_count": 1,
+      "refs": [
+        "edge_detection_service.dart"
+      ]
+    },
+    {
+      "path": "lib\\features\\scanner\\services\\image_processing_service.dart",
+      "name": "image_processing_service.dart",
+      "lines": 191,
+      "size_kb": 7.12,
+      "ref_count": 3,
+      "refs": [
+        "edge_detection_service.dart",
+        "scan_processing_service.dart",
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\main.dart",
+      "name": "main.dart",
+      "lines": 186,
+      "size_kb": 5.86,
+      "ref_count": 4,
+      "refs": [
+        "delete_confirm_dialog.dart",
+        "global_loading_overlay.dart",
+        "login_form.dart",
+        "lottie_loader.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\app_contact.dart",
+      "name": "app_contact.dart",
+      "lines": 709,
+      "size_kb": 20.51,
+      "ref_count": 17,
+      "refs": [
+        "contact_import_service.dart",
+        "contact_photo_resolver.dart",
+        "contact_saver_service.dart",
+        "device_contact_service.dart",
+        "contact_action_helper.dart",
+        "scanned_contact_model.dart",
+        "contact_provider.dart",
+        "group_provider.dart",
+        "contact_viewmodel.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart",
+        "contact_list_tile.dart",
+        "contact_tile_helpers.dart",
+        "quick_action_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\app_theme_item.dart",
+      "name": "app_theme_item.dart",
+      "lines": 197,
+      "size_kb": 6.22,
+      "ref_count": 2,
+      "refs": [
+        "theme_viewmodel.dart",
+        "customize_theme_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\card_duplicate_check.dart",
+      "name": "card_duplicate_check.dart",
+      "lines": 23,
+      "size_kb": 0.74,
+      "ref_count": 1,
+      "refs": [
+        "contact_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\card_model.dart",
+      "name": "card_model.dart",
+      "lines": 479,
+      "size_kb": 16.5,
+      "ref_count": 14,
+      "refs": [
+        "contact_photo_resolver.dart",
+        "contact_action_helper.dart",
+        "card_repository.dart",
+        "user_repository.dart",
+        "card_viewmodel.dart",
+        "mycards.dart",
+        "smart_card_list_screen.dart",
+        "manage_card_screens.dart",
+        "manage_cards_edit_sheet.dart",
+        "manage_cards_header.dart",
+        "manage_cards_video_widget.dart",
+        "customize_flow_widgets.dart",
+        "digital_corporate_card_widget.dart",
+        "premium_card_widget.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\contact_model.dart",
+      "name": "contact_model.dart",
+      "lines": 260,
+      "size_kb": 8.83,
+      "ref_count": 26,
+      "refs": [
+        "scan_bloc.dart",
+        "hive_scan_database.dart",
+        "sqlite_database.dart",
+        "scanner_provider.dart",
+        "backend_sync_service.dart",
+        "contact_import_service.dart",
+        "contact_photo_resolver.dart",
+        "contact_saver_service.dart",
+        "export_service.dart",
+        "firebase_contact_sync_service.dart",
+        "qr_extraction_service.dart",
+        "scan_processing_service.dart",
+        "contact_action_helper.dart",
+        "contact_parser.dart",
+        "card_duplicate_check.dart",
+        "contact_provider.dart",
+        "contact_viewmodel.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart",
+        "mycards.dart",
+        "company_conflict_warning_dialog.dart",
+        "contact_list_tile.dart",
+        "duplicate_scan_popup_dialog.dart",
+        "recent_activity_list.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\coupon_model.dart",
+      "name": "coupon_model.dart",
+      "lines": 156,
+      "size_kb": 4.54,
+      "ref_count": 1,
+      "refs": [
+        "subscription_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\message_model.dart",
+      "name": "message_model.dart",
+      "lines": 51,
+      "size_kb": 1.94,
+      "ref_count": 3,
+      "refs": [
+        "support_repository.dart",
+        "support_viewmodel.dart",
+        "support_chat_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\payment_confirm_model.dart",
+      "name": "payment_confirm_model.dart",
+      "lines": 68,
+      "size_kb": 1.95,
+      "ref_count": 1,
+      "refs": [
+        "subscription_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\scanned_contact_model.dart",
+      "name": "scanned_contact_model.dart",
+      "lines": 553,
+      "size_kb": 20.55,
+      "ref_count": 25,
+      "refs": [
+        "scan_bloc.dart",
+        "hive_scan_database.dart",
+        "sqlite_database.dart",
+        "scanner_provider.dart",
+        "backend_sync_service.dart",
+        "contact_import_service.dart",
+        "contact_photo_resolver.dart",
+        "contact_saver_service.dart",
+        "export_service.dart",
+        "firebase_contact_sync_service.dart",
+        "qr_extraction_service.dart",
+        "scan_processing_service.dart",
+        "contact_action_helper.dart",
+        "contact_parser.dart",
+        "card_duplicate_check.dart",
+        "contact_provider.dart",
+        "contact_viewmodel.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart",
+        "company_conflict_warning_dialog.dart",
+        "contact_list_tile.dart",
+        "duplicate_scan_popup_dialog.dart",
+        "recent_activity_list.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\subscription_model.dart",
+      "name": "subscription_model.dart",
+      "lines": 81,
+      "size_kb": 2.85,
+      "ref_count": 1,
+      "refs": [
+        "subscription_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\user_model.dart",
+      "name": "user_model.dart",
+      "lines": 169,
+      "size_kb": 6.49,
+      "ref_count": 9,
+      "refs": [
+        "auth_repository.dart",
+        "user_repository.dart",
+        "auth_viewmodel.dart",
+        "card_viewmodel.dart",
+        "profile_viewmodel.dart",
+        "mycards.dart",
+        "profile_screen.dart",
+        "digital_corporate_card_widget.dart",
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\models\\video_item.dart",
+      "name": "video_item.dart",
+      "lines": 218,
+      "size_kb": 7.15,
+      "ref_count": 4,
+      "refs": [
+        "card_model.dart",
+        "card_viewmodel.dart",
+        "manage_cards_edit_sheet.dart",
+        "manage_cards_video_widget.dart"
+      ]
+    },
+    {
+      "path": "lib\\providers\\app_providers.dart",
+      "name": "app_providers.dart",
+      "lines": 81,
+      "size_kb": 3.04,
+      "ref_count": 1,
+      "refs": [
+        "main.dart"
+      ]
+    },
+    {
+      "path": "lib\\providers\\contact_provider.dart",
+      "name": "contact_provider.dart",
+      "lines": 734,
+      "size_kb": 25.14,
+      "ref_count": 13,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "reactive_contact_sync_service.dart",
+        "app_providers.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart",
+        "home_screen.dart",
+        "smart_scanner_screen.dart",
+        "contact_list_tile.dart",
+        "contact_tile_helpers.dart"
+      ]
+    },
+    {
+      "path": "lib\\providers\\group_provider.dart",
+      "name": "group_provider.dart",
+      "lines": 154,
+      "size_kb": 4.26,
+      "ref_count": 8,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart",
+        "contact_tile_helpers.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\auth_repository.dart",
+      "name": "auth_repository.dart",
+      "lines": 497,
+      "size_kb": 15.49,
+      "ref_count": 5,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "auth_viewmodel.dart",
+        "card_viewmodel.dart",
+        "landing_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\base_repository.dart",
+      "name": "base_repository.dart",
+      "lines": 69,
+      "size_kb": 2.59,
+      "ref_count": 2,
+      "refs": [
+        "contact_repository.dart",
+        "dashboard_repository.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\card_repository.dart",
+      "name": "card_repository.dart",
+      "lines": 107,
+      "size_kb": 3.62,
+      "ref_count": 3,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "card_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\contact_repository.dart",
+      "name": "contact_repository.dart",
+      "lines": 58,
+      "size_kb": 1.52,
+      "ref_count": 2,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "contact_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\dashboard_repository.dart",
+      "name": "dashboard_repository.dart",
+      "lines": 62,
+      "size_kb": 1.91,
+      "ref_count": 1,
+      "refs": [
+        "dashboard_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\support_repository.dart",
+      "name": "support_repository.dart",
+      "lines": 121,
+      "size_kb": 3.69,
+      "ref_count": 4,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "support_viewmodel.dart",
+        "contact_company_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\theme_repository.dart",
+      "name": "theme_repository.dart",
+      "lines": 263,
+      "size_kb": 8.0,
+      "ref_count": 4,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "card_viewmodel.dart",
+        "customize_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\repositories\\user_repository.dart",
+      "name": "user_repository.dart",
+      "lines": 818,
+      "size_kb": 26.03,
+      "ref_count": 6,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "auth_viewmodel.dart",
+        "card_viewmodel.dart",
+        "message_viewmodel.dart",
+        "profile_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\auth_viewmodel.dart",
+      "name": "auth_viewmodel.dart",
+      "lines": 447,
+      "size_kb": 14.46,
+      "ref_count": 4,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "profile_screen.dart",
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\card_viewmodel.dart",
+      "name": "card_viewmodel.dart",
+      "lines": 1115,
+      "size_kb": 38.24,
+      "ref_count": 8,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "profile_screen.dart",
+        "manage_card_screens.dart",
+        "manage_cards_edit_sheet.dart",
+        "manage_cards_header.dart",
+        "manage_cards_video_widget.dart",
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\contact_viewmodel.dart",
+      "name": "contact_viewmodel.dart",
+      "lines": 1946,
+      "size_kb": 77.52,
+      "ref_count": 10,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "reactive_contact_sync_service.dart",
+        "app_providers.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "contact_preview_screen.dart",
+        "home_screen.dart",
+        "smart_scanner_screen.dart",
+        "contact_list_tile.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\customize_viewmodel.dart",
+      "name": "customize_viewmodel.dart",
+      "lines": 144,
+      "size_kb": 4.24,
+      "ref_count": 2,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\dashboard_viewmodel.dart",
+      "name": "dashboard_viewmodel.dart",
+      "lines": 82,
+      "size_kb": 2.31,
+      "ref_count": 7,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "reactive_contact_sync_service.dart",
+        "app_providers.dart",
+        "contacts_screen.dart",
+        "profile_screen.dart",
+        "smart_scanner_screen.dart",
+        "master_bottom_nav.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\landing_viewmodel.dart",
+      "name": "landing_viewmodel.dart",
+      "lines": 44,
+      "size_kb": 1.28,
+      "ref_count": 2,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\message_viewmodel.dart",
+      "name": "message_viewmodel.dart",
+      "lines": 282,
+      "size_kb": 10.65,
+      "ref_count": 5,
+      "refs": [
+        "dio_client.dart",
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "messages_screen.dart",
+        "profile_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\profile_viewmodel.dart",
+      "name": "profile_viewmodel.dart",
+      "lines": 380,
+      "size_kb": 13.55,
+      "ref_count": 6,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "contact_detail_screen.dart",
+        "profile_screen.dart",
+        "smart_scanner_screen.dart",
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\subscription_viewmodel.dart",
+      "name": "subscription_viewmodel.dart",
+      "lines": 269,
+      "size_kb": 8.81,
+      "ref_count": 4,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "profile_screen.dart",
+        "subscription_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\support_viewmodel.dart",
+      "name": "support_viewmodel.dart",
+      "lines": 164,
+      "size_kb": 5.12,
+      "ref_count": 3,
+      "refs": [
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "support_chat_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\viewmodels\\theme_viewmodel.dart",
+      "name": "theme_viewmodel.dart",
+      "lines": 91,
+      "size_kb": 3.2,
+      "ref_count": 9,
+      "refs": [
+        "main.dart",
+        "app_riverpod_providers.dart",
+        "app_providers.dart",
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_preview_screen.dart",
+        "profile_screen.dart",
+        "master_app_bar.dart",
+        "theme_toggle_switch.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\about_screen.dart",
+      "name": "about_screen.dart",
+      "lines": 483,
+      "size_kb": 21.14,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\contact_company_screen.dart",
+      "name": "contact_company_screen.dart",
+      "lines": 386,
+      "size_kb": 14.63,
+      "ref_count": 2,
+      "refs": [
+        "support_agent_screen.dart",
+        "support_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\contact_detail_screen.dart",
+      "name": "contact_detail_screen.dart",
+      "lines": 2591,
+      "size_kb": 116.0,
+      "ref_count": 3,
+      "refs": [
+        "contact_list_tile.dart",
+        "premium_card_widget.dart",
+        "recent_activity_list.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\contact_form_screen.dart",
+      "name": "contact_form_screen.dart",
+      "lines": 2379,
+      "size_kb": 98.49,
+      "ref_count": 4,
+      "refs": [
+        "contacts_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_preview_screen.dart",
+        "contact_list_tile.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\contact_preview_screen.dart",
+      "name": "contact_preview_screen.dart",
+      "lines": 526,
+      "size_kb": 21.27,
+      "ref_count": 1,
+      "refs": [
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\contacts_screen.dart",
+      "name": "contacts_screen.dart",
+      "lines": 1579,
+      "size_kb": 58.06,
+      "ref_count": 2,
+      "refs": [
+        "contact_detail_screen.dart",
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\customize\\customize_ai_screen.dart",
+      "name": "customize_ai_screen.dart",
+      "lines": 2009,
+      "size_kb": 85.23,
+      "ref_count": 1,
+      "refs": [
+        "customize_menu_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\customize\\customize_menu_screen.dart",
+      "name": "customize_menu_screen.dart",
+      "lines": 258,
+      "size_kb": 8.55,
+      "ref_count": 3,
+      "refs": [
+        "smart_card_list_screen.dart",
+        "customize_theme_screen.dart",
+        "customize_flow_widgets.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\customize\\customize_theme_screen.dart",
+      "name": "customize_theme_screen.dart",
+      "lines": 799,
+      "size_kb": 33.28,
+      "ref_count": 1,
+      "refs": [
+        "customize_menu_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\customize\\widgets\\editor_toolbar.dart",
+      "name": "editor_toolbar.dart",
+      "lines": 79,
+      "size_kb": 2.46,
+      "ref_count": 1,
+      "refs": [
+        "customize_ai_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\group_detail_screen.dart",
+      "name": "group_detail_screen.dart",
+      "lines": 510,
+      "size_kb": 21.83,
+      "ref_count": 2,
+      "refs": [
+        "contacts_screen.dart",
+        "groups_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\groups_screen.dart",
+      "name": "groups_screen.dart",
+      "lines": 523,
+      "size_kb": 22.34,
+      "ref_count": 1,
+      "refs": [
+        "contacts_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\home_screen.dart",
+      "name": "home_screen.dart",
+      "lines": 799,
+      "size_kb": 28.47,
+      "ref_count": 10,
+      "refs": [
+        "contact_company_screen.dart",
+        "landing_screen.dart",
+        "profile_screen.dart",
+        "register_screen.dart",
+        "smart_card_list_screen.dart",
+        "splash_screen.dart",
+        "support_agent_screen.dart",
+        "support_chat_screen.dart",
+        "common_drawer.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\landing_screen.dart",
+      "name": "landing_screen.dart",
+      "lines": 349,
+      "size_kb": 12.71,
+      "ref_count": 1,
+      "refs": [
+        "splash_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\login_screen.dart",
+      "name": "login_screen.dart",
+      "lines": 74,
+      "size_kb": 2.44,
+      "ref_count": 5,
+      "refs": [
+        "main.dart",
+        "landing_screen.dart",
+        "profile_screen.dart",
+        "common_drawer.dart",
+        "profile_menu_bottom_sheet.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\manage_cards\\manage_card_screens.dart",
+      "name": "manage_card_screens.dart",
+      "lines": 1437,
+      "size_kb": 71.53,
+      "ref_count": 2,
+      "refs": [
+        "home_screen.dart",
+        "smart_card_list_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\manage_cards\\widgets\\manage_cards_edit_sheet.dart",
+      "name": "manage_cards_edit_sheet.dart",
+      "lines": 1201,
+      "size_kb": 49.69,
+      "ref_count": 1,
+      "refs": [
+        "manage_card_screens.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\manage_cards\\widgets\\manage_cards_header.dart",
+      "name": "manage_cards_header.dart",
+      "lines": 176,
+      "size_kb": 6.34,
+      "ref_count": 1,
+      "refs": [
+        "manage_card_screens.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\manage_cards\\widgets\\manage_cards_summary.dart",
+      "name": "manage_cards_summary.dart",
+      "lines": 275,
+      "size_kb": 9.09,
+      "ref_count": 1,
+      "refs": [
+        "manage_card_screens.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\manage_cards\\widgets\\manage_cards_video_widget.dart",
+      "name": "manage_cards_video_widget.dart",
+      "lines": 2462,
+      "size_kb": 85.97,
+      "ref_count": 2,
+      "refs": [
+        "manage_card_screens.dart",
+        "manage_cards_edit_sheet.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\messages_screen.dart",
+      "name": "messages_screen.dart",
+      "lines": 914,
+      "size_kb": 39.61,
+      "ref_count": 2,
+      "refs": [
+        "home_screen.dart",
+        "recent_messages_list.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\mycards.dart",
+      "name": "mycards.dart",
+      "lines": 1693,
+      "size_kb": 58.83,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\profile_screen.dart",
+      "name": "profile_screen.dart",
+      "lines": 3465,
+      "size_kb": 164.13,
+      "ref_count": 3,
+      "refs": [
+        "main.dart",
+        "home_screen.dart",
+        "profile_menu_bottom_sheet.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\register_screen.dart",
+      "name": "register_screen.dart",
+      "lines": 1007,
+      "size_kb": 34.46,
+      "ref_count": 2,
+      "refs": [
+        "landing_screen.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\settings_screen.dart",
+      "name": "settings_screen.dart",
+      "lines": 301,
+      "size_kb": 11.19,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\smart_card_list_screen.dart",
+      "name": "smart_card_list_screen.dart",
+      "lines": 671,
+      "size_kb": 32.38,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\smart_scanner_screen.dart",
+      "name": "smart_scanner_screen.dart",
+      "lines": 1190,
+      "size_kb": 42.02,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\splash_screen.dart",
+      "name": "splash_screen.dart",
+      "lines": 83,
+      "size_kb": 2.39,
+      "ref_count": 1,
+      "refs": [
+        "main.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\subscription_screen.dart",
+      "name": "subscription_screen.dart",
+      "lines": 1380,
+      "size_kb": 59.87,
+      "ref_count": 3,
+      "refs": [
+        "settings_screen.dart",
+        "customize_theme_screen.dart",
+        "premium_upgrade_dialog.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\support_agent_screen.dart",
+      "name": "support_agent_screen.dart",
+      "lines": 435,
+      "size_kb": 18.76,
+      "ref_count": 2,
+      "refs": [
+        "support_chat_screen.dart",
+        "support_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\support_chat_screen.dart",
+      "name": "support_chat_screen.dart",
+      "lines": 853,
+      "size_kb": 33.27,
+      "ref_count": 2,
+      "refs": [
+        "home_screen.dart",
+        "support_agent_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\screens\\support_screen.dart",
+      "name": "support_screen.dart",
+      "lines": 131,
+      "size_kb": 4.41,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\alphabet_scroll_bar.dart",
+      "name": "alphabet_scroll_bar.dart",
+      "lines": 147,
+      "size_kb": 5.25,
+      "ref_count": 1,
+      "refs": [
+        "contacts_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\app_profile_avatar.dart",
+      "name": "app_profile_avatar.dart",
+      "lines": 285,
+      "size_kb": 8.89,
+      "ref_count": 1,
+      "refs": [
+        "contact_list_tile.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\app_update_dialog.dart",
+      "name": "app_update_dialog.dart",
+      "lines": 195,
+      "size_kb": 6.5,
+      "ref_count": 1,
+      "refs": [
+        "app_update_service.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\auto_loop_carousel.dart",
+      "name": "auto_loop_carousel.dart",
+      "lines": 148,
+      "size_kb": 4.0,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\card_tracker_overlay.dart",
+      "name": "card_tracker_overlay.dart",
+      "lines": 661,
+      "size_kb": 18.95,
+      "ref_count": 1,
+      "refs": [
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\circular_profile_avatar.dart",
+      "name": "circular_profile_avatar.dart",
+      "lines": 223,
+      "size_kb": 6.51,
+      "ref_count": 6,
+      "refs": [
+        "contact_preview_screen.dart",
+        "settings_screen.dart",
+        "subscription_screen.dart",
+        "common_drawer.dart",
+        "duplicate_scan_popup_dialog.dart",
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\common_drawer.dart",
+      "name": "common_drawer.dart",
+      "lines": 443,
+      "size_kb": 15.89,
+      "ref_count": 1,
+      "refs": [
+        "mycards.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\company_conflict_warning_dialog.dart",
+      "name": "company_conflict_warning_dialog.dart",
+      "lines": 574,
+      "size_kb": 21.62,
+      "ref_count": 0,
+      "refs": []
+    },
+    {
+      "path": "lib\\views\\widgets\\contact_list_tile.dart",
+      "name": "contact_list_tile.dart",
+      "lines": 1025,
+      "size_kb": 43.32,
+      "ref_count": 2,
+      "refs": [
+        "contacts_screen.dart",
+        "group_detail_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\contact_tile_helpers.dart",
+      "name": "contact_tile_helpers.dart",
+      "lines": 338,
+      "size_kb": 12.1,
+      "ref_count": 1,
+      "refs": [
+        "contact_list_tile.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\country_code_dropdown_dialog.dart",
+      "name": "country_code_dropdown_dialog.dart",
+      "lines": 329,
+      "size_kb": 12.41,
+      "ref_count": 2,
+      "refs": [
+        "profile_screen.dart",
+        "international_phone_input.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\custom_text_field.dart",
+      "name": "custom_text_field.dart",
+      "lines": 111,
+      "size_kb": 3.13,
+      "ref_count": 2,
+      "refs": [
+        "contact_form_screen.dart",
+        "register_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\customize_flow_widgets.dart",
+      "name": "customize_flow_widgets.dart",
+      "lines": 108,
+      "size_kb": 3.23,
+      "ref_count": 2,
+      "refs": [
+        "customize_ai_screen.dart",
+        "customize_menu_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\delete_confirm_dialog.dart",
+      "name": "delete_confirm_dialog.dart",
+      "lines": 235,
+      "size_kb": 8.0,
+      "ref_count": 2,
+      "refs": [
+        "contact_detail_screen.dart",
+        "profile_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\digital_corporate_card_widget.dart",
+      "name": "digital_corporate_card_widget.dart",
+      "lines": 539,
+      "size_kb": 19.36,
+      "ref_count": 1,
+      "refs": [
+        "smart_card_list_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\duplicate_field_swipe_widget.dart",
+      "name": "duplicate_field_swipe_widget.dart",
+      "lines": 325,
+      "size_kb": 12.84,
+      "ref_count": 1,
+      "refs": [
+        "contact_form_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\duplicate_scan_popup_dialog.dart",
+      "name": "duplicate_scan_popup_dialog.dart",
+      "lines": 688,
+      "size_kb": 26.46,
+      "ref_count": 1,
+      "refs": [
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\empty_state_widget.dart",
+      "name": "empty_state_widget.dart",
+      "lines": 131,
+      "size_kb": 4.24,
+      "ref_count": 3,
+      "refs": [
+        "contacts_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\genie_hero_route.dart",
+      "name": "genie_hero_route.dart",
+      "lines": 119,
+      "size_kb": 3.63,
+      "ref_count": 5,
+      "refs": [
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "app_profile_avatar.dart",
+        "contact_list_tile.dart",
+        "recent_activity_list.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\global_loading_overlay.dart",
+      "name": "global_loading_overlay.dart",
+      "lines": 99,
+      "size_kb": 2.92,
+      "ref_count": 1,
+      "refs": [
+        "main.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\image_confirm_sheet.dart",
+      "name": "image_confirm_sheet.dart",
+      "lines": 283,
+      "size_kb": 8.39,
+      "ref_count": 1,
+      "refs": [
+        "manage_card_screens.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\image_cropper_widget.dart",
+      "name": "image_cropper_widget.dart",
+      "lines": 415,
+      "size_kb": 12.94,
+      "ref_count": 4,
+      "refs": [
+        "contact_form_screen.dart",
+        "profile_screen.dart",
+        "smart_scanner_screen.dart",
+        "manage_card_screens.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\info_card.dart",
+      "name": "info_card.dart",
+      "lines": 172,
+      "size_kb": 5.94,
+      "ref_count": 1,
+      "refs": [
+        "profile_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\international_phone_input.dart",
+      "name": "international_phone_input.dart",
+      "lines": 565,
+      "size_kb": 20.23,
+      "ref_count": 2,
+      "refs": [
+        "register_screen.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\login_form.dart",
+      "name": "login_form.dart",
+      "lines": 655,
+      "size_kb": 21.21,
+      "ref_count": 1,
+      "refs": [
+        "login_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\lottie_loader.dart",
+      "name": "lottie_loader.dart",
+      "lines": 46,
+      "size_kb": 1.4,
+      "ref_count": 3,
+      "refs": [
+        "home_screen.dart",
+        "landing_screen.dart",
+        "primary_button.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\master_app_bar.dart",
+      "name": "master_app_bar.dart",
+      "lines": 254,
+      "size_kb": 8.45,
+      "ref_count": 14,
+      "refs": [
+        "contact_company_screen.dart",
+        "contact_form_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart",
+        "home_screen.dart",
+        "mycards.dart",
+        "smart_card_list_screen.dart",
+        "subscription_screen.dart",
+        "support_agent_screen.dart",
+        "support_chat_screen.dart",
+        "customize_theme_screen.dart",
+        "manage_card_screens.dart",
+        "manage_cards_header.dart",
+        "customize_flow_widgets.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\master_bottom_nav.dart",
+      "name": "master_bottom_nav.dart",
+      "lines": 125,
+      "size_kb": 4.2,
+      "ref_count": 14,
+      "refs": [
+        "contact_company_screen.dart",
+        "contact_detail_screen.dart",
+        "contact_form_screen.dart",
+        "groups_screen.dart",
+        "group_detail_screen.dart",
+        "home_screen.dart",
+        "smart_card_list_screen.dart",
+        "subscription_screen.dart",
+        "support_agent_screen.dart",
+        "support_chat_screen.dart",
+        "customize_ai_screen.dart",
+        "customize_menu_screen.dart",
+        "customize_theme_screen.dart",
+        "manage_card_screens.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\otp_channel_banner.dart",
+      "name": "otp_channel_banner.dart",
+      "lines": 276,
+      "size_kb": 8.57,
+      "ref_count": 2,
+      "refs": [
+        "register_screen.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\otp_input_field.dart",
+      "name": "otp_input_field.dart",
+      "lines": 229,
+      "size_kb": 7.37,
+      "ref_count": 3,
+      "refs": [
+        "profile_screen.dart",
+        "register_screen.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\premium_card_widget.dart",
+      "name": "premium_card_widget.dart",
+      "lines": 435,
+      "size_kb": 16.19,
+      "ref_count": 2,
+      "refs": [
+        "home_screen.dart",
+        "smart_card_list_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\premium_upgrade_dialog.dart",
+      "name": "premium_upgrade_dialog.dart",
+      "lines": 93,
+      "size_kb": 3.2,
+      "ref_count": 2,
+      "refs": [
+        "home_screen.dart",
+        "smart_card_list_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\primary_button.dart",
+      "name": "primary_button.dart",
+      "lines": 76,
+      "size_kb": 2.06,
+      "ref_count": 2,
+      "refs": [
+        "register_screen.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\profile_hero_rect_dialog.dart",
+      "name": "profile_hero_rect_dialog.dart",
+      "lines": 360,
+      "size_kb": 12.81,
+      "ref_count": 1,
+      "refs": [
+        "profile_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\profile_menu_bottom_sheet.dart",
+      "name": "profile_menu_bottom_sheet.dart",
+      "lines": 1195,
+      "size_kb": 44.19,
+      "ref_count": 5,
+      "refs": [
+        "home_screen.dart",
+        "profile_screen.dart",
+        "customize_ai_screen.dart",
+        "customize_menu_screen.dart",
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\quick_action_bar.dart",
+      "name": "quick_action_bar.dart",
+      "lines": 183,
+      "size_kb": 5.34,
+      "ref_count": 1,
+      "refs": [
+        "contact_detail_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\recent_activity_list.dart",
+      "name": "recent_activity_list.dart",
+      "lines": 105,
+      "size_kb": 3.41,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\recent_messages_list.dart",
+      "name": "recent_messages_list.dart",
+      "lines": 288,
+      "size_kb": 12.9,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\rich_text_editor_widget.dart",
+      "name": "rich_text_editor_widget.dart",
+      "lines": 611,
+      "size_kb": 19.94,
+      "ref_count": 1,
+      "refs": [
+        "manage_cards_edit_sheet.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\rotating_profile_avatar_ring.dart",
+      "name": "rotating_profile_avatar_ring.dart",
+      "lines": 109,
+      "size_kb": 3.06,
+      "ref_count": 1,
+      "refs": [
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\scanner_overlay.dart",
+      "name": "scanner_overlay.dart",
+      "lines": 140,
+      "size_kb": 4.07,
+      "ref_count": 1,
+      "refs": [
+        "smart_scanner_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\smart_cards_logo.dart",
+      "name": "smart_cards_logo.dart",
+      "lines": 59,
+      "size_kb": 1.75,
+      "ref_count": 1,
+      "refs": [
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\statistics_grid.dart",
+      "name": "statistics_grid.dart",
+      "lines": 271,
+      "size_kb": 8.96,
+      "ref_count": 1,
+      "refs": [
+        "home_screen.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\theme_toggle_switch.dart",
+      "name": "theme_toggle_switch.dart",
+      "lines": 118,
+      "size_kb": 3.82,
+      "ref_count": 1,
+      "refs": [
+        "master_app_bar.dart"
+      ]
+    },
+    {
+      "path": "lib\\views\\widgets\\whatsapp_toggle_switch.dart",
+      "name": "whatsapp_toggle_switch.dart",
+      "lines": 196,
+      "size_kb": 5.82,
+      "ref_count": 2,
+      "refs": [
+        "profile_screen.dart",
+        "international_phone_input.dart"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "path": "assets\\audio\\heartbeat_warning.wav",
+      "name": "heartbeat_warning.wav",
+      "size_kb": 103.4,
+      "ref_count": 2,
+      "refs": [
+        "company_conflict_warning_dialog.dart",
+        "duplicate_scan_popup_dialog.dart"
+      ]
+    },
+    {
+      "path": "assets\\icon\\app_icon.png",
+      "name": "app_icon.png",
+      "size_kb": 4.55,
+      "ref_count": 0,
+      "refs": []
+    },
+    {
+      "path": "assets\\images\\edit.png",
+      "name": "edit.png",
+      "size_kb": 7.78,
+      "ref_count": 2,
+      "refs": [
+        "manage_cards_summary.dart",
+        "info_card.dart"
+      ]
+    },
+    {
+      "path": "assets\\images\\login.png",
+      "name": "login.png",
+      "size_kb": 79.49,
+      "ref_count": 18,
+      "refs": [
+        "main.dart",
+        "about_screen.dart",
+        "contacts_screen.dart",
+        "contact_company_screen.dart",
+        "contact_detail_screen.dart",
+        "login_screen.dart",
+        "messages_screen.dart",
+        "mycards.dart",
+        "profile_screen.dart",
+        "register_screen.dart",
+        "settings_screen.dart",
+        "smart_card_list_screen.dart",
+        "subscription_screen.dart",
+        "support_agent_screen.dart",
+        "support_chat_screen.dart",
+        "support_screen.dart",
+        "customize_menu_screen.dart",
+        "manage_card_screens.dart"
+      ]
+    },
+    {
+      "path": "assets\\images\\smartlogo.png",
+      "name": "smartlogo.png",
+      "size_kb": 407.6,
+      "ref_count": 5,
+      "refs": [
+        "app_theme_item.dart",
+        "about_screen.dart",
+        "login_screen.dart",
+        "register_screen.dart",
+        "customize_theme_screen.dart"
+      ]
+    },
+    {
+      "path": "assets\\images\\welcome_page_sc.png",
+      "name": "welcome_page_sc.png",
+      "size_kb": 445.84,
+      "ref_count": 1,
+      "refs": [
+        "landing_viewmodel.dart"
+      ]
+    },
+    {
+      "path": "assets\\lottie\\Animation - 1727287595969.json",
+      "name": "Animation - 1727287595969.json",
+      "size_kb": 29.73,
+      "ref_count": 1,
+      "refs": [
+        "main.dart"
+      ]
+    },
+    {
+      "path": "assets\\lottie\\Animation - 1733557597592.json",
+      "name": "Animation - 1733557597592.json",
+      "size_kb": 20.02,
+      "ref_count": 1,
+      "refs": [
+        "delete_confirm_dialog.dart"
+      ]
+    },
+    {
+      "path": "assets\\lottie\\Success Animation 2.json",
+      "name": "Success Animation 2.json",
+      "size_kb": 40.98,
+      "ref_count": 2,
+      "refs": [
+        "main.dart",
+        "login_form.dart"
+      ]
+    },
+    {
+      "path": "assets\\lottie\\loading_loop.json",
+      "name": "loading_loop.json",
+      "size_kb": 49.97,
+      "ref_count": 3,
+      "refs": [
+        "main.dart",
+        "global_loading_overlay.dart",
+        "lottie_loader.dart"
+      ]
+    },
+    {
+      "path": "assets\\lottie\\people.json",
+      "name": "people.json",
+      "size_kb": 362.65,
+      "ref_count": 1,
+      "refs": [
+        "support_screen.dart"
+      ]
+    },
+    {
+      "path": "assets\\lottie\\profile_user_card.json",
+      "name": "profile_user_card.json",
+      "size_kb": 129.08,
+      "ref_count": 1,
+      "refs": [
+        "customize_menu_screen.dart"
+      ]
+    },
+    {
+      "path": "assets\\lottie\\warning.json",
+      "name": "warning.json",
+      "size_kb": 5.97,
+      "ref_count": 1,
+      "refs": [
+        "duplicate_scan_popup_dialog.dart"
+      ]
+    },
+    {
+      "path": "assets\\rive\\splash_screen_animation_2.riv",
+      "name": "splash_screen_animation_2.riv",
+      "size_kb": 2.12,
+      "ref_count": 1,
+      "refs": [
+        "splash_screen.dart"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "path": "test\\acceptance_requirements_test.dart",
+      "name": "acceptance_requirements_test.dart",
+      "lines": 355
+    },
+    {
+      "path": "test\\address_and_gallery_unit_test.dart",
+      "name": "address_and_gallery_unit_test.dart",
+      "lines": 159
+    },
+    {
+      "path": "test\\app_update_service_test.dart",
+      "name": "app_update_service_test.dart",
+      "lines": 46
+    },
+    {
+      "path": "test\\card_duplicate_merge_test.dart",
+      "name": "card_duplicate_merge_test.dart",
+      "lines": 194
+    },
+    {
+      "path": "test\\card_model_test.dart",
+      "name": "card_model_test.dart",
+      "lines": 122
+    },
+    {
+      "path": "test\\card_tracker_overlay_test.dart",
+      "name": "card_tracker_overlay_test.dart",
+      "lines": 110
+    },
+    {
+      "path": "test\\company_conflict_warning_dialog_test.dart",
+      "name": "company_conflict_warning_dialog_test.dart",
+      "lines": 136
+    },
+    {
+      "path": "test\\contact_3tier_lifecycle_test.dart",
+      "name": "contact_3tier_lifecycle_test.dart",
+      "lines": 286
+    },
+    {
+      "path": "test\\contact_action_helper_test.dart",
+      "name": "contact_action_helper_test.dart",
+      "lines": 93
+    },
+    {
+      "path": "test\\contact_pages_full_unit_test.dart",
+      "name": "contact_pages_full_unit_test.dart",
+      "lines": 249
+    },
+    {
+      "path": "test\\contact_parser_phone_test.dart",
+      "name": "contact_parser_phone_test.dart",
+      "lines": 53
+    },
+    {
+      "path": "test\\contact_phone_match_test.dart",
+      "name": "contact_phone_match_test.dart",
+      "lines": 150
+    },
+    {
+      "path": "test\\contacts_page_unit_test.dart",
+      "name": "contacts_page_unit_test.dart",
+      "lines": 174
+    },
+    {
+      "path": "test\\contacts_screen_unit_test.dart",
+      "name": "contacts_screen_unit_test.dart",
+      "lines": 270
+    },
+    {
+      "path": "test\\contacts_workflow_test.dart",
+      "name": "contacts_workflow_test.dart",
+      "lines": 93
+    },
+    {
+      "path": "test\\device_contact_provider_test.dart",
+      "name": "device_contact_provider_test.dart",
+      "lines": 84
+    },
+    {
+      "path": "test\\hive_persistence_and_duplicate_deletion_test.dart",
+      "name": "hive_persistence_and_duplicate_deletion_test.dart",
+      "lines": 368
+    },
+    {
+      "path": "test\\international_otp_delivery_test.dart",
+      "name": "international_otp_delivery_test.dart",
+      "lines": 454
+    },
+    {
+      "path": "test\\multi_company_and_count_test.dart",
+      "name": "multi_company_and_count_test.dart",
+      "lines": 427
+    },
+    {
+      "path": "test\\otp_autofill_service_test.dart",
+      "name": "otp_autofill_service_test.dart",
+      "lines": 143
+    },
+    {
+      "path": "test\\otp_banner_widget_test.dart",
+      "name": "otp_banner_widget_test.dart",
+      "lines": 192
+    },
+    {
+      "path": "test\\payment_calculation_test.dart",
+      "name": "payment_calculation_test.dart",
+      "lines": 35
+    },
+    {
+      "path": "test\\profile_edit_country_restrictions_test.dart",
+      "name": "profile_edit_country_restrictions_test.dart",
+      "lines": 165
+    },
+    {
+      "path": "test\\realtime_delete_sync_test.dart",
+      "name": "realtime_delete_sync_test.dart",
+      "lines": 223
+    },
+    {
+      "path": "test\\scan_gallery_and_smart_card_lifecycle_test.dart",
+      "name": "scan_gallery_and_smart_card_lifecycle_test.dart",
+      "lines": 160
+    },
+    {
+      "path": "test\\scan_pages_full_unit_test.dart",
+      "name": "scan_pages_full_unit_test.dart",
+      "lines": 125
+    },
+    {
+      "path": "test\\scanner_edit_overflow_test.dart",
+      "name": "scanner_edit_overflow_test.dart",
+      "lines": 123
+    },
+    {
+      "path": "test\\scanner_feature_unit_test.dart",
+      "name": "scanner_feature_unit_test.dart",
+      "lines": 91
+    },
+    {
+      "path": "test\\support_message_test.dart",
+      "name": "support_message_test.dart",
+      "lines": 68
+    },
+    {
+      "path": "test\\theme_access_test.dart",
+      "name": "theme_access_test.dart",
+      "lines": 50
+    },
+    {
+      "path": "test\\upload_url_resolver_test.dart",
+      "name": "upload_url_resolver_test.dart",
+      "lines": 58
+    },
+    {
+      "path": "test\\vcard_share_test.dart",
+      "name": "vcard_share_test.dart",
+      "lines": 432
+    },
+    {
+      "path": "test\\video_platform_helper_test.dart",
+      "name": "video_platform_helper_test.dart",
+      "lines": 136
+    }
+  ]
+}

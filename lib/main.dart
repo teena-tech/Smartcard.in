@@ -1,31 +1,26 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_theme.dart';
+import 'core/providers/app_riverpod_providers.dart';
 import 'providers/app_providers.dart';
 import 'views/screens/splash_screen.dart';
 import 'core/database/hive_scan_database.dart';
 import 'core/database/sqlite_database.dart';
-import 'core/database/local_data_source/profile_local_data_source.dart';
-import 'core/database/local_data_source/sync_queue_data_source.dart';
 import 'core/services/backend_sync_service.dart';
+import 'core/services/telemetry_service.dart';
 import 'views/widgets/global_loading_overlay.dart';
-import 'viewmodels/customization_controller.dart';
 import 'views/screens/profile_screen.dart';
 import 'views/screens/login_screen.dart';
 
+import 'core/network/dio_client.dart';
 
-import 'core/services/dio_client.dart';
-import 'viewmodels/theme_viewmodel.dart';
-
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:rive/rive.dart' hide File;
 import 'package:firebase_core/firebase_core.dart';
-import 'bloc/scan_bloc.dart';
-import 'bloc/sync_bloc.dart';
 
 /// Lottie composition preloaded at startup so the overlay shows it instantly.
 LottieComposition? globalLottieComposition;
@@ -37,17 +32,26 @@ void main() async {
   // Ensure Flutter engine bindings are fully initialized before native code execution
   WidgetsFlutterBinding.ensureInitialized();
 
-  try {
-    await Firebase.initializeApp();
-    debugPrint('🔥 Firebase initialized successfully');
-  } catch (e) {
-    debugPrint('⚠️ Firebase initialization error: $e');
-  }
+  // Initialize central telemetry & error reporting
+  TelemetryService.instance.init();
+
+  // Global safety net: intercept uncaught Flutter and async errors so Android never force-closes the app
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    debugPrint('[FlutterError] ${details.exception}');
+    TelemetryService.instance.reportFlutterError(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('[PlatformDispatcher] Uncaught async error safely handled: $error');
+    TelemetryService.instance.reportPlatformError(error, stack);
+    return true; // Prevents process termination
+  };
 
   try {
-    await RiveNative.init();
+    await Firebase.initializeApp();
+    debugPrint('ðŸ”¥ Firebase initialized successfully');
   } catch (e) {
-    debugPrint('RiveNative init: $e');
+    debugPrint('âš ï¸ Firebase initialization error: $e');
   }
 
   // Lock orientation to Portrait only
@@ -56,41 +60,49 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Load environment variables (.env_live preferred for live release, fallback to .env)
+  // Load environment variables from .env
   try {
-    await dotenv.load(fileName: ".env_live");
-    debugPrint('✅ Environment loaded from .env_live');
-  } catch (_) {
-    try {
-      await dotenv.load(fileName: ".env");
-      debugPrint('ℹ️ Environment loaded from .env');
-    } catch (e) {
-      debugPrint('⚠️ Warning loading environment file: $e');
-    }
+    await dotenv.load(fileName: ".env");
+    debugPrint('âœ… Environment loaded from .env');
+  } catch (e) {
+    debugPrint('âš ï¸ Warning loading .env file: $e');
   }
 
   // Initialize persistent Hive storage & boxes before repositories are accessed
-  await HiveScanDatabase.init();
+  try {
+    await HiveScanDatabase.init();
+    debugPrint('HiveScanDatabase initialized');
+  } catch (e) {
+    debugPrint('Warning HiveScanDatabase init: $e');
+  }
 
   // Initialize dynamic local storage
-  await SqliteDatabase.init();
-  await ProfileLocalDataSource.init();
-  await SyncQueueDataSource.init();
+  try {
+    await SqliteDatabase.init();
+    debugPrint('SqliteDatabase initialized');
+  } catch (e) {
+    debugPrint('Warning SqliteDatabase init: $e');
+  }
 
   // Start automated cloud sync listener
-  BackendSyncService().initConnectivityListener();
+  try {
+    BackendSyncService().initConnectivityListener();
+    debugPrint('BackendSyncService initialized');
+  } catch (e) {
+    debugPrint('Warning BackendSyncService init: $e');
+  }
 
   // Asynchronously pre-load Lottie animations in background without blocking runApp
   _preloadLottieAssets();
 
   runApp(
-    MultiProvider(
-      providers: [
-        ...AppProviders.providers,
-        BlocProvider<ScanBloc>(create: (_) => ScanBloc()),
-        BlocProvider<SyncBloc>(create: (_) => SyncBloc()),
-      ],
-      child: const SmartCardsApp(),
+    ProviderScope(
+      child: MultiProvider(
+        providers: [
+          ...AppProviders.providers,
+        ],
+        child: const SmartCardsApp(),
+      ),
     ),
   );
 }
@@ -113,53 +125,49 @@ void _preloadLottieAssets() {
         }),
       ]);
     } catch (e) {
-      debugPrint('⚠️ Non-critical Lottie preload error: $e');
+      debugPrint('âš ï¸ Non-critical Lottie preload error: $e');
     }
   });
 }
 
-class SmartCardsApp extends StatelessWidget {
+class SmartCardsApp extends ConsumerWidget {
   const SmartCardsApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<ThemeViewModel>(
-      builder: (context, themeViewModel, child) {
-        return MaterialApp(
-          navigatorKey: DioClient.navigatorKey,
-          title: 'Smart Cards',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.getTheme(themeViewModel.themeMode),
-          builder: (context, child) {
-            return GlobalLoadingOverlay(
-              child: ThemeWrapper(child: child!),
-            );
-          },
-          routes: {
-            '/profile': (context) => const ProfileScreen(),
-            '/login': (context) => const LoginScreen(),
-          },
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
 
-          home: const SplashScreen(),
+    return MaterialApp(
+      navigatorKey: DioClient.navigatorKey,
+      title: 'Smart Cards',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.getTheme(themeMode),
+      builder: (context, child) {
+        return GlobalLoadingOverlay(
+          child: ThemeWrapper(child: child!),
         );
       },
+      routes: {
+        '/profile': (context) => const ProfileScreen(),
+        '/login': (context) => const LoginScreen(),
+      },
+      home: const SplashScreen(),
     );
   }
 }
 
-class ThemeWrapper extends StatelessWidget {
+class ThemeWrapper extends ConsumerWidget {
   final Widget child;
   const ThemeWrapper({super.key, required this.child});
 
   @override
-  Widget build(BuildContext context) {
-    // 1. Precise listeners for Theme background colors
-    final bgStart = context.select<ThemeViewModel, Color>((t) => t.colors.backgroundStart);
-    final bgEnd = context.select<ThemeViewModel, Color>((t) => t.colors.backgroundEnd);
-
-    // 2. Precise listeners for Customization Controller background settings
-    final bgImageEnabled = context.select<CustomizationController, bool>((c) => c.bgImageEnabled);
-    final bgImagePath = context.select<CustomizationController, String?>((c) => c.backgroundImagePath);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeColorsProvider);
+    final themeVm = ref.watch(themeViewModelProvider);
+    final bgStart = colors.backgroundStart;
+    final bgEnd = colors.backgroundEnd;
+    final bgImageEnabled = themeVm.bgImageEnabled;
+    final bgImagePath = themeVm.backgroundImagePath;
 
     final Widget themedContent;
     if (bgImageEnabled && bgImagePath != null && bgImagePath.isNotEmpty) {

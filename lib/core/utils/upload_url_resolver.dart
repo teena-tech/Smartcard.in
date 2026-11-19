@@ -1,4 +1,4 @@
-import '../services/api_config.dart';
+import '../network/api_config.dart';
 
 class UploadUrlResolver {
   static const String _sharedUploadsDir = 'shared-uploads';

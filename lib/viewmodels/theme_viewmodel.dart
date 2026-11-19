@@ -23,6 +23,8 @@ class ThemeViewModel extends ChangeNotifier {
   String get selectedFrontImage => _currentTheme.frontImage;
   String get selectedBackImage => _currentTheme.backImage;
   bool get isFrontSelected => _isFrontSelected;
+  bool get bgImageEnabled => false;
+  String? get backgroundImagePath => null;
 
   ThemeViewModel() {
     _loadTheme();

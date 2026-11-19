@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/theme_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 
-class InfoCard extends StatelessWidget {
+class InfoCard extends ConsumerWidget {
   final String title;
   final IconData icon;
   final VoidCallback? onEdit;
@@ -19,8 +19,8 @@ class InfoCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeViewModelProvider).colors;
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       padding: const EdgeInsets.all(16),

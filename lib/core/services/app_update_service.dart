@@ -62,7 +62,7 @@ class AppUpdateConfig {
   static const String? minimumRequiredVersion = null;
 
   /// Country code for iTunes lookup API region (e.g. 'us', 'in', 'gb').
-  static const String appStoreCountry = 'us';
+  static const String appStoreCountry = 'in';
 }
 
 /// ============================================================================

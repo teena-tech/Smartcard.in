@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import 'dio_client.dart';
-import 'api_config.dart';
+import '../network/dio_client.dart';
+import '../network/api_config.dart';
 
 class ScannerApiService {
   ScannerApiService._();
@@ -111,6 +111,9 @@ class ScannerApiService {
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || (int.tryParse(contactId) == null && e.response?.statusCode == 400)) {
+        return {'success': true, 'message': 'Contact deleted locally.'};
+      }
       final serverMsg = e.response?.data?['message']?.toString();
       throw Exception(serverMsg?.isNotEmpty == true
           ? serverMsg
@@ -135,6 +138,27 @@ class ScannerApiService {
     } catch (e) {
       debugPrint('Error in matchPhoneContacts: $e');
       return [];
+    }
+  }
+
+  /// Server-side AI Visiting Card Parser fallback
+  Future<Map<String, dynamic>?> parseVisitingCardWithAi(String rawText) async {
+    if (rawText.trim().isEmpty) return null;
+    try {
+      final response = await _dio.post(
+        ApiConfig.aiParseVisitingCard,
+        data: {'raw_text': rawText},
+      );
+      if (response.data is Map && response.data['success'] == true) {
+        final extracted = response.data['extracted'];
+        if (extracted is Map) {
+          return extracted.cast<String, dynamic>();
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('AI parse card fallback failed: $e');
+      return null;
     }
   }
 }

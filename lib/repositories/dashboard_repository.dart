@@ -1,7 +1,7 @@
 import 'package:smartcard_flutter/repositories/base_repository.dart';
-import '../core/services/api_config.dart';
+import '../core/network/api_config.dart';
 
-/// Repository handling dashboard‑related API calls.
+/// Repository handling dashboardâ€‘related API calls.
 /// Since the gobifile backend does not have a generic '/dashboard/landing'
 /// endpoint, we safely mock the data or point to the correct gobifile endpoints.
 class DashboardRepository extends BaseRepository {
@@ -10,6 +10,9 @@ class DashboardRepository extends BaseRepository {
     try {
       final response = await get(ApiConfig.dashboardLanding);
       if (response is Map<String, dynamic>) {
+        if (response['data'] is Map) {
+          return Map<String, dynamic>.from(response['data'] as Map);
+        }
         return response;
       }
     } catch (_) {}
@@ -24,8 +27,9 @@ class DashboardRepository extends BaseRepository {
   Future<String?> fetchProfileImage(String userId) async {
     try {
       final response = await get(ApiConfig.userProfile(userId));
-      if (response is Map && response['user'] != null) {
-        return response['user']['image'] as String?;
+      if (response is Map && response['user'] is Map) {
+        final user = response['user'] as Map;
+        return (user['profile_image'] ?? user['image'])?.toString();
       }
     } catch (e) {
       // ignore error
@@ -47,6 +51,9 @@ class DashboardRepository extends BaseRepository {
       );
       if (response is List) {
         return List<dynamic>.from(response);
+      }
+      if (response is Map && response['data'] is List) {
+        return List<dynamic>.from(response['data'] as List);
       }
     } catch (_) {}
     return [];

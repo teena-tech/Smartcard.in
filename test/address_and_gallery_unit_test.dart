@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/core/services/api_config.dart';
+import 'package:smartcard_flutter/core/network/api_config.dart';
 import 'package:smartcard_flutter/models/card_model.dart';
 
 void main() {

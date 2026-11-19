@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../core/network/api_config.dart';
 import 'video_item.dart';
 
 class CardModel {
@@ -33,7 +34,7 @@ class CardModel {
   bool get isCorporate => isOrganization;
 
   /// The URL to encode into the QR code and display/share.
-  /// Reads directly from database `qr_code` field (e.g., https://thesmartcards.com/?sc=...) 
+  /// Reads directly from database `qr_code` field (e.g., https://thesmartcards.in/?sc=...) 
   /// matching the Preview button logic.
   String get qrData {
     final rawQr = (qrCode ?? '').trim();
@@ -45,7 +46,7 @@ class CardModel {
     if (profileUrl != null && profileUrl!.isNotEmpty) {
       return profileUrl!;
     }
-    return 'https://thesmartcards.com/profile/$workProfileId';
+    return ApiConfig.cardProfileUrl('$workProfileId');
   }
 
 
@@ -147,9 +148,13 @@ class CardModel {
       bgImageColor: json['bg_image_color']?.toString(),
       opacity: json['opacity']?.toString(),
       profileImageName: json['profile_image']?.toString() ?? json['image']?.toString(),
-      isSuspended: json['is_suspended'] == 1 || json['is_suspended'] == true || json['is_suspended'] == '1',
+      isSuspended: (json['is_card_suspended'] ?? json['is_suspended']) == 1 ||
+          (json['is_card_suspended'] ?? json['is_suspended']) == true ||
+          (json['is_card_suspended'] ?? json['is_suspended']) == '1',
       isOrganization: isOrg,
       profileUrl: json['profile_url']?.toString(),
+      templateId: json['template_id']?.toString(),
+      templateKey: json['template_key']?.toString(),
     );
   }
 

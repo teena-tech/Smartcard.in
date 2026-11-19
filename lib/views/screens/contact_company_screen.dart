@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/support_viewmodel.dart';
-import '../../repositories/user_repository.dart';
-import '../widgets/common_app_bar.dart';
+import '../../core/providers/app_riverpod_providers.dart';
+import '../../repositories/support_repository.dart';
+import '../widgets/master_app_bar.dart';
 import 'home_screen.dart';
 import '../../core/utils/responsive.dart';
 
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 
-class ContactCompanyScreen extends StatefulWidget {
+class ContactCompanyScreen extends ConsumerStatefulWidget {
   final String? initialPrefill;
   final String? initialType;
 
@@ -21,13 +20,13 @@ class ContactCompanyScreen extends StatefulWidget {
   });
 
   @override
-  State<ContactCompanyScreen> createState() => _ContactCompanyScreenState();
+  ConsumerState<ContactCompanyScreen> createState() => _ContactCompanyScreenState();
 }
 
-class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
+class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
   String _selectedType = 'complaint';
   final TextEditingController _textController = TextEditingController();
-  final UserRepository _userRepository = UserRepository();
+  final SupportRepository _supportRepository = SupportRepository();
   
   List<Map<String, dynamic>> _reports = [];
   bool _isLoadingReports = false;
@@ -55,7 +54,7 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
   Future<void> _loadReports() async {
     setState(() => _isLoadingReports = true);
     try {
-      final reports = await _userRepository.getUserReports();
+      final reports = await _supportRepository.getUserReports();
       setState(() {
         _reports = reports;
       });
@@ -74,12 +73,13 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+    final colors = ref.watch(themeViewModelProvider).colors;
 
     return Scaffold(
       backgroundColor: colors.backgroundStart,
       bottomNavigationBar: const GlobalBottomNav(),
-      appBar: CommonAppBar(
+      appBar: MasterAppBar(
+        style: MasterHeaderStyle.standard,
         titleText: 'SUPPORT REQUEST',
         showProfile: true,
         onProfileTap: () {
@@ -242,7 +242,7 @@ class _ContactCompanyScreenState extends State<ContactCompanyScreen> {
                 );
 
                 // 2. Perform network submission in background
-                final supportVm = context.read<SupportViewModel>();
+                final supportVm = ref.read(supportViewModelProvider);
                 supportVm.submitReport(_selectedType, text).then((success) {
                   if (mounted) _loadReports();
                 }).catchError((e) {

@@ -1641,9 +1641,10 @@ class ContactViewModel extends ChangeNotifier {
     for (final c in _allContacts) {
       final rawId = c.id.replaceFirst('phone_', '').replaceFirst('matched_', '');
 
-      // 1. If any profile (Smart Card, Scanned, Phone) has an explicit linked device contact ID and that device contact was deleted in phonebook:
-      final hasLinkedDevId = c.deviceContactId != null && c.deviceContactId!.trim().isNotEmpty;
-      final isLinkedDeviceDeleted = hasLinkedDevId && validDeviceIds.isNotEmpty && !validDeviceIds.contains(c.deviceContactId!.trim());
+      // 1. If any profile (Smart Card, Scanned, Phone) has an explicit real native device contact ID and that device contact was deleted in phonebook:
+      final devId = (c.deviceContactId ?? '').trim();
+      final hasLinkedDevId = devId.isNotEmpty && !devId.startsWith('device_');
+      final isLinkedDeviceDeleted = hasLinkedDevId && validDeviceIds.isNotEmpty && !validDeviceIds.contains(devId);
 
       // 2. Direct device ID deletion for phone-imported contacts
       final isDirectDeviceDeleted = (c.source == 'phone' || c.id.startsWith('phone_')) && rawId.isNotEmpty && validDeviceIds.isNotEmpty && !validDeviceIds.contains(rawId);
@@ -1907,11 +1908,22 @@ class ContactViewModel extends ChangeNotifier {
           await _repository.saveContact({
             'name': contact.name,
             'phone': contact.phone,
+            'alternative_phone': contact.alternativePhone ?? '',
+            'landline': contact.landline ?? '',
+            'whatsapp': contact.whatsApp ?? '',
             'email': contact.email,
             'company': contact.company,
+            'company_name': contact.company,
             'designation': contact.designation,
             'address': contact.address,
+            'pin_code': contact.pinCode ?? '',
+            'district': contact.district ?? '',
+            'state_name': contact.stateName ?? '',
             'website': contact.website,
+            'social_links': contact.socialLinks,
+            'profile_image': contact.profileImage ?? contact.imagePath ?? '',
+            'company_logo': contact.companyLogo ?? '',
+            'source': contact.source ?? 'scan',
           });
           final idx = _allContacts.indexWhere((c) => c.id == contact.id);
           if (idx != -1) {

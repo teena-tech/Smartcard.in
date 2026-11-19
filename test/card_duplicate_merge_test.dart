@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -8,7 +7,6 @@ import 'package:smartcard_flutter/core/utils/company_normalizer.dart';
 import 'package:smartcard_flutter/models/card_duplicate_check.dart';
 import 'package:smartcard_flutter/models/scanned_contact_model.dart';
 import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
-import 'package:smartcard_flutter/views/widgets/scam_alert_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +14,7 @@ void main() {
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n');
+    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n');
   });
 
   tearDownAll(() async {
@@ -191,131 +189,6 @@ void main() {
 
       await contactVm.addScannedContact(newScanned);
       expect(contactVm.scannedContactsCount, greaterThan(initialScanned));
-    });
-
-    testWidgets('7. ScamAlertDialog Case A: Shows "SCAM ALERT" with View Existing Contact & Cancel', (tester) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final duplicateCheck = CardDuplicateCheck(
-        type: CardDuplicateType.exactDuplicate,
-        existingContact: existingCard,
-      );
-
-      ScamAlertAction? chosenAction;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => ElevatedButton(
-                onPressed: () async {
-                  chosenAction = await ScamAlertDialog.show(
-                    context: context,
-                    check: duplicateCheck,
-                    incoming: existingCard,
-                  );
-                },
-                child: const Text('Show Scam Alert'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Open Dialog
-      await tester.tap(find.text('Show Scam Alert'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-
-      // Check title and message
-      expect(find.text('Contact Exist'), findsOneWidget);
-      expect(find.textContaining('This card has already been scanned'), findsOneWidget);
-
-      // Check existing card preview
-      expect(find.text('Dr. John Doe'), findsOneWidget);
-      expect(find.text('Apex Health Corp'), findsOneWidget);
-
-      // Check buttons
-      expect(find.text('View Existing Contact'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-
-      // Tap View Existing Contact
-      await tester.tap(find.text('View Existing Contact'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(chosenAction, equals(ScamAlertAction.viewExisting));
-    });
-
-    testWidgets('8. ScamAlertDialog Case B: Shows "EXISTING NUMBER FOUND" with Save as Another Card, Merge, & Cancel', (tester) async {
-      tester.view.physicalSize = const Size(1080, 1920);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-
-      final incomingDiff = ScannedContactModel(
-        id: 'new_diff',
-        name: 'Samantha Ray',
-        company: 'Venture Solar Inc',
-        designation: 'Sales Director',
-        phone: '+91 98765 43210',
-        email: 'samantha@venturesolar.com',
-        website: '',
-        address: '',
-        socialLinks: const [],
-        createdAt: DateTime.now(),
-      );
-
-      final duplicateCheck = CardDuplicateCheck(
-        type: CardDuplicateType.sameNumberDifferentCard,
-        existingContact: existingCard,
-      );
-
-      ScamAlertAction? chosenAction;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => ElevatedButton(
-                onPressed: () async {
-                  chosenAction = await ScamAlertDialog.show(
-                    context: context,
-                    check: duplicateCheck,
-                    incoming: incomingDiff,
-                  );
-                },
-                child: const Text('Show Existing Number Dialog'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      // Open Dialog
-      await tester.tap(find.text('Show Existing Number Dialog'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-
-      // Check title and message
-      expect(find.text('EXISTING NUMBER FOUND'), findsOneWidget);
-      expect(find.textContaining('This phone number already exists with another contact'), findsOneWidget);
-
-      // Check comparison display
-      expect(find.text('Dr. John Doe'), findsOneWidget);
-      expect(find.text('Venture Solar Inc'), findsOneWidget);
-
-      // Check buttons
-      expect(find.text('Save as Another Card'), findsOneWidget);
-      expect(find.text('Merge Contact'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-
-      // Tap Save as Another Card
-      await tester.ensureVisible(find.text('Save as Another Card'));
-      await tester.tap(find.text('Save as Another Card'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-      expect(chosenAction, equals(ScamAlertAction.saveAsAnotherCard));
     });
   });
 }

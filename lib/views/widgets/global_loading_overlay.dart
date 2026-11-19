@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../core/providers/app_riverpod_providers.dart';
 import 'package:lottie/lottie.dart';
 import '../../core/state/app_loading_service.dart';
 import '../../main.dart';
@@ -12,8 +14,23 @@ class GlobalLoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading =
-        context.select<AppLoadingService, bool>((s) => s.isLoading);
+    final hasScope = context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+        context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+    if (hasScope) {
+      return Consumer(
+        builder: (context, ref, _) {
+          final isLoading = ref.watch(appLoadingServiceProvider.select((s) => s.isLoading));
+          return _buildStack(isLoading);
+        },
+      );
+    }
+
+    final isLoading = legacy.Provider.of<AppLoadingService>(context).isLoading;
+    return _buildStack(isLoading);
+  }
+
+  Widget _buildStack(bool isLoading) {
     return Stack(
       children: [
         child,

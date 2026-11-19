@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
-import '../core/services/dio_client.dart';
-import '../core/services/api_config.dart';
+import '../core/network/dio_client.dart';
+import '../core/network/api_config.dart';
 import '../models/card_model.dart';
 
 class CardRepository {
-  final DioClient _dioClient = DioClient();
+  final DioClient _dioClient;
+
+  CardRepository([DioClient? dioClient]) : _dioClient = dioClient ?? DioClient();
 
   Future<List<CardModel>> getCards(
     String userId, {
@@ -100,54 +102,6 @@ class CardRepository {
       return [];
     } on DioException catch (e) {
       throw DioClient.getErrorMessage(e, 'Failed to fetch subscription cards');
-    }
-  }
-
-  /// Fetches subscription details response maps
-  Future<Map<String, dynamic>?> getSubscriptionDetails(String userId) async {
-    try {
-      final response = await _dioClient.dio.get(
-        ApiConfig.subscriptionDetails(userId),
-        options: Options(headers: {'x-background-sync': 'true'}),
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data['data'] ?? response.data;
-      }
-      return null;
-    } on DioException catch (e) {
-      throw DioClient.getErrorMessage(e, 'Failed to fetch subscription details');
-    }
-  }
-
-  /// Coupon verification
-  Future<Map<String, dynamic>?> applyCoupon(String userId, String couponCode) async {
-    try {
-      final response = await _dioClient.dio.post(
-        ApiConfig.subscriptionCoupon(userId),
-        data: {'code': couponCode},
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data;
-      }
-      return null;
-    } on DioException catch (e) {
-      throw DioClient.getErrorMessage(e, 'Failed to apply coupon');
-    }
-  }
-
-  /// Confirm payment
-  Future<Map<String, dynamic>?> confirmPayment(String userId, Map<String, dynamic> payload) async {
-    try {
-      final response = await _dioClient.dio.post(
-        ApiConfig.subscriptionConfirm(userId),
-        data: payload,
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return response.data;
-      }
-      return null;
-    } on DioException catch (e) {
-      throw DioClient.getErrorMessage(e, 'Failed to confirm payment');
     }
   }
 }

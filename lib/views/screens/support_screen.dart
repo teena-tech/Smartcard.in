@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
-import '../../viewmodels/theme_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import 'support_agent_screen.dart';
 import 'contact_company_screen.dart';
 
-class SupportScreen extends StatelessWidget {
+class SupportScreen extends ConsumerWidget {
   const SupportScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeViewModelProvider).colors;
     
     return Container(
       width: double.infinity,

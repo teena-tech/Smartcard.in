@@ -23,9 +23,12 @@ import 'package:smartcard_flutter/views/widgets/app_profile_avatar.dart';
 import 'package:smartcard_flutter/views/widgets/circular_profile_avatar.dart';
 
 void main() {
-  setUpAll(() async {
+  setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
-    await dotenv.load(fileName: '.env');
+    dotenv.loadFromString(
+      envString:
+          'USE_LOCAL_BACKEND=false\nAPI_URL=https://thesmartcards.in\nSHARED_UPLOADS_URL=https://thesmartcards.in/shared-uploads\n',
+    );
   });
 
   group('ContactModel vCard 3.0 & Share Tests', () {
@@ -93,7 +96,7 @@ void main() {
       );
 
       final vCard = contact.toVCard();
-      expect(vCard, contains('PHOTO;VALUE=URI:https://thesmartcards.com/shared-uploads/users/profile/1745411455.png'));
+      expect(vCard, contains('PHOTO;VALUE=URI:https://thesmartcards.in/shared-uploads/users/profile/1745411455.png'));
 
       final scanned = ContactParser.parseVCard(vCard);
       expect(scanned.name, 'Jeena Remakanth');
@@ -101,7 +104,7 @@ void main() {
       expect(scanned.phone, '9995655999');
       expect(
         scanned.profileImage,
-        'https://thesmartcards.com/shared-uploads/users/profile/1745411455.png',
+        'https://thesmartcards.in/shared-uploads/users/profile/1745411455.png',
       );
     });
 
@@ -157,28 +160,25 @@ void main() {
       expect(bytes, isNull);
     });
 
-    test('formats Contact QR copy text in clean professional format without profile link or image', () {
+    test('formats Contact QR copy text with icons and card URL without profile image link', () {
       final copied = MyCardsScreen.buildContactCopyText(
         name: 'Kunju Wjaiiz',
         designation: 'Mobile App Developer',
-        company: 'AntzMedia',
-        phone: '+91 8086750402',
+        company: 'antzmedia',
+        phone: '+91 80867 50402',
         cardUrl: 'https://smartcards.antzmedia.com/kunju',
       );
 
       expect(
         copied,
-        'Hello, here are my contact details:\n'
+        '👤 Kunju Wjaiiz\n'
+        '💻 Mobile App Developer\n'
+        '🏢 antzmedia\n'
+        '📞 +91 80867 50402\n'
         '\n'
-        'Kunju Wjaiiz\n'
-        'Mobile App Developer | AntzMedia\n'
-        '📞 +91 8086750402\n'
-        '\n'
-        'Looking forward to connecting with you!',
+        '🔗 View Digital Card: https://smartcards.antzmedia.com/kunju',
       );
       expect(copied, isNot(contains('Profile Image')));
-      expect(copied, isNot(contains('View Digital Card')));
-      expect(copied, isNot(contains('https://')));
     });
 
     test('QrExtractionService extracts Contact QR PHOTO URI, cardUrl, and unwrapped email', () async {
@@ -314,7 +314,7 @@ void main() {
       final netImg = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
       expect(
         netImg.imageUrl,
-        'https://thesmartcards.com/shared-uploads/users/profile/kunju.webp',
+        'https://thesmartcards.in/shared-uploads/users/profile/kunju.webp',
       );
     });
 

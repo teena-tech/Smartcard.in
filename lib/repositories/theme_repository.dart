@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import '../core/services/dio_client.dart';
-import '../core/services/api_config.dart';
+import '../core/network/dio_client.dart';
+import '../core/network/api_config.dart';
 
 class ThemeRepository {
-  final DioClient _dioClient = DioClient();
+  final DioClient _dioClient;
+
+  ThemeRepository([DioClient? dioClient]) : _dioClient = dioClient ?? DioClient();
 
   Map<String, dynamic> _normalizeScope(Map<String, dynamic>? scope) {
     final Map<String, dynamic> normalized = {};
@@ -141,7 +143,6 @@ class ThemeRepository {
           : await MultipartFile.fromFile(filePath ?? '', filename: fileName);
       
       final formData = FormData.fromMap({
-        'bg_image': filePart,
         'bg_image_upload': filePart,
         ...(payload ?? {}),
         ...queryParams,
@@ -257,6 +258,58 @@ class ThemeRepository {
       return null;
     } on DioException catch (e) {
       throw DioClient.getErrorMessage(e, 'Failed to save template');
+    }
+  }
+
+  /// Generates AI headlines, bio and branding tags from user profession & company
+  Future<Map<String, dynamic>?> generateAiBio({
+    required String name,
+    required String designation,
+    String? company,
+    String? industry,
+    String tone = 'professional',
+  }) async {
+    try {
+      final response = await _dioClient.dio.post(
+        ApiConfig.aiGenerateBio,
+        data: {
+          'name': name,
+          'designation': designation,
+          if (company != null && company.isNotEmpty) 'company': company,
+          if (industry != null && industry.isNotEmpty) 'industry': industry,
+          'tone': tone,
+        },
+      );
+      if (response.data is Map) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      return null;
+    } on DioException catch (e) {
+      throw DioClient.getErrorMessage(e, 'Failed to generate AI bio');
+    }
+  }
+
+  /// Suggests card design theme, color palettes, and templates based on industry
+  Future<Map<String, dynamic>?> suggestAiDesign({
+    String? industry,
+    String? profession,
+    String? style,
+  }) async {
+    try {
+      final response = await _dioClient.dio.post(
+        ApiConfig.aiSuggestDesign,
+        data: {
+          if (industry != null) 'industry': industry,
+          if (profession != null) 'profession': profession,
+          if (style != null) 'style': style,
+        },
+      );
+      if (response.data is Map) {
+        return Map<String, dynamic>.from(response.data as Map);
+      }
+      return null;
+    } on DioException catch (e) {
+      throw DioClient.getErrorMessage(e, 'Failed to suggest AI design');
     }
   }
 }

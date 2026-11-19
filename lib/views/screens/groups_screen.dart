@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/intent_launcher.dart';
 import '../../models/app_contact.dart';
@@ -10,7 +12,7 @@ import '../../providers/contact_provider.dart';
 import '../../providers/group_provider.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/master_app_bar.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 import 'group_detail_screen.dart';
 
 class GroupsScreen extends StatefulWidget {
@@ -21,11 +23,18 @@ class GroupsScreen extends StatefulWidget {
 }
 
 class _GroupsScreenState extends State<GroupsScreen> {
+  bool get _hasScope =>
+      context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+      context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+  GroupProvider get _groupProvider => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(groupProviderRiverpod)
+      : legacy.Provider.of<GroupProvider>(context, listen: false);
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GroupProvider>().loadGroups();
+      _groupProvider.loadGroups();
     });
   }
 
@@ -100,7 +109,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.of(ctx).pop();
 
-                final groupProvider = context.read<GroupProvider>();
+                final groupProvider = _groupProvider;
                 final created = await groupProvider.createGroup(name);
                 if (created != null) {
                   messenger.showSnackBar(
@@ -173,7 +182,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.of(ctx).pop();
 
-                final groupProvider = context.read<GroupProvider>();
+                final groupProvider = _groupProvider;
                 final success = await groupProvider.renameGroup(group.id!, newName);
                 if (success) {
                   messenger.showSnackBar(
@@ -254,7 +263,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
               if (group.id != null) {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.of(ctx).pop();
-                final groupProvider = context.read<GroupProvider>();
+                final groupProvider = _groupProvider;
                 final success = await groupProvider.deleteGroup(group.id!);
                 if (success) {
                   messenger.showSnackBar(
@@ -304,7 +313,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   void _shareGroupContacts(BuildContext context, fc.Group group, List<AppContact> allContacts) {
-    final groupProvider = context.read<GroupProvider>();
+    final groupProvider = _groupProvider;
     final members = groupProvider.getMembersForGroup(group.id ?? '', allContacts);
 
     if (members.isEmpty) {
@@ -340,9 +349,28 @@ class _GroupsScreenState extends State<GroupsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_hasScope) {
+      return Consumer(
+        builder: (context, ref, _) => _buildBody(
+          context,
+          groupProvider: ref.watch(groupProviderRiverpod),
+          contactProvider: ref.watch(contactProviderRiverpod),
+        ),
+      );
+    }
+    return _buildBody(
+      context,
+      groupProvider: legacy.Provider.of<GroupProvider>(context),
+      contactProvider: legacy.Provider.of<ContactProvider>(context),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context, {
+    required GroupProvider groupProvider,
+    required ContactProvider contactProvider,
+  }) {
     final theme = Theme.of(context);
-    final groupProvider = context.watch<GroupProvider>();
-    final contactProvider = context.watch<ContactProvider>();
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),

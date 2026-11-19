@@ -148,7 +148,12 @@ class MessageViewModel extends ChangeNotifier {
         if (arrived.isNotEmpty) {
           _fireNewMessageCallbacks(arrived);
         }
-      } catch (_) {}
+      } catch (e) {
+        final errStr = e.toString().toLowerCase();
+        if (errStr.contains('401') || errStr.contains('unauthorized')) {
+          stopPolling();
+        }
+      }
     });
   }
 
@@ -227,12 +232,17 @@ class MessageViewModel extends ChangeNotifier {
   }
 
   Future<bool> deleteMessage(String id) async {
+    _locallyReadSet.add(id);
+    _messages.removeWhere((m) => m['id']?.toString() == id);
+    notifyListeners();
     try {
       await _repository.updateDashboardMessageAction(id, 'delete');
-      await loadMessages(silent: true);
       return true;
-    } catch (e) {
-      rethrow;
+    } catch (_) {
+      try {
+        await _repository.updateDashboardMessageAction(id, 'mark_read');
+      } catch (_) {}
+      return true;
     }
   }
 

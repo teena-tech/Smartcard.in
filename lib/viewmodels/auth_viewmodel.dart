@@ -83,7 +83,9 @@ class AuthViewModel extends ChangeNotifier {
               notifyListeners();
             }
           }).catchError((e) async {
-            if (e is DioException && (e.response?.statusCode == 401 || e.response?.statusCode == 403)) {
+            final dioStatus = e is DioException ? e.response?.statusCode : null;
+            final hasTokens = await _authRepository.hasSessionTokens();
+            if (dioStatus == 401 || dioStatus == 403 || !hasTokens) {
               await _authRepository.clearTokens();
               _currentUser = null;
               _setState(AuthState.unauthenticated);
@@ -105,14 +107,9 @@ class AuthViewModel extends ChangeNotifier {
             _setState(AuthState.unauthenticated);
           }
         } catch (e) {
-          bool isSessionExpired = false;
-          if (e is DioException) {
-            final statusCode = e.response?.statusCode;
-            if (statusCode == 401 || statusCode == 403) {
-              isSessionExpired = true;
-            }
-          }
-          if (isSessionExpired) {
+          final dioStatus = e is DioException ? e.response?.statusCode : null;
+          final hasTokens = await _authRepository.hasSessionTokens();
+          if (dioStatus == 401 || dioStatus == 403 || !hasTokens) {
             await _authRepository.clearTokens();
             _currentUser = null;
           }
@@ -369,8 +366,14 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   Future<bool> checkPhone(String phone, {String countryCode = '+91'}) async {
+    _errorMessage = null;
     try {
-      return await _authRepository.checkPhone(phone, countryCode: countryCode);
+      final available = await _authRepository.checkPhone(phone, countryCode: countryCode);
+      if (!available) {
+        _errorMessage = 'This phone number is already registered. Please login instead.';
+        notifyListeners();
+      }
+      return available;
     } catch (e) {
       _errorMessage = e.toString();
       notifyListeners();

@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
-import '../../viewmodels/card_viewmodel.dart';
-import '../../viewmodels/message_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../screens/home_screen.dart';
 import '../screens/login_screen.dart';
 import 'circular_profile_avatar.dart';
 import '../../core/utils/upload_url_resolver.dart';
-import '../../core/services/dio_client.dart';
+import '../../core/network/dio_client.dart';
 
-class CommonDrawer extends StatelessWidget {
+class CommonDrawer extends ConsumerWidget {
   final int? currentTabIndex;
   final String? currentRoute;
   final Function(int)? onTabChanged;
@@ -45,23 +41,23 @@ class CommonDrawer extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final themeViewModel = context.watch<ThemeViewModel>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeViewModel = ref.watch(themeViewModelProvider);
     final colors = themeViewModel.colors;
-    final authViewModel = context.watch<AuthViewModel>();
-    final profileViewModel = context.watch<ProfileViewModel>();
+    final authViewModel = ref.watch(authViewModelProvider);
+    final profileViewModel = ref.watch(profileViewModelProvider);
 
     // Ensure profile & cards are loaded
     if (profileViewModel.user == null && !profileViewModel.isLoading && authViewModel.currentUser != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<ProfileViewModel>().loadProfile(authViewModel.currentUser!.id!);
+        ref.read(profileViewModelProvider).loadProfile(authViewModel.currentUser!.id!);
       });
     }
 
-    final cardViewModel = context.watch<CardViewModel>();
+    final cardViewModel = ref.watch(cardViewModelProvider);
     if (cardViewModel.cards.isEmpty && authViewModel.currentUser != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<CardViewModel>().fetchCards(authViewModel.currentUser!.id.toString());
+        ref.read(cardViewModelProvider).fetchCards(authViewModel.currentUser!.id.toString());
       });
     }
 
@@ -295,10 +291,10 @@ class CommonDrawer extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           final navigator = Navigator.of(context, rootNavigator: true);
-                          final messageVm = context.read<MessageViewModel>();
-                          final authVm = context.read<AuthViewModel>();
-                          final profileVm = context.read<ProfileViewModel>();
-                          final cardVm = context.read<CardViewModel>();
+                          final messageVm = ref.read(messageViewModelProvider);
+                          final authVm = ref.read(authViewModelProvider);
+                          final profileVm = ref.read(profileViewModelProvider);
+                          final cardVm = ref.read(cardViewModelProvider);
 
                           Navigator.of(context).pop(); // Close drawer
 
@@ -400,7 +396,7 @@ class _DrawerItem extends StatelessWidget {
   }
 }
 
-class _ThemeButton extends StatelessWidget {
+class _ThemeButton extends ConsumerWidget {
   final String title;
   final bool isSelected;
   final AppThemeMode mode;
@@ -412,8 +408,8 @@ class _ThemeButton extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) {
-    final themeViewModel = context.read<ThemeViewModel>();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeViewModel = ref.read(themeViewModelProvider);
     final colors = themeViewModel.colors;
     return Expanded(
       child: InkWell(

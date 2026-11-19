@@ -8,7 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../core/providers/app_riverpod_providers.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_colors.dart';
@@ -26,7 +28,7 @@ import '../../core/services/contact_photo_service.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/image_cropper_widget.dart';
 import '../widgets/master_app_bar.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 import '../widgets/genie_hero_route.dart';
 import '../widgets/duplicate_field_swipe_widget.dart';
 
@@ -114,6 +116,21 @@ class ContactFormScreen extends StatefulWidget {
 }
 
 class _ContactFormScreenState extends State<ContactFormScreen> {
+  bool get _hasScope =>
+      context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+      context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+  ContactProvider get _contactProvider => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(contactProviderRiverpod)
+      : legacy.Provider.of<ContactProvider>(context, listen: false);
+
+  ContactViewModel get _contactViewModel => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(contactViewModelProvider)
+      : legacy.Provider.of<ContactViewModel>(context, listen: false);
+
+  GroupProvider get _groupProvider => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(groupProviderRiverpod)
+      : legacy.Provider.of<GroupProvider>(context, listen: false);
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _firstNameController;
@@ -158,7 +175,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
   @override
   void initState() {
     super.initState();
-    final contactProvider = context.read<ContactProvider>();
+    final contactProvider = _contactProvider;
     AppContact? c = widget.contactToEdit;
     ScannedContactModel? sc = widget.scannedContactToEdit;
 
@@ -176,7 +193,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
             ) ??
             contactProvider.findContactById(sc.id);
       } else if (sc == null && c != null) {
-        final contactVm = context.read<ContactViewModel>();
+        final contactVm = _contactViewModel;
         final phoneToMatch = c.primaryPhone.trim();
         if (phoneToMatch.isNotEmpty) {
           for (final item in contactVm.allContacts) {
@@ -306,7 +323,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
       AppContact? linkedDevContact;
       if (c == null && sc != null) {
         try {
-          final cp = context.read<ContactProvider>();
+          final cp = _contactProvider;
           linkedDevContact = cp.findContactById(sc.id) ??
               cp.findContactByPhoneOrEmail(sc.phone, sc.email, name: sc.name);
         } catch (_) {}
@@ -417,7 +434,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<GroupProvider>().loadGroups();
+      _groupProvider.loadGroups();
 
       // Async enrichment: fetch full SQLite record if the passed model is thin
       // (i.e., scannedContactToEdit has no email/address/website populated)
@@ -639,7 +656,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
 
     Future(() async {
       try {
-        final contactProvider = context.read<ContactProvider>();
+        final contactProvider = _contactProvider;
         for (final appC in contactProvider.contacts) {
           if (appC.photo != null && appC.photo!.isNotEmpty) {
             final matchFound = appC.phones.any((p) {
@@ -819,7 +836,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
               if (formKey.currentState!.validate()) {
                 final name = textController.text.trim();
                 Navigator.pop(ctx);
-                final groupProvider = context.read<GroupProvider>();
+                final groupProvider = _groupProvider;
                 final created = await groupProvider.createGroup(name);
                 if (created?.id != null) {
                   setState(() {
@@ -976,8 +993,8 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
 
     setState(() => _isSaving = true);
 
-    final provider = context.read<ContactProvider>();
-    final groupProvider = context.read<GroupProvider>();
+    final provider = _contactProvider;
+    final groupProvider = _groupProvider;
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
@@ -1006,7 +1023,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
         );
 
         // Simultaneously sync edits to ContactViewModel (SQLite + Live Backend)
-        final contactVm = context.read<ContactViewModel>();
+        final contactVm = _contactViewModel;
         String? photoString;
         if (_photoBytes != null) {
           photoString = 'data:image/jpeg;base64,${base64Encode(_photoBytes!)}';
@@ -1099,7 +1116,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
             ? otherPhoneList.skip(1).map((p) => '${p.label}:${p.number}').toList()
             : <String>[];
 
-        final contactVm = context.read<ContactViewModel>();
+        final contactVm = _contactViewModel;
         final bool isDuplicateSave = widget.existingContact != null;
         final String profileId = isDuplicateSave
             ? 'scan_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(999999)}'
@@ -1190,7 +1207,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     } else {
       // ─── NEW CONTACT PATH ───────────────────────────────────────────────────────
       // Before saving a fresh scanned contact, check for duplicates
-      final contactVm = context.read<ContactViewModel>();
+      final contactVm = _contactViewModel;
       final firstPhone = phoneList.isNotEmpty ? phoneList.first.number : '';
       final firstEmail = emailList.isNotEmpty ? emailList.first.address : '';
 
@@ -1328,8 +1345,16 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_hasScope) {
+      return Consumer(
+        builder: (context, ref, _) => _buildForm(context, ref.watch(groupProviderRiverpod)),
+      );
+    }
+    return _buildForm(context, legacy.Provider.of<GroupProvider>(context));
+  }
+
+  Widget _buildForm(BuildContext context, GroupProvider groupProvider) {
     final theme = Theme.of(context);
-    final groupProvider = context.watch<GroupProvider>();
 
     return Scaffold(
       appBar: MasterAppBar(
@@ -2295,7 +2320,7 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
 
                 final messenger = ScaffoldMessenger.of(context);
                 final navigator = Navigator.of(context);
-                final created = await context.read<ContactProvider>().openNativeCreator(initialData: fallback);
+                final created = await _contactProvider.openNativeCreator(initialData: fallback);
                 if (created != null) {
                   messenger.showSnackBar(
                     SnackBar(

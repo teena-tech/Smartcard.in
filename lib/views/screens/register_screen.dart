@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/auth_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../../core/utils/responsive.dart';
@@ -15,14 +14,14 @@ import '../widgets/international_phone_input.dart';
 import '../../core/utils/international_phone_helper.dart';
 import '../../core/services/otp_autofill_service.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   int _step = 1;
   String _error = '';
   String _message = '';
@@ -125,7 +124,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _onPincodeChanged() async {
     final pincode = _pincodeController.text.trim();
     if (pincode.length == 6) {
-      final authViewModel = context.read<AuthViewModel>();
+      final authViewModel = ref.read(authViewModelProvider);
       final response = await authViewModel.fetchPincodeDetails(pincode);
 
       if (response != null && response['success'] == true) {
@@ -212,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
     final previousWhatsApp = _isWhatsAppMode;
 
     if (checkAvailability) {
@@ -289,6 +288,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _handleSwitchOtpChannel() async {
+    await _sendRegOtp(
+      useWhatsApp: !_isWhatsAppMode,
+      checkAvailability: false,
+      showSnack: true,
+    );
+  }
+
   void _handleVerifyOtp() async {
     _clearFeedback();
     if (_otpController.text.length != 6) {
@@ -296,7 +303,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
     final success = await authViewModel.verifyRegistrationOtp(_otpController.text.trim());
 
     if (success) {
@@ -324,12 +331,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _handleRegister() async {
     _clearFeedback();
-    if (_pincodeController.text.length != 6) {
-      setState(() => _error = 'Pincode must be 6 digits');
+    final rawPin = _pincodeController.text.trim();
+    final pinDigits = rawPin.replaceAll(RegExp(r'\D'), '');
+    final isIndia = _selectedCountryCode == '+91' || _selectedCountryCode == '91';
+    if (isIndia) {
+      if (pinDigits.length != 6) {
+        setState(() => _error = 'Pincode must be 6 digits');
+        return;
+      }
+    } else if (pinDigits.length < 4 || pinDigits.length > 10) {
+      setState(() => _error = 'Postal code must be 4 to 10 digits');
       return;
     }
 
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
 
     final registrationData = {
       'verification_token': authViewModel.verificationToken,
@@ -379,7 +394,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildProgressBar() {
-    final colors = context.watch<ThemeViewModel>().colors;
+    final colors = ref.watch(themeViewModelProvider).colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -462,8 +477,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildStepContent() {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final busy = context.watch<AuthViewModel>().isLoading;
+    final colors = ref.watch(themeViewModelProvider).colors;
+    final busy = ref.watch(authViewModelProvider).isLoading;
 
     switch (_step) {
       case 1:
@@ -472,12 +487,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             InternationalPhoneInput(
               phoneController: _phoneController,
-              isWhatsAppMode: false,
-              selectedCountryCode: '+91',
+              isWhatsAppMode: _isWhatsAppMode,
+              selectedCountryCode: _selectedCountryCode,
               allowSeparateWhatsApp: false,
-              showModeSelector: false,
-              disableCountryPicker: true,
-              showChannelStatusBanner: false,
               enabled: !busy,
               onWhatsAppModeChanged: (val) {
                 setState(() {
@@ -501,7 +513,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             const SizedBox(height: 14),
             Text(
-              'Enter your mobile number to create your SmartCards account.',
+              _isWhatsAppMode
+                  ? '6-digit OTP will be delivered directly to your WhatsApp.'
+                  : 'Enter your mobile number to create your SmartCards account.',
               style: GoogleFonts.inter(
                 color: AppColors.textSecondary,
                 fontSize: 12,
@@ -510,7 +524,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 22),
             PrimaryButton(
-              text: busy ? 'Sending...' : 'SEND OTP',
+              text: busy
+                  ? (_isWhatsAppMode ? 'Sending via WhatsApp...' : 'Sending...')
+                  : (_isWhatsAppMode ? 'SEND OTP VIA WHATSAPP' : 'SEND OTP'),
               isLoading: busy,
               onPressed: _handleSendOtp,
             ),
@@ -529,7 +545,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             OTPInputField(
               controller: _otpController,
               length: 6,
-              accentColor: const Color(0xFFA81C24),
+              accentColor: _isWhatsAppMode
+                  ? const Color(0xFF15803D)
+                  : const Color(0xFFA81C24),
               onChanged: (code) {
                 if (_error.isNotEmpty) {
                   setState(() => _error = '');
@@ -545,7 +563,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             OtpStatusNotice(
               statusMessage: _message,
               errorMessage: _error,
-              isWhatsAppMode: false,
+              isWhatsAppMode: _isWhatsAppMode,
+            ),
+            const SizedBox(height: 12),
+            OtpSwitchChannelLink(
+              isWhatsAppMode: _isWhatsAppMode,
+              isLoading: busy,
+              onSwitchPressed: _handleSwitchOtpChannel,
             ),
             const SizedBox(height: 16),
             Row(
@@ -795,8 +819,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final busy = context.watch<AuthViewModel>().isLoading;
+    final colors = ref.watch(themeViewModelProvider).colors;
+    final busy = ref.watch(authViewModelProvider).isLoading;
     const crimson = Color(0xFF9E1C24);
 
     return Scaffold(

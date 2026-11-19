@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'dio_client.dart';
-import 'api_config.dart';
+import '../network/dio_client.dart';
+import '../network/api_config.dart';
 
 class SubscriptionApiService {
   SubscriptionApiService._();
@@ -79,7 +79,7 @@ class SubscriptionApiService {
         },
       );
     } catch (_) {
-      // Best-effort — don't throw for failure reporting
+      // Best-effort â€” don't throw for failure reporting
     }
   }
 }

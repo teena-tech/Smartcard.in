@@ -8,7 +8,6 @@ import 'package:smartcard_flutter/models/scanned_contact_model.dart';
 import 'package:smartcard_flutter/models/app_contact.dart';
 import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
 import 'package:smartcard_flutter/views/widgets/duplicate_field_swipe_widget.dart';
-import 'package:smartcard_flutter/views/widgets/duplicate_phone_banner.dart';
 import 'package:smartcard_flutter/views/widgets/duplicate_scan_popup_dialog.dart';
 
 void main() {
@@ -17,7 +16,7 @@ void main() {
   setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n');
+    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n');
     try {
       final dbPath = await getDatabasesPath();
       await databaseFactory.deleteDatabase('$dbPath/smartcards_app.db');
@@ -230,34 +229,6 @@ void main() {
   });
 
   group('UI Components Widget Tests', () {
-    testWidgets('DuplicatePhoneBanner renders 5s notice and allows manual dismiss', (tester) async {
-      bool dismissed = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DuplicatePhoneBanner(
-              autoDismissDuration: const Duration(seconds: 10),
-              onDismissed: () => dismissed = true,
-            ),
-          ),
-        ),
-      );
-      // Wait for entrance animation to finish sliding in
-      await tester.pumpAndSettle();
-
-      expect(find.text('This phone number already exists in your contacts'), findsOneWidget);
-      expect(find.textContaining('Swipe left/right below to replace or keep fields'), findsOneWidget);
-
-      // Tap manual close button
-      final closeBtn = find.byIcon(Icons.close_rounded);
-      expect(closeBtn, findsOneWidget);
-      await tester.tap(closeBtn);
-      await tester.pumpAndSettle();
-
-      expect(dismissed, isTrue);
-    });
-
     testWidgets('DuplicateFieldSwipeWidget provides interactive comparison and toggle', (tester) async {
       bool selectedNew = true;
 

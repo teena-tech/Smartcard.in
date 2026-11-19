@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
-import '../core/services/dio_client.dart';
-import '../core/services/api_config.dart';
+import '../repositories/auth_repository.dart';
 
 class LandingViewModel extends ChangeNotifier {
+  final AuthRepository _authRepository = AuthRepository();
   List<Map<String, dynamic>> _slides = [];
   bool _isLoading = true;
 
@@ -14,28 +14,12 @@ class LandingViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final dio = DioClient().dio;
-
-      final response = await dio.get(
-        ApiConfig.welcomeSlides, 
-      );
-
-      if (response.data != null) {
-        final data = response.data;
-        List<dynamic> list = [];
-
-        if (data is List) {
-          list = data;
-        } else if (data is Map && data['data'] is List) {
-          list = data['data'];
-        }
-
-        if (list.isNotEmpty) {
-          _slides = list.map((e) => Map<String, dynamic>.from(e)).toList();
-          _isLoading = false;
-          notifyListeners();
-          return;
-        }
+      final list = await _authRepository.fetchWelcomeSlides();
+      if (list.isNotEmpty) {
+        _slides = list;
+        _isLoading = false;
+        notifyListeners();
+        return;
       }
     } catch (e) {
       debugPrint('Welcome Slides API Error: $e');
@@ -46,7 +30,7 @@ class LandingViewModel extends ChangeNotifier {
       {
         'title': 'Smart Cards',
         'subtitle': 'The modern way to share your contact information and build professional connections.',
-        'image_path': 'assets/images/welcome pageSC WelcomeSC Welcome.png',
+        'image_path': 'assets/images/welcome_page_sc.png',
       },
       {
         'title': 'Digital Connections',

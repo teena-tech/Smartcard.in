@@ -1,20 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:rive/rive.dart' hide File;
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/theme_viewmodel.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import 'home_screen.dart';
 import 'landing_screen.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
@@ -24,10 +23,10 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
     await authViewModel.checkAuthStatus();
 
-    // Allow splash Rive animation to play smoothly
+    // Smooth branding delay for logo presentation
     await Future<void>.delayed(const Duration(milliseconds: 1500));
     if (!mounted) return;
 
@@ -46,11 +45,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+    final colors = ref.watch(themeViewModelProvider).colors;
 
     return Scaffold(
       backgroundColor: colors.backgroundStart,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -58,25 +59,42 @@ class _SplashScreenState extends State<SplashScreen> {
             colors: [colors.backgroundStart, colors.backgroundEnd],
           ),
         ),
-        child: Stack(
-          children: [
-            // Full-screen Rive animation background
-            Positioned.fill(
-              child: RiveWidgetBuilder(
-                fileLoader: FileLoader.fromAsset(
-                  "assets/rive/splash_screen_animation_2.riv",
-                  riveFactory: Factory.rive,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/images/smartlogo.png',
+                width: 140,
+                height: 140,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.credit_card_rounded,
+                  size: 80,
+                  color: Colors.white,
                 ),
-                builder: (context, state) => switch (state) {
-                  RiveLoaded(controller: final controller) => RiveWidget(
-                      controller: controller,
-                      fit: Fit.cover,
-                    ),
-                  _ => const SizedBox.shrink(),
-                },
-              ),
-            ),
-          ],
+              )
+                  .animate()
+                  .fadeIn(duration: 600.ms, curve: Curves.easeOut)
+                  .scale(
+                    begin: const Offset(0.85, 0.85),
+                    end: const Offset(1.0, 1.0),
+                    duration: 600.ms,
+                    curve: Curves.easeOutBack,
+                  ),
+              const SizedBox(height: 28),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 350.ms, duration: 400.ms),
+            ],
+          ),
         ),
       ),
     );

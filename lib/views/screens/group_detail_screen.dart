@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/intent_launcher.dart';
 import '../../models/app_contact.dart';
 import '../../providers/contact_provider.dart';
 import '../../providers/group_provider.dart';
-import '../widgets/contact_tile.dart';
+import '../widgets/contact_list_tile.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/master_app_bar.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final fc.Group group;
@@ -22,6 +24,17 @@ class GroupDetailScreen extends StatefulWidget {
 }
 
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
+  bool get _hasScope =>
+      context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+      context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+  GroupProvider get _groupProvider => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(groupProviderRiverpod)
+      : legacy.Provider.of<GroupProvider>(context, listen: false);
+
+  ContactProvider get _contactProvider => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(contactProviderRiverpod)
+      : legacy.Provider.of<ContactProvider>(context, listen: false);
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -58,8 +71,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   }
 
   void _showAddMembersModal(BuildContext context) {
-    final contactProvider = context.read<ContactProvider>();
-    final groupProvider = context.read<GroupProvider>();
+    final contactProvider = _contactProvider;
+    final groupProvider = _groupProvider;
     final groupId = widget.group.id;
     if (groupId == null) return;
 
@@ -334,8 +347,8 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
             onPressed: () async {
               final messenger = ScaffoldMessenger.of(context);
               Navigator.of(ctx).pop();
-              final groupProvider = context.read<GroupProvider>();
-              final contactProvider = context.read<ContactProvider>();
+              final groupProvider = _groupProvider;
+              final contactProvider = _contactProvider;
 
               final success = await groupProvider.removeContactsFromGroup(
                 groupId: groupId,
@@ -366,8 +379,27 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final contactProvider = context.watch<ContactProvider>();
-    final groupProvider = context.watch<GroupProvider>();
+    if (_hasScope) {
+      return Consumer(
+        builder: (context, ref, _) => _buildDetail(
+          context,
+          contactProvider: ref.watch(contactProviderRiverpod),
+          groupProvider: ref.watch(groupProviderRiverpod),
+        ),
+      );
+    }
+    return _buildDetail(
+      context,
+      contactProvider: legacy.Provider.of<ContactProvider>(context),
+      groupProvider: legacy.Provider.of<GroupProvider>(context),
+    );
+  }
+
+  Widget _buildDetail(
+    BuildContext context, {
+    required ContactProvider contactProvider,
+    required GroupProvider groupProvider,
+  }) {
     final groupId = widget.group.id ?? '';
 
     // Members in this group via unified provider

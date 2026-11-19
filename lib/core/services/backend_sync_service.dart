@@ -3,10 +3,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dio_client.dart';
+import '../network/dio_client.dart';
 import '../database/sqlite_database.dart';
 import '../../models/scanned_contact_model.dart';
-import 'api_config.dart';
+import '../network/api_config.dart';
 
 class BackendSyncService {
   static final BackendSyncService _instance = BackendSyncService._internal();
@@ -34,13 +34,13 @@ class BackendSyncService {
 
     final pending = await SqliteDatabase.getPendingContactsAsync();
     if (pending.isEmpty) {
-      debugPrint('📬 Offline sync queue is empty. Nothing to sync.');
+      debugPrint('ðŸ“¬ Offline sync queue is empty. Nothing to sync.');
       return;
     }
 
     _isSyncing = true;
     debugPrint(
-      '🔄 Found ${pending.length} pending contacts in sync queue. Syncing now...',
+      'ðŸ”„ Found ${pending.length} pending contacts in sync queue. Syncing now...',
     );
 
     for (var contact in pending) {
@@ -49,8 +49,10 @@ class BackendSyncService {
         if (success) {
           await SqliteDatabase.updateSyncStatus(contact.id, 'synced');
         }
+        // Polite 150ms delay between uploads to prevent burst 429 rate-limiting
+        await Future.delayed(const Duration(milliseconds: 150));
       } catch (e) {
-        debugPrint('🚨 Failed to sync contact ${contact.name}: $e');
+        debugPrint('ðŸš¨ Failed to sync contact ${contact.name}: $e');
         // Stop current sync batch, retry on next network change or manual trigger
         break;
       }
@@ -66,7 +68,7 @@ class BackendSyncService {
   /// error" text that appeared previously).
   Future<bool> uploadContact(ScannedContactModel contact) async {
     try {
-      // ── Resolve user_id from secure storage (with SharedPreferences fallback) ─
+      // â”€â”€ Resolve user_id from secure storage (with SharedPreferences fallback) â”€
       const storage = FlutterSecureStorage();
       String? userId = await storage.read(key: 'user_id');
       if (userId == null || userId.isEmpty) {
@@ -75,9 +77,9 @@ class BackendSyncService {
           userId = prefs.getString('user_id');
         } catch (_) {}
       }
-      debugPrint('📤 BackendSync: resolved userId=$userId');
+      debugPrint('ðŸ“¤ BackendSync: resolved userId=$userId');
 
-      // ── Flat payload matching backend DB table columns exactly ──────────────
+      // â”€â”€ Flat payload matching backend DB table columns exactly â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       // Using a flat structure prevents "Column count doesn't match value count"
       // SQL errors that occurred when nested arrays were included in the body.
       final payload = <String, dynamic>{
@@ -94,7 +96,7 @@ class BackendSyncService {
         'website': contact.website,
         'address': contact.address,
         'pin_code': contact.pinCode ?? '',
-        'social_links': contact.socialLinks.join(','),
+        'social_links': contact.socialLinks,
         'profile_image': contact.profileImage ?? contact.imagePath ?? '',
         'company_logo': contact.companyLogo ?? '',
         'district': contact.district ?? '',
@@ -105,7 +107,7 @@ class BackendSyncService {
       };
 
       debugPrint(
-        '📤 BackendSync: POST ${ApiConfig.qrContacts} | payload keys: ${payload.keys.join(', ')}',
+        'ðŸ“¤ BackendSync: POST ${ApiConfig.qrContacts} | payload keys: ${payload.keys.join(', ')}',
       );
 
       final response = await _dio.post(
@@ -115,16 +117,16 @@ class BackendSyncService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('☁️ Successfully synced contact: ${contact.name}');
+        debugPrint('â˜ï¸ Successfully synced contact: ${contact.name}');
         return true;
       }
 
       debugPrint(
-        '⚠️ Unexpected status code: ${response.statusCode} for contact: ${contact.name}',
+        'âš ï¸ Unexpected status code: ${response.statusCode} for contact: ${contact.name}',
       );
       return false;
     } on DioException catch (e) {
-      // ── Extract meaningful server-side error message ─────────────────────
+      // â”€â”€ Extract meaningful server-side error message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       String serverMessage;
       try {
         final data = e.response?.data;
@@ -142,10 +144,10 @@ class BackendSyncService {
       } catch (_) {
         serverMessage = e.message ?? 'Unknown server error';
       }
-      debugPrint('🚨 BackendSync DioError: $serverMessage');
+      debugPrint('ðŸš¨ BackendSync DioError: $serverMessage');
       throw Exception(serverMessage);
     } catch (e) {
-      debugPrint('🚨 BackendSync unexpected error: $e');
+      debugPrint('ðŸš¨ BackendSync unexpected error: $e');
       rethrow;
     }
   }
@@ -176,7 +178,7 @@ class BackendSyncService {
         'website': contact.website,
         'address': contact.address,
         'pin_code': contact.pinCode ?? '',
-        'social_links': contact.socialLinks.join(','),
+        'social_links': contact.socialLinks,
         'profile_image': contact.profileImage ?? contact.imagePath ?? '',
         'company_logo': contact.companyLogo ?? '',
         'district': contact.district ?? '',
@@ -194,7 +196,7 @@ class BackendSyncService {
       final data = response.data is Map ? response.data as Map<String, dynamic> : <String, dynamic>{};
       final bool alreadySaved = data['already_saved'] == true;
       final String message = data['message']?.toString() ??
-          (alreadySaved ? 'Contact already exists — updated with latest details!' : 'Contact saved successfully!');
+          (alreadySaved ? 'Contact already exists â€” updated with latest details!' : 'Contact saved successfully!');
 
       return {
         'success': true,

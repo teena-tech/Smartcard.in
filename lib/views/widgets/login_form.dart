@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 import '../../main.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/otp_autofill_service.dart';
-import '../../viewmodels/auth_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import 'otp_channel_banner.dart';
 import 'otp_input_field.dart';
 import 'primary_button.dart';
@@ -15,16 +15,15 @@ import '../../core/utils/international_phone_helper.dart';
 import '../screens/register_screen.dart';
 import '../screens/home_screen.dart';
 
-class LoginForm extends StatefulWidget {
+class LoginForm extends ConsumerStatefulWidget {
   const LoginForm({super.key});
 
   @override
-  State<LoginForm> createState() => _LoginFormState();
+  ConsumerState<LoginForm> createState() => _LoginFormState();
 }
 
-class _LoginFormState extends State<LoginForm> {
+class _LoginFormState extends ConsumerState<LoginForm> {
   final _identifierController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _otpController = TextEditingController();
 
   Timer? _resendTimer;
@@ -47,7 +46,7 @@ class _LoginFormState extends State<LoginForm> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && context.read<AuthViewModel>().showOtp) {
+      if (mounted && ref.read(authViewModelProvider).showOtp) {
         _startOtpListener();
       }
     });
@@ -77,7 +76,6 @@ class _LoginFormState extends State<LoginForm> {
   void dispose() {
     _stopOtpListener();
     _identifierController.dispose();
-    _passwordController.dispose();
     _otpController.dispose();
     _resendTimer?.cancel();
     _lockoutTimer?.cancel();
@@ -138,7 +136,7 @@ class _LoginFormState extends State<LoginForm> {
       return;
     }
     
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
     final channel = _isWhatsAppMode ? 'whatsapp' : 'phone';
     final ok = await authViewModel.sendLoginOtp(
       phone,
@@ -165,7 +163,7 @@ class _LoginFormState extends State<LoginForm> {
   Future<void> _handleVerifyOtp() async {
     if (_isLockedOut || _isVerifyingOtp) return;
 
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
     if (authViewModel.isLoading) return;
     if (_otpController.text.trim().length != 6) {
       _showErrorDialog(
@@ -285,7 +283,7 @@ class _LoginFormState extends State<LoginForm> {
     required bool useWhatsApp,
     required String snackText,
   }) async {
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
     if (authViewModel.isLoading) return;
 
     final phone = _identifierController.text.trim();
@@ -348,6 +346,14 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
+  Future<void> _handleSwitchOtpChannel() async {
+    final nextWhatsApp = !_isWhatsAppMode;
+    await _dispatchLoginOtp(
+      useWhatsApp: nextWhatsApp,
+      snackText: nextWhatsApp ? 'OTP sent via WhatsApp' : 'OTP sent via SMS',
+    );
+  }
+
   void _startResendTimer() {
     _resendTimer?.cancel();
     setState(() {
@@ -376,7 +382,7 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    final authViewModel = context.watch<AuthViewModel>();
+    final authViewModel = ref.watch(authViewModelProvider);
     
     // Automatically ensure listener is cleaned up if showOtp resets to false
     if (!authViewModel.showOtp && OtpAutofillService().isListening) {
@@ -418,12 +424,9 @@ class _LoginFormState extends State<LoginForm> {
               if (!authViewModel.showOtp)
                 InternationalPhoneInput(
                   phoneController: _identifierController,
-                  isWhatsAppMode: false,
-                  selectedCountryCode: '+91',
+                  isWhatsAppMode: _isWhatsAppMode,
+                  selectedCountryCode: _selectedCountryCode,
                   allowSeparateWhatsApp: false,
-                  showModeSelector: false,
-                  disableCountryPicker: true,
-                  showChannelStatusBanner: false,
                   enabled: !authViewModel.isLoading,
                   onWhatsAppModeChanged: (val) {
                     setState(() {
@@ -524,7 +527,13 @@ class _LoginFormState extends State<LoginForm> {
                 OtpStatusNotice(
                   statusMessage: authViewModel.message,
                   errorMessage: authViewModel.error,
-                  isWhatsAppMode: false,
+                  isWhatsAppMode: _isWhatsAppMode,
+                ),
+                const SizedBox(height: 12),
+                OtpSwitchChannelLink(
+                  isWhatsAppMode: _isWhatsAppMode,
+                  isLoading: authViewModel.isLoading,
+                  onSwitchPressed: _handleSwitchOtpChannel,
                 ),
                 const SizedBox(height: 16),
               ] else if (!_isLockedOut) ...[

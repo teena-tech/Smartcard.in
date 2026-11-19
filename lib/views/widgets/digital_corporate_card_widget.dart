@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../../core/network/api_config.dart';
 import '../../core/utils/app_haptics.dart';
 import '../../core/utils/intent_launcher.dart';
 import '../../models/user_model.dart';
 import '../../models/card_model.dart';
-import '../../providers/workspace_provider.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/card_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 
 /// Digital Corporate Card presentation widget with QR code and locked brand elements enforcement
-class DigitalCorporateCardWidget extends StatefulWidget {
+class DigitalCorporateCardWidget extends ConsumerStatefulWidget {
   final CardModel? card;
   final UserModel? user;
   final bool showLockDetails;
@@ -25,13 +23,13 @@ class DigitalCorporateCardWidget extends StatefulWidget {
   });
 
   @override
-  State<DigitalCorporateCardWidget> createState() => _DigitalCorporateCardWidgetState();
+  ConsumerState<DigitalCorporateCardWidget> createState() => _DigitalCorporateCardWidgetState();
 }
 
-class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget> {
+class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCardWidget> {
   bool _isBackFlipped = false;
 
-  void _showLockedBrandDialog(BuildContext context, WorkspaceProvider ws) {
+  void _showLockedBrandDialog(BuildContext context, String companyName) {
     AppHaptics.selection();
     showDialog(
       context: context,
@@ -74,7 +72,7 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
             ),
             const SizedBox(height: 14),
             _buildLockRow(Icons.image_outlined, 'Organization Logo', 'Locked & Verified'),
-            _buildLockRow(Icons.apartment_rounded, 'Organization', ws.companyName),
+            _buildLockRow(Icons.apartment_rounded, 'Organization', companyName),
             _buildLockRow(Icons.palette_outlined, 'Brand Palette', '#0284C7 (Organization Ocean)'),
             _buildLockRow(Icons.gavel_rounded, 'Legal Disclaimer', 'Centrally Enforced'),
             const SizedBox(height: 10),
@@ -140,13 +138,15 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
 
   @override
   Widget build(BuildContext context) {
-    final ws = context.watch<WorkspaceProvider>();
-    final authVm = context.watch<AuthViewModel>();
-    final profileVm = context.watch<ProfileViewModel>();
-    final cardVm = context.watch<CardViewModel>();
+    final authVm = ref.watch(authViewModelProvider);
+    final profileVm = ref.watch(profileViewModelProvider);
+    final cardVm = ref.watch(cardViewModelProvider);
 
     final user = widget.user ?? profileVm.user ?? authVm.currentUser;
     final card = widget.card ?? cardVm.primaryCard ?? (cardVm.cards.isNotEmpty ? cardVm.cards.first : null);
+    final companyName = (card?.companyName != null && card!.companyName.isNotEmpty)
+        ? card.companyName
+        : 'ORGANIZATION';
 
     final displayName = user?.displayName.isNotEmpty == true
         ? user!.displayName
@@ -159,7 +159,7 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
     final memberId = user?.memberId?.isNotEmpty == true ? user!.memberId! : 'SC-1092';
     final qrUrl = card?.qrData.isNotEmpty == true
         ? card!.qrData
-        : 'https://thesmartcards.in/profile/${user?.id ?? "employee"}';
+        : ApiConfig.cardProfileUrl(user?.id ?? 'employee');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,8 +197,8 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
               ],
             ),
             child: _isBackFlipped
-                ? _buildBackFace(displayName, role, phone, email, ws, qrUrl)
-                : _buildFrontFace(displayName, role, phone, email, memberId, ws, qrUrl),
+                ? _buildBackFace(displayName, role, phone, email, '', qrUrl)
+                : _buildFrontFace(displayName, role, phone, email, memberId, companyName, qrUrl),
           ),
         ),
 
@@ -206,7 +206,7 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
         if (widget.showLockDetails) ...[
           const SizedBox(height: 10),
           GestureDetector(
-            onTap: () => _showLockedBrandDialog(context, ws),
+            onTap: () => _showLockedBrandDialog(context, companyName),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -262,7 +262,7 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
     String phone,
     String email,
     String memberId,
-    WorkspaceProvider ws,
+    String companyName,
     String qrUrl,
   ) {
     return Column(
@@ -289,7 +289,7 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          ws.companyName.toUpperCase(),
+                          companyName.toUpperCase(),
                           style: GoogleFonts.outfit(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -455,7 +455,7 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
     String role,
     String phone,
     String email,
-    WorkspaceProvider ws,
+    String disclaimer,
     String qrUrl,
   ) {
     return Column(
@@ -486,10 +486,11 @@ class _DigitalCorporateCardWidgetState extends State<DigitalCorporateCardWidget>
           ],
         ),
         const SizedBox(height: 12),
-        Text(
-          ws.corporateDisclaimer,
-          style: GoogleFonts.inter(fontSize: 10.5, color: Colors.white70, height: 1.3),
-        ),
+        if (disclaimer.isNotEmpty)
+          Text(
+            disclaimer,
+            style: GoogleFonts.inter(fontSize: 10.5, color: Colors.white70, height: 1.3),
+          ),
         const SizedBox(height: 14),
 
         // Quick Action Buttons

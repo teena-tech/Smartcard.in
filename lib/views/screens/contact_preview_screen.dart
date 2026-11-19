@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/database/sqlite_database.dart';
 import '../../core/database/hive_scan_database.dart';
@@ -33,6 +35,17 @@ class ContactPreviewScreen extends StatefulWidget {
 }
 
 class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
+  bool get _hasScope =>
+      context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+      context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+  ContactViewModel get _cvm => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(contactViewModelProvider)
+      : legacy.Provider.of<ContactViewModel>(context, listen: false);
+
+  ContactProvider get _cp => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(contactProviderRiverpod)
+      : legacy.Provider.of<ContactProvider>(context, listen: false);
   late TextEditingController _nameController;
   late TextEditingController _companyController;
   late TextEditingController _designationController;
@@ -175,11 +188,11 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
 
       // Refresh ContactViewModel so Scans and Smart Card tabs update instantly
       if (mounted) {
-        final cvm = context.read<ContactViewModel>();
+        final cvm = _cvm;
         await cvm.saveScannedContact(updatedContact);
         try {
           if (mounted && savedDeviceId != null) {
-            await context.read<ContactProvider>().syncWithDevice(silent: true);
+            await _cp.syncWithDevice(silent: true);
           }
         } catch (_) {}
       }
@@ -255,8 +268,15 @@ class _ContactPreviewScreenState extends State<ContactPreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ThemeViewModel>();
-    final colors = theme.colors;
+    if (_hasScope) {
+      return Consumer(
+        builder: (context, ref, _) => _buildWithColors(context, ref.watch(themeColorsProvider)),
+      );
+    }
+    return _buildWithColors(context, legacy.Provider.of<ThemeViewModel>(context).colors);
+  }
+
+  Widget _buildWithColors(BuildContext context, AppColors colors) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(

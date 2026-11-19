@@ -2,9 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../core/network/api_exceptions.dart';
-import '../core/services/dio_client.dart';
-import '../data/models/message_model.dart';
-import '../data/repositories/support_repository.dart';
+import '../core/network/dio_client.dart';
+import '../models/message_model.dart';
+import '../repositories/support_repository.dart';
 
 enum SupportState { initial, loading, loaded, error }
 

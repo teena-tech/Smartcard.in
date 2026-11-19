@@ -1,21 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/upload_url_resolver.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/card_viewmodel.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
-import '../../viewmodels/message_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
-import '../../viewmodels/subscription_viewmodel.dart';
-import '../../viewmodels/theme_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../screens/login_screen.dart';
 import '../screens/profile_screen.dart';
-import '../../core/services/dio_client.dart';
+import '../../core/network/dio_client.dart';
 
-class ProfileMenuBottomSheet extends StatefulWidget {
+class ProfileMenuBottomSheet extends ConsumerStatefulWidget {
   const ProfileMenuBottomSheet({super.key});
 
   static Future<void> show(BuildContext context) {
@@ -28,16 +22,17 @@ class ProfileMenuBottomSheet extends StatefulWidget {
   }
 
   @override
-  State<ProfileMenuBottomSheet> createState() => _ProfileMenuBottomSheetState();
+  ConsumerState<ProfileMenuBottomSheet> createState() => _ProfileMenuBottomSheetState();
 }
 
-class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
+class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet> {
   int? _selectedMenuIndex;
 
   void _navigateToTab(BuildContext context, int tabIndex) {
     Navigator.pop(context); // Close bottom sheet
     try {
-      final dashboardVm = context.read<DashboardViewModel>();
+      ref.read(tabIndexProvider.notifier).setIndex(tabIndex);
+      final dashboardVm = ref.read(dashboardViewModelProvider);
       dashboardVm.setIndex(tabIndex);
       // If we are currently pushed into a sub-page, pop back to home tabs
       if (Navigator.canPop(context)) {
@@ -59,7 +54,7 @@ class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
   }
 
   void _showFutureVersionDialog(BuildContext context) {
-    final colors = context.read<ThemeViewModel>().colors;
+    final colors = ref.read(themeViewModelProvider).colors;
     showDialog(
       context: context,
       builder: (dialogCtx) => AlertDialog(
@@ -101,7 +96,7 @@ class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
                 ),
               ),
               child: Text(
-                '⚡ In Active Development',
+                'âš¡ In Active Development',
                 style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -170,11 +165,11 @@ class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final profileViewModel = context.watch<ProfileViewModel>();
-    final authViewModel = context.watch<AuthViewModel>();
-    final cardViewModel = context.watch<CardViewModel>();
-    final subscriptionViewModel = context.watch<SubscriptionViewModel>();
+    final colors = ref.watch(themeViewModelProvider).colors;
+    final profileViewModel = ref.watch(profileViewModelProvider);
+    final authViewModel = ref.watch(authViewModelProvider);
+    final cardViewModel = ref.watch(cardViewModelProvider);
+    final subscriptionViewModel = ref.watch(subscriptionViewModelProvider);
 
     final user = profileViewModel.user ?? authViewModel.currentUser;
     final isPremium = subscriptionViewModel.isPremium;
@@ -213,7 +208,7 @@ class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ── Top Red Profile Header Card ──────────────────────────
+              // â”€â”€ Top Red Profile Header Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
               _buildHeaderBanner(
                 context: context,
                 userId: user?.id,
@@ -225,10 +220,10 @@ class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
                 onProfileTap: () => _openProfileScreen(context),
               ),
 
-              // ── Theme-Aware Inner Menu Container BG ──
+              // â”€â”€ Theme-Aware Inner Menu Container BG â”€â”€
               Builder(
                 builder: (context) {
-                  final themeVm = context.watch<ThemeViewModel>();
+                  final themeVm = ref.watch(themeViewModelProvider);
                   final isDark = themeVm.themeMode != AppThemeMode.light;
                   return Transform.translate(
                     offset: const Offset(0, -14),
@@ -272,7 +267,7 @@ class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
                       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
                       child: Column(
                         children: [
-                          // ── 6 Menu Actions Grid (3 Columns x 2 Rows) ──────────────
+                          // â”€â”€ 6 Menu Actions Grid (3 Columns x 2 Rows) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                           Row(
                             children: [
                               Expanded(
@@ -360,17 +355,17 @@ class _ProfileMenuBottomSheetState extends State<ProfileMenuBottomSheet> {
 
                           const SizedBox(height: 16),
 
-                          // ── Logout Button ────────────────────────────────────────
+                          // â”€â”€ Logout Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                           SizedBox(
                             width: double.infinity,
                             height: 52,
                             child: ElevatedButton(
                               onPressed: () async {
                                 final navigator = Navigator.of(context, rootNavigator: true);
-                                final messageVm = context.read<MessageViewModel>();
-                                final authVm = context.read<AuthViewModel>();
-                                final profileVm = context.read<ProfileViewModel>();
-                                final cardVm = context.read<CardViewModel>();
+                                final messageVm = ref.read(messageViewModelProvider);
+                                final authVm = ref.read(authViewModelProvider);
+                                final profileVm = ref.read(profileViewModelProvider);
+                                final cardVm = ref.read(cardViewModelProvider);
 
                                 Navigator.of(context).pop();
 
@@ -850,7 +845,7 @@ class _MenuActionCardState extends State<_MenuActionCard>
       duration: const Duration(milliseconds: 380),
     );
 
-    // Subtle heartbeat / pulse animation: 1.0 → 1.05 → 0.98 → 1.02 → 1.0
+    // Subtle heartbeat / pulse animation: 1.0 â†’ 1.05 â†’ 0.98 â†’ 1.02 â†’ 1.0
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween<double>(begin: 1.0, end: 1.05)

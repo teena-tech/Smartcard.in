@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/providers/app_riverpod_providers.dart';
+import '../../models/user_model.dart';
 import '../../viewmodels/theme_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/card_viewmodel.dart';
-import '../../models/user_model.dart';
 import 'circular_profile_avatar.dart';
 import 'rotating_profile_avatar_ring.dart';
 import 'smart_cards_logo.dart';
@@ -54,10 +56,39 @@ class MasterAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final profileViewModel = context.watch<ProfileViewModel>();
-    final authViewModel = context.watch<AuthViewModel>();
-    final cardViewModel = context.watch<CardViewModel>();
+    final hasScope = context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+        context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+    if (hasScope) {
+      return Consumer(
+        builder: (context, ref, _) {
+          return _buildAppBarContent(
+            context,
+            colors: ref.watch(themeViewModelProvider).colors,
+            profileViewModel: ref.watch(profileViewModelProvider),
+            authViewModel: ref.watch(authViewModelProvider),
+            cardViewModel: ref.watch(cardViewModelProvider),
+          );
+        },
+      );
+    }
+
+    return _buildAppBarContent(
+      context,
+      colors: legacy.Provider.of<ThemeViewModel>(context).colors,
+      profileViewModel: legacy.Provider.of<ProfileViewModel>(context),
+      authViewModel: legacy.Provider.of<AuthViewModel>(context),
+      cardViewModel: legacy.Provider.of<CardViewModel>(context),
+    );
+  }
+
+  Widget _buildAppBarContent(
+    BuildContext context, {
+    required AppColors colors,
+    required ProfileViewModel profileViewModel,
+    required AuthViewModel authViewModel,
+    required CardViewModel cardViewModel,
+  }) {
     final user = profileViewModel.user ?? authViewModel.currentUser;
     
     // Mandatory Profile Image Waterfall Resolution:

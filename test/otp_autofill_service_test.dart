@@ -1,4 +1,3 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartcard_flutter/core/services/otp_autofill_service.dart';
@@ -8,16 +7,6 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(
-      const MethodChannel('sms_autofill'),
-      (MethodCall methodCall) async {
-        if (methodCall.method == 'unregisterListener') return 'success';
-        if (methodCall.method == 'listenForCode') return null;
-        if (methodCall.method == 'getAppSignature') return '11/FA+9q3Fs';
-        return null;
-      },
-    );
   });
 
   group('OtpAutofillService', () {

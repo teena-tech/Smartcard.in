@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/theme_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../models/scanned_contact_model.dart';
 import '../screens/contact_detail_screen.dart';
 import '../../core/utils/card_expansion_route.dart';
 import 'genie_hero_route.dart';
-import 'package:provider/provider.dart';
 
-class RecentActivityList extends StatelessWidget {
+class RecentActivityList extends ConsumerWidget {
   final List<ScannedContactModel> activities;
 
   const RecentActivityList({
@@ -17,8 +17,8 @@ class RecentActivityList extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeViewModelProvider).colors;
 
     if (activities.isEmpty) {
       return Container(

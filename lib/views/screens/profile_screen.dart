@@ -2,34 +2,21 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show File;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
-import '../../viewmodels/subscription_viewmodel.dart';
-import '../../viewmodels/card_viewmodel.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/message_viewmodel.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
 import '../../models/user_model.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/upload_url_resolver.dart';
-import '../widgets/profile_menu_bottom_sheet.dart';
+import '../widgets/common_drawer.dart';
+import '../widgets/master_bottom_nav.dart';
 import '../widgets/image_cropper_widget.dart';
 import '../widgets/info_card.dart';
 import '../widgets/otp_input_field.dart';
 import '../widgets/delete_confirm_dialog.dart';
-import '../../core/services/otp_autofill_service.dart';
+import '../widgets/rotating_profile_avatar_ring.dart';
 import 'login_screen.dart';
-import '../widgets/profile_hero_rect_dialog.dart';
-import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../../core/utils/international_phone_helper.dart';
-import '../widgets/country_code_dropdown_dialog.dart';
-
-
 
 // ═══════════════════════════════════════════════════════════════
 // Root Screen
@@ -40,6 +27,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const CommonDrawer(currentRoute: 'Dashboard'),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -51,6 +39,7 @@ class ProfileScreen extends StatelessWidget {
         ),
         child: const ResponsiveCenter(child: _ProfileBody()),
       ),
+      bottomNavigationBar: const GlobalBottomNav(),
     );
   }
 }
@@ -75,15 +64,14 @@ class ProfileBody extends StatelessWidget {
   }
 }
 
-class _ProfileBody extends StatefulWidget {
+class _ProfileBody extends ConsumerStatefulWidget {
   const _ProfileBody();
 
   @override
-  State<_ProfileBody> createState() => _ProfileBodyState();
+  ConsumerState<_ProfileBody> createState() => _ProfileBodyState();
 }
 
-class _ProfileBodyState extends State<_ProfileBody> {
-  bool get _isWhatsAppFrozen => false;
+class _ProfileBodyState extends ConsumerState<_ProfileBody> {
   bool    _isInit              = false;
   String? _lastPopulatedUserId;
 
@@ -92,13 +80,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
   late final TextEditingController _lastNameCtrl;
   late final TextEditingController _emailCtrl;
   late final TextEditingController _phoneCtrl;
-  late final TextEditingController _whatsappCtrl;
   late final TextEditingController _dobCtrl;
   late final TextEditingController _professionCtrl;
   String _gender = 'Male';
-  String _countryCode = '+91';
-  String _whatsappCountryCode = '+91';
-  String _preferredOtpMethod = 'phone';
 
   // ── Form controllers (address) ──────────────────────────────
   late final TextEditingController _addressCtrl;
@@ -113,7 +97,6 @@ class _ProfileBodyState extends State<_ProfileBody> {
     _lastNameCtrl  = TextEditingController();
     _emailCtrl     = TextEditingController();
     _phoneCtrl     = TextEditingController();
-    _whatsappCtrl  = TextEditingController();
     _dobCtrl       = TextEditingController();
     _professionCtrl= TextEditingController();
     _addressCtrl   = TextEditingController();
@@ -128,7 +111,6 @@ class _ProfileBodyState extends State<_ProfileBody> {
     _lastNameCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
-    _whatsappCtrl.dispose();
     _dobCtrl.dispose();
     _professionCtrl.dispose();
     _addressCtrl.dispose();
@@ -141,21 +123,17 @@ class _ProfileBodyState extends State<_ProfileBody> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final profileVm = context.read<ProfileViewModel>();
-    final authVm    = context.read<AuthViewModel>();
+    final profileVm = ref.read(profileViewModelProvider);
+    final authVm    = ref.read(authViewModelProvider);
     final currentUserId = authVm.currentUser?.id;
 
     if (!_isInit) {
-      if (currentUserId != null) {
-        final subVm = context.read<SubscriptionViewModel>();
-        if (subVm.subscription == null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
-              subVm.fetchSubscription(currentUserId);
-            }
-          });
-        }
+      final initialUser = profileVm.user ?? authVm.currentUser;
+      if (initialUser != null) {
+        _populate(initialUser);
+        _lastPopulatedUserId = initialUser.id ?? currentUserId;
       }
+
       if (profileVm.user == null &&
           !profileVm.isLoading &&
           currentUserId != null) {
@@ -163,30 +141,30 @@ class _ProfileBodyState extends State<_ProfileBody> {
           if (!context.mounted) return;
           profileVm.loadProfile(currentUserId).then((_) {
             if (!context.mounted) return;
-            _populate(context.read<ProfileViewModel>().user, notify: true);
+            final loaded = ref.read(profileViewModelProvider).user ?? ref.read(authViewModelProvider).currentUser;
+            _populate(loaded);
             _lastPopulatedUserId = currentUserId;
           });
         });
-      } else {
-        _populate(profileVm.user, notify: false);
-        _lastPopulatedUserId = currentUserId;
       }
       _isInit = true;
       return;
     }
 
-    if (profileVm.user != null &&
-        profileVm.user!.id != _lastPopulatedUserId) {
-      _populate(profileVm.user, notify: false);
-      _lastPopulatedUserId = profileVm.user!.id;
+    final activeUser = profileVm.user ?? authVm.currentUser;
+    if (activeUser != null &&
+        activeUser.id != _lastPopulatedUserId) {
+      _populate(activeUser);
+      _lastPopulatedUserId = activeUser.id;
     }
   }
 
-  void _populate(UserModel? u, {bool notify = false}) {
+  void _populate(UserModel? u) {
     if (u == null) return;
     _set(_firstNameCtrl,  u.firstName);
     _set(_lastNameCtrl,   u.lastName);
     _set(_emailCtrl,      u.email);
+    _set(_phoneCtrl,      u.phone);
     _set(_dobCtrl,        u.dateOfBirth);
     _set(_professionCtrl, u.profession);
     _set(_addressCtrl,    u.address);
@@ -196,30 +174,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
     if (u.gender != null && u.gender!.isNotEmpty) {
       _gender = _normaliseGender(u.gender!);
     }
-
-    if (u.countryCode != null && u.countryCode!.isNotEmpty) {
-      _countryCode = u.countryCode!;
-      _set(_phoneCtrl, u.phone);
-    } else if (u.phone != null && u.phone!.isNotEmpty) {
-      final parsed = InternationalPhoneHelper.parseRaw(u.phone!);
-      _countryCode = parsed.countryCode;
-      _phoneCtrl.text = parsed.nationalNumber;
-    }
-
-    if (u.whatsappNumber != null && u.whatsappNumber!.isNotEmpty) {
-      final parsed = InternationalPhoneHelper.parseRaw(u.whatsappNumber!);
-      _whatsappCountryCode = parsed.countryCode;
-      _whatsappCtrl.text = parsed.nationalNumber;
-    } else {
-      _whatsappCtrl.text = '';
-      _whatsappCountryCode = _countryCode;
-    }
-
-    if (u.preferredOtpMethod != null && u.preferredOtpMethod!.isNotEmpty) {
-      _preferredOtpMethod = u.preferredOtpMethod!;
-    }
-
-    if (notify && mounted) setState(() {});
+    if (context.mounted) setState(() {});
   }
 
   void _set(TextEditingController ctrl, String? val) {
@@ -267,7 +222,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
 
       if (!context.mounted) return;
 
-      final userId = context.read<AuthViewModel>().currentUser?.id;
+      final userId = ref.read(authViewModelProvider).currentUser?.id;
       if (userId == null) {
         _showSnack('Not logged in.', error: true);
         return;
@@ -307,18 +262,13 @@ class _ProfileBodyState extends State<_ProfileBody> {
 
   void _showSnack(String msg, {bool error = false}) {
     if (!context.mounted) return;
-    try {
-      final sm = ScaffoldMessenger.maybeOf(context);
-      if (sm == null) return;
-      sm.hideCurrentSnackBar();
-      sm.showSnackBar(SnackBar(
-        content: Text(msg, style: GoogleFonts.inter(color: Colors.white)),
-        backgroundColor: error ? Colors.red.shade600 : Colors.green.shade600,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-      ));
-    } catch (_) {}
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg, style: GoogleFonts.inter(color: Colors.white)),
+      backgroundColor: error ? Colors.red.shade600 : Colors.green.shade600,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.all(16),
+    ));
   }
 
   // ── Image source bottom sheet ────────────────────────────────
@@ -342,34 +292,22 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFF4285F4), Color(0xFF9B72CF), Color(0xFFD96570)],
-                    ).createShader(bounds),
-                    child: const Icon(Icons.auto_awesome_rounded, size: 20, color: Colors.white),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Profile Photo',
-                      style: GoogleFonts.outfit(
-                          fontSize: 17, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                ],
-              ),
+              Text('Change Profile Photo',
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4285F4).withValues(alpha: 0.1),
+                    color: AppColors.primaryRed.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.camera_alt_outlined,
-                      color: Color(0xFF4285F4)),
+                      color: AppColors.primaryRed),
                 ),
                 title: Text('Take Photo',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.camera);
@@ -379,14 +317,14 @@ class _ProfileBodyState extends State<_ProfileBody> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF9B72CF).withValues(alpha: 0.12),
+                    color: AppColors.primaryRed.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.photo_library_outlined,
-                      color: Color(0xFF9B72CF)),
+                      color: AppColors.primaryRed),
                 ),
                 title: Text('Choose from Gallery',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.gallery);
@@ -407,17 +345,17 @@ class _ProfileBodyState extends State<_ProfileBody> {
                         color: Colors.red.shade600)),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final authVm = context.read<AuthViewModel>();
+                  final authVm = ref.read(authViewModelProvider);
                   final userId = authVm.currentUser?.id;
                   if (userId == null) return;
 
-                  final success = await context
-                      .read<ProfileViewModel>()
+                  final success = await ref
+                      .read(profileViewModelProvider)
                       .removeProfileImage(userId);
 
                   if (success && authVm.currentUser != null) {
                     authVm.updateUser(authVm.currentUser!.copyWith(profileImage: ''));
-                    context.read<CardViewModel>().clearProfileImage();
+                    ref.read(cardViewModelProvider).clearProfileImage();
                   }
 
 
@@ -450,11 +388,12 @@ class _ProfileBodyState extends State<_ProfileBody> {
   // ═════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
-    final profileVm = context.watch<ProfileViewModel>();
-    final cardImage = context.select<CardViewModel, String?>((vm) => vm.currentCard?.profileImageName);
-    context.watch<ThemeViewModel>(); // keep dependency without unused variable
+    final profileVm = ref.watch(profileViewModelProvider);
+    final authVm    = ref.watch(authViewModelProvider);
+    final cardImage = ref.watch(cardViewModelProvider.select((vm) => vm.currentCard?.profileImageName));
+    ref.watch(themeViewModelProvider); // keep dependency without unused variable
 
-    final profile   = profileVm.user;
+    final profile   = profileVm.user ?? authVm.currentUser;
     final userImage = profile?.profileImage;
     final imagePath =
         (cardImage != null && cardImage.isNotEmpty) ? cardImage : userImage;
@@ -462,7 +401,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
     final fullName = profile?.displayName.isNotEmpty == true
         ? profile!.displayName
         : '${_firstNameCtrl.text} ${_lastNameCtrl.text}'.trim();
-    final isIndian = _isUserIndian(profile ?? context.read<AuthViewModel>().currentUser);
+
+    final badgeText = profile?.roleName ?? 'SmartCard User';
 
     IconData getGenderIcon(String gender) {
       final g = gender.toLowerCase().trim();
@@ -481,12 +421,12 @@ class _ProfileBodyState extends State<_ProfileBody> {
           child: RefreshIndicator(
             color: AppColors.primaryRed,
             onRefresh: () async {
-              final uid = context.read<AuthViewModel>().currentUser?.id;
-              final pVm = context.read<ProfileViewModel>();
+              final uid = ref.read(authViewModelProvider).currentUser?.id;
+              final pVm = ref.read(profileViewModelProvider);
               if (uid != null) {
                 await pVm.loadProfile(uid);
                 if (context.mounted) {
-                  _populate(pVm.user);
+                  _populate(pVm.user ?? ref.read(authViewModelProvider).currentUser);
                 }
               }
             },
@@ -496,12 +436,12 @@ class _ProfileBodyState extends State<_ProfileBody> {
                 children: [
                   // ── Red header ──────────────────────────────────────
                   _Header(
-                    userId:          context.read<AuthViewModel>().currentUser?.id,
                     fullName:        fullName.isEmpty ? 'Your Name' : fullName,
                     initials:        profile?.initials ?? '?',
                     imagePath:       imagePath,
                     isUploading:     profileVm.isUploadingImage,
                     onCameraTap:     _showImageSourceSheet,
+                    badgeText:       badgeText,
                   ),
 
                   // ── Content below header ─────────────────────────────
@@ -520,89 +460,18 @@ class _ProfileBodyState extends State<_ProfileBody> {
                             padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
                             child: Column(
                               children: [
-                                
-
                                 InfoCard(
                                   title: 'PERSONAL DETAILS',
                                   icon: Icons.person_outline,
-                                  onEdit: () => _showPersonalDetailsDialog(),
+                                  onEdit: _showPersonalDetailsDialog,
                                   rows: [
                                     RowData(Icons.person_outline,       'Full Name',    fullName.isEmpty ? '—' : fullName),
                                     RowData(getGenderIcon(_gender),      'Gender',       _gender),
-                                    RowData(Icons.mail_outline,          'Email Address', _emailCtrl.text.isEmpty ? '—' : _emailCtrl.text),
-                                    RowData(
-                                      Icons.phone_outlined,
-                                      'Phone Number',
-                                      _phoneCtrl.text.isEmpty
-                                          ? (isIndian ? '—' : 'Not provided (Disabled)')
-                                          : '${_countryCode.isNotEmpty ? '$_countryCode ' : ''}${_phoneCtrl.text}',
-                                      trailing: !isIndian
-                                          ? Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[200],
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Icon(Icons.lock_outline_rounded, size: 12, color: Colors.grey[600]),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Read-only',
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 10,
-                                                      color: Colors.grey[700],
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            )
-                                          : null,
-                                      onTap: !isIndian
-                                          ? () => _showInternationalPhoneUnavailableDialog(context)
-                                          : null,
-                                    ),
-                                    RowData(
-                                        Icons.chat,
-                                        'WhatsApp Number',
-                                        _whatsappCtrl.text.isNotEmpty
-                                            ? '${_whatsappCountryCode.isNotEmpty ? '$_whatsappCountryCode ' : ''}${_whatsappCtrl.text}'
-                                            : (isIndian && _phoneCtrl.text.isNotEmpty
-                                                ? '${_countryCode.isNotEmpty ? '$_countryCode ' : ''}${_phoneCtrl.text}'
-                                                : '—'),
-                                        trailing: _whatsappCtrl.text.isNotEmpty
-                                            ? Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFE8F5E9),
-                                                  borderRadius: BorderRadius.circular(6),
-                                                  border: Border.all(
-                                                    color: const Color(0xFF25D366).withValues(alpha: 0.4),
-                                                  ),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(Icons.verified_rounded, size: 13, color: Color(0xFF25D366)),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      'Verified',
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: 10.5,
-                                                        color: const Color(0xFF2E7D32),
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              )
-                                            : null,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
+                                    RowData(Icons.mail_outline,          'Email Address', _emailCtrl.text.isNotEmpty ? _emailCtrl.text : (profile?.email?.isNotEmpty == true ? profile!.email! : '—')),
+                                    RowData(Icons.phone_outlined,        'Phone Number',  _phoneCtrl.text.isNotEmpty ? _phoneCtrl.text : (profile?.phone?.isNotEmpty == true ? profile!.phone! : '—')),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
 
                                 // ── Address card ────────────────────
                                 InfoCard(
@@ -610,17 +479,18 @@ class _ProfileBodyState extends State<_ProfileBody> {
                                   icon: Icons.location_on_outlined,
                                   onEdit: _showAddressDialog,
                                   rows: [
-                                    if (_addressCtrl.text.isNotEmpty)
-                                      RowData(Icons.location_on_outlined, 'Address',  _addressCtrl.text),
-                                    if (_pincodeCtrl.text.isNotEmpty)
-                                      RowData(Icons.pin_drop_outlined,    'Pin Code',  _pincodeCtrl.text),
-                                    if (_districtCtrl.text.isNotEmpty)
-                                      RowData(Icons.map_outlined,         'District',  _districtCtrl.text),
-                                    if (_stateCtrl.text.isNotEmpty)
-                                      RowData(Icons.map_outlined,         'State',     _stateCtrl.text),
+                                    if (_addressCtrl.text.isNotEmpty || profile?.address?.isNotEmpty == true)
+                                      RowData(Icons.location_on_outlined, 'Address',  _addressCtrl.text.isNotEmpty ? _addressCtrl.text : profile!.address!),
+                                    if (_pincodeCtrl.text.isNotEmpty || profile?.pincode?.isNotEmpty == true)
+                                      RowData(Icons.pin_drop_outlined,    'Pin Code',  _pincodeCtrl.text.isNotEmpty ? _pincodeCtrl.text : profile!.pincode!),
+                                    if (_districtCtrl.text.isNotEmpty || profile?.district?.isNotEmpty == true)
+                                      RowData(Icons.map_outlined,         'District',  _districtCtrl.text.isNotEmpty ? _districtCtrl.text : profile!.district!),
+                                    if (_stateCtrl.text.isNotEmpty || profile?.state?.isNotEmpty == true)
+                                      RowData(Icons.map_outlined,         'State',     _stateCtrl.text.isNotEmpty ? _stateCtrl.text : profile!.state!),
                                     // Show placeholder if all empty
                                     if (_addressCtrl.text.isEmpty && _pincodeCtrl.text.isEmpty &&
-                                        _districtCtrl.text.isEmpty && _stateCtrl.text.isEmpty)
+                                        _districtCtrl.text.isEmpty && _stateCtrl.text.isEmpty &&
+                                        (profile?.address?.isEmpty ?? true) && (profile?.pincode?.isEmpty ?? true))
                                       const RowData(Icons.location_on_outlined, 'Address', '—'),
                                   ],
                                 ),
@@ -658,261 +528,17 @@ class _ProfileBodyState extends State<_ProfileBody> {
   }
 
   // ═════════════════════════════════════════════════════════════
-  // COUNTRY DETECTION HELPER
+  // PERSONAL DETAILS DIALOG — direct save, no OTP gate
   // ═════════════════════════════════════════════════════════════
-  bool _isUserIndian(UserModel? u) {
-    if (u?.countryCode != null && u!.countryCode!.trim().isNotEmpty) {
-      final clean = u.countryCode!.trim().replaceAll(RegExp(r'\D'), '');
-      return clean == '91';
-    }
-    if (u?.phone != null && u!.phone!.trim().isNotEmpty) {
-      final parsed = InternationalPhoneHelper.parseRaw(u.phone!.trim());
-      final clean = parsed.countryCode.replaceAll(RegExp(r'\D'), '');
-      return clean == '91';
-    }
-    if (u?.whatsappNumber != null && u!.whatsappNumber!.trim().isNotEmpty) {
-      final parsed = InternationalPhoneHelper.parseRaw(u.whatsappNumber!.trim());
-      final clean = parsed.countryCode.replaceAll(RegExp(r'\D'), '');
-      return clean == '91';
-    }
-    final clean = _countryCode.replaceAll(RegExp(r'\D'), '');
-    return clean == '91' || _countryCode == '+91';
-  }
-
-  // ═════════════════════════════════════════════════════════════
-  // ALERT DIALOG FOR INTERNATIONAL USERS (Main Profile Screen tap)
-  // ═════════════════════════════════════════════════════════════
-  void _showInternationalPhoneUnavailableDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (alertCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 12),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber.shade200),
-              ),
-              child: Icon(Icons.phone_disabled_rounded, color: Colors.amber.shade800, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Phone/SMS Service Unavailable',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E293B),
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'Phone/SMS profile updates are currently available only for Indian users. Please update your WhatsApp number instead.',
-          style: GoogleFonts.inter(
-            fontSize: 13.5,
-            color: Colors.grey[700],
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // When Cancel is selected, close the alert without changing any profile data.
-              Navigator.pop(alertCtx);
-            },
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(alertCtx);
-              _showPersonalDetailsDialog(initialEnableWhatsApp: true);
-            },
-            icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 16, color: Colors.white),
-            label: Text(
-              'Update WhatsApp Number',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF25D366),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════
-  // ALERT DIALOG FOR INTERNATIONAL USERS (Inside Edit Dialog tap)
-  // ═════════════════════════════════════════════════════════════
-  void _showInternationalPhoneAlert({
-    required BuildContext context,
-    required StateSetter setDialogState,
-    required ScrollController scrollController,
-    required FocusNode waFocusNode,
-    VoidCallback? onWhatsAppSectionEnabled,
-  }) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (alertCtx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titlePadding: const EdgeInsets.fromLTRB(22, 22, 22, 12),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber.shade200),
-              ),
-              child: Icon(Icons.phone_disabled_rounded, color: Colors.amber.shade800, size: 22),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Phone/SMS Service Unavailable',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E293B),
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'Phone/SMS profile updates are currently available only for Indian users. Please update your WhatsApp number instead.',
-          style: GoogleFonts.inter(
-            fontSize: 13.5,
-            color: Colors.grey[700],
-            height: 1.45,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              // When Cancel is selected, close the alert without changing any profile data.
-              Navigator.pop(alertCtx);
-            },
-            child: Text(
-              'Cancel',
-              style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              // 1. Close the alert dialog.
-              Navigator.pop(alertCtx);
-
-              // 2. Enable the WhatsApp section or toggle it ON.
-              setDialogState(() {
-                if (onWhatsAppSectionEnabled != null) {
-                  onWhatsAppSectionEnabled();
-                }
-              });
-
-              // 3. Scroll to the WhatsApp number field.
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (scrollController.hasClients) {
-                  scrollController.animateTo(
-                    scrollController.position.maxScrollExtent,
-                    duration: const Duration(milliseconds: 350),
-                    curve: Curves.easeOut,
-                  );
-                }
-                // 4. Allow user to enter or update WhatsApp number.
-                waFocusNode.requestFocus();
-              });
-            },
-            icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 16, color: Colors.white),
-            label: Text(
-              'Update WhatsApp Number',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF25D366),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═════════════════════════════════════════════════════════════
-  // PERSONAL DETAILS DIALOG — with OTP verification
-  // ═════════════════════════════════════════════════════════════
-  void _showPersonalDetailsDialog({bool initialEnableWhatsApp = false}) {
-    final profileVm = context.read<ProfileViewModel>();
-    final authVm    = context.read<AuthViewModel>();
-    final user      = profileVm.user ?? authVm.currentUser;
-    final isIndian  = _isUserIndian(user);
-
+  void _showPersonalDetailsDialog() {
     // Temporary copies so dialog changes don't affect main state until saved
     final fn  = TextEditingController(text: _firstNameCtrl.text);
     final ln  = TextEditingController(text: _lastNameCtrl.text);
     final em  = TextEditingController(text: _emailCtrl.text);
     final ph  = TextEditingController(text: _phoneCtrl.text);
-    final waCtrl = TextEditingController(text: _whatsappCtrl.text);
     final otpCtrl = TextEditingController();
-    final scrollController = ScrollController();
-    final waFocusNode = FocusNode();
-    final GlobalKey waCountryKey = GlobalKey();
-    final GlobalKey waSectionKey = GlobalKey();
-
     String dialogGender = _gender;
     bool showOtpField = false;
-
-    String dialogCountryCode = _countryCode;
-    String dialogWhatsappCountryCode = _whatsappCountryCode;
-    bool dialogIsWhatsApp = _preferredOtpMethod == 'whatsapp' || initialEnableWhatsApp || (!isIndian && _whatsappCtrl.text.isNotEmpty);
-    bool isWhatsAppSectionEnabled = dialogIsWhatsApp || initialEnableWhatsApp;
-
-    // Track verification of WhatsApp number in dialog
-    bool isWhatsAppVerified = _whatsappCtrl.text.trim().isNotEmpty &&
-        waCtrl.text.trim() == _whatsappCtrl.text.trim() &&
-        dialogWhatsappCountryCode == _whatsappCountryCode;
-
-    if (initialEnableWhatsApp) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (scrollController.hasClients) {
-          scrollController.animateTo(
-            scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeOut,
-          );
-        }
-        waFocusNode.requestFocus();
-      });
-    }
 
     showDialog(
       context: context,
@@ -922,9 +548,9 @@ class _ProfileBodyState extends State<_ProfileBody> {
         String? errMsg;
 
         return StatefulBuilder(builder: (ctx, setS) {
-          final pVm    = ctx.read<ProfileViewModel>();
-          final aVm    = ctx.read<AuthViewModel>();
-          final userId = aVm.currentUser?.id ?? '';
+          final profileVm = ref.read(profileViewModelProvider);
+          final authVm    = ref.read(authViewModelProvider);
+          final userId    = authVm.currentUser?.id ?? '';
 
           return Dialog(
             shape: RoundedRectangleBorder(
@@ -936,14 +562,10 @@ class _ProfileBodyState extends State<_ProfileBody> {
                 _DialogHeader(
                   title: 'Personal Details',
                   icon: Icons.person_outline,
-                  onClose: () {
-                    OtpAutofillService().stopListening();
-                    Navigator.pop(ctx);
-                  },
+                  onClose: () => Navigator.pop(ctx),
                 ),
                 Flexible(
                   child: SingleChildScrollView(
-                    controller: scrollController,
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -956,745 +578,10 @@ class _ProfileBodyState extends State<_ProfileBody> {
                         _DField('Email Address', em,
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress),
-                        const SizedBox(height: 12),
-
-                        // ── Phone Number Section ───────────────────────
-                        if (isIndian) ...[
-                          // Indian Users: Keep existing phone editable, locked to +91, with optional WhatsApp toggle
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Phone Number',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Country code locked to +91
-                              InkWell(
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Indian phone numbers are locked to +91.',
-                                        style: GoogleFonts.inter(fontSize: 12.5, color: Colors.white),
-                                      ),
-                                      backgroundColor: const Color(0xFF1E293B),
-                                      duration: const Duration(seconds: 3),
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  height: 50,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(ctx).cardColor,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Theme.of(ctx).colorScheme.outline.withValues(alpha: 0.35),
-                                      width: 1.2,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text('🇮🇳', style: TextStyle(fontSize: 16)),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        '+91',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                          color: Theme.of(ctx).colorScheme.onSurface,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        Icons.lock_outline_rounded,
-                                        size: 14,
-                                        color: Theme.of(ctx).colorScheme.onSurface.withValues(alpha: 0.4),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 50,
-                                  child: TextFormField(
-                                    controller: ph,
-                                    enabled: !saving && !showOtpField,
-                                    keyboardType: TextInputType.phone,
-                                    maxLength: 10,
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.digitsOnly,
-                                      LengthLimitingTextInputFormatter(10),
-                                    ],
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFFDC2626),
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'Enter 10-digit mobile number',
-                                      hintStyle: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                        color: const Color(0xFFDC2626).withValues(alpha: 0.6),
-                                      ),
-                                      counterText: '',
-                                      filled: true,
-                                      fillColor: Theme.of(ctx).cardColor,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(ctx).colorScheme.outline.withValues(alpha: 0.35),
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(
-                                          color: Theme.of(ctx).colorScheme.outline.withValues(alpha: 0.35),
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: const BorderSide(
-                                          color: Color(0xFFDC2626),
-                                          width: 1.6,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-
-
-                          // Optional WhatsApp number field (frozen)
-                          if (_isWhatsAppFrozen) ...[
-                            const SizedBox(height: 14),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const FaIcon(FontAwesomeIcons.whatsapp, size: 14, color: Color(0xFF25D366)),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'WhatsApp Number',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF2E7D32),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (isWhatsAppVerified)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE8F5E9),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: const Color(0xFF25D366).withValues(alpha: 0.5)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(Icons.verified_rounded, size: 12, color: Color(0xFF25D366)),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Verified',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF2E7D32),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.shade50,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: Colors.amber.shade300),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.info_outline, size: 12, color: Colors.amber.shade800),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Verification Required',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.amber.shade900,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                InkWell(
-                                  key: waCountryKey,
-                                  onTap: (!saving && !showOtpField)
-                                      ? () {
-                                          CountryCodeDropdownDialog.show(
-                                            context,
-                                            anchorKey: waCountryKey,
-                                            selectedCode: dialogWhatsappCountryCode,
-                                            isWhatsAppMode: true,
-                                            onSelectCountry: (item) {
-                                              setS(() {
-                                                dialogWhatsappCountryCode = item.code;
-                                                isWhatsAppVerified = (_whatsappCtrl.text.trim().isNotEmpty &&
-                                                    dialogWhatsappCountryCode == _whatsappCountryCode &&
-                                                    waCtrl.text.trim() == _whatsappCtrl.text.trim());
-                                              });
-                                            },
-                                          );
-                                        }
-                                      : null,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    height: 50,
-                                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFE8F5E9),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: const Color(0xFF25D366).withValues(alpha: 0.6),
-                                        width: 1.2,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          InternationalPhoneHelper.findByCode(dialogWhatsappCountryCode).flag,
-                                          style: const TextStyle(fontSize: 16),
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Text(
-                                          dialogWhatsappCountryCode,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w700,
-                                            color: const Color(0xFF2E7D32),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 2),
-                                        const Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          size: 16,
-                                          color: Color(0xFF2E7D32),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 50,
-                                    child: TextFormField(
-                                      controller: waCtrl,
-                                      focusNode: waFocusNode,
-                                      enabled: !saving && !showOtpField,
-                                      keyboardType: TextInputType.phone,
-                                      maxLength: 15,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                        LengthLimitingTextInputFormatter(15),
-                                      ],
-                                      onChanged: (val) {
-                                        setS(() {
-                                          isWhatsAppVerified = (_whatsappCtrl.text.trim().isNotEmpty &&
-                                              dialogWhatsappCountryCode == _whatsappCountryCode &&
-                                              val.trim() == _whatsappCtrl.text.trim());
-                                        });
-                                      },
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF2E7D32),
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: 'Enter WhatsApp number',
-                                        hintStyle: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: const Color(0xFF2E7D32).withValues(alpha: 0.6),
-                                        ),
-                                        counterText: '',
-                                        filled: true,
-                                        fillColor: Theme.of(ctx).cardColor,
-                                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(
-                                            color: isWhatsAppVerified
-                                                ? const Color(0xFF25D366)
-                                                : const Color(0xFFDC2626).withValues(alpha: 0.8),
-                                            width: 1.2,
-                                          ),
-                                        ),
-                                        enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(
-                                            color: isWhatsAppVerified
-                                                ? const Color(0xFF25D366)
-                                                : const Color(0xFFDC2626).withValues(alpha: 0.8),
-                                            width: 1.2,
-                                          ),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                          borderSide: BorderSide(
-                                            color: isWhatsAppVerified ? const Color(0xFF25D366) : const Color(0xFFDC2626),
-                                            width: 1.6,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ] else ...[
-                          // ── International Users Section ───────────────────
-                          // Phone field is strictly read-only/disabled.
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Phone Number',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.grey[700],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[200],
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: Colors.grey[300]!),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.lock_outline_rounded, size: 11, color: Colors.grey[600]),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          'Read-only',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              InkWell(
-                                onTap: () {
-                                  _showInternationalPhoneAlert(
-                                    context: context,
-                                    setDialogState: setS,
-                                    scrollController: scrollController,
-                                    waFocusNode: waFocusNode,
-                                    onWhatsAppSectionEnabled: () {
-                                      isWhatsAppSectionEnabled = true;
-                                      dialogIsWhatsApp = true;
-                                    },
-                                  );
-                                },
-                                borderRadius: BorderRadius.circular(12),
-                                child: Container(
-                                  height: 50,
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.grey[300]!, width: 1.2),
-                                  ),
-                                  child: ph.text.trim().isNotEmpty
-                                      ? Row(
-                                          children: [
-                                            Text(
-                                              InternationalPhoneHelper.findByCode(dialogCountryCode).flag,
-                                              style: const TextStyle(fontSize: 16),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              dialogCountryCode,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w700,
-                                                color: Colors.grey[700],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Text(
-                                                ph.text.trim(),
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Colors.grey[700],
-                                                ),
-                                              ),
-                                            ),
-                                            Icon(Icons.lock_outline_rounded, size: 16, color: Colors.grey[500]),
-                                          ],
-                                        )
-                                      : Row(
-                                          children: [
-                                            Icon(Icons.phone_disabled_outlined, size: 18, color: Colors.grey[500]),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: Text(
-                                                'No phone number added (Disabled)',
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 13,
-                                                  color: Colors.grey[500],
-                                                  fontStyle: FontStyle.italic,
-                                                ),
-                                              ),
-                                            ),
-                                            Icon(Icons.lock_outline_rounded, size: 16, color: Colors.grey[500]),
-                                          ],
-                                        ),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              GestureDetector(
-                                onTap: () {
-                                  _showInternationalPhoneAlert(
-                                    context: context,
-                                    setDialogState: setS,
-                                    scrollController: scrollController,
-                                    waFocusNode: waFocusNode,
-                                    onWhatsAppSectionEnabled: () {
-                                      isWhatsAppSectionEnabled = true;
-                                      dialogIsWhatsApp = true;
-                                    },
-                                  );
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 2),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.info_outline, size: 12, color: Colors.grey[600]),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          'Phone/SMS updates available for Indian users only. Tap to update WhatsApp.',
-                                          style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // International Users: WhatsApp Update Card
-                          const SizedBox(height: 16),
-                          Container(
-                            key: waSectionKey,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0FDF4),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: isWhatsAppVerified
-                                    ? const Color(0xFF25D366).withValues(alpha: 0.6)
-                                    : const Color(0xFFDC2626).withValues(alpha: 0.6),
-                                width: 1.2,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const FaIcon(FontAwesomeIcons.whatsapp, size: 16, color: Color(0xFF25D366)),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'WhatsApp Number',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF1B5E20),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (isWhatsAppVerified)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE8F5E9),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: const Color(0xFF25D366)),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.verified_rounded, size: 13, color: Color(0xFF25D366)),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Verified',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: const Color(0xFF2E7D32),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
-                                    else
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade50,
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: Colors.red.shade300),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.error_outline, size: 13, color: Colors.red.shade700),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Unverified',
-                                              style: GoogleFonts.inter(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.red.shade700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    // Country code selector for WhatsApp
-                                    InkWell(
-                                      key: waCountryKey,
-                                      onTap: (!saving && !showOtpField)
-                                          ? () {
-                                              CountryCodeDropdownDialog.show(
-                                                context,
-                                                anchorKey: waCountryKey,
-                                                selectedCode: dialogWhatsappCountryCode,
-                                                isWhatsAppMode: true,
-                                                onSelectCountry: (item) {
-                                                  setS(() {
-                                                    dialogWhatsappCountryCode = item.code;
-                                                    isWhatsAppVerified = (_whatsappCtrl.text.trim().isNotEmpty &&
-                                                        dialogWhatsappCountryCode == _whatsappCountryCode &&
-                                                        waCtrl.text.trim() == _whatsappCtrl.text.trim());
-                                                  });
-                                                },
-                                              );
-                                            }
-                                          : null,
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Container(
-                                        height: 50,
-                                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: const Color(0xFF25D366).withValues(alpha: 0.6),
-                                            width: 1.2,
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              InternationalPhoneHelper.findByCode(dialogWhatsappCountryCode).flag,
-                                              style: const TextStyle(fontSize: 16),
-                                            ),
-                                            const SizedBox(width: 5),
-                                            Text(
-                                              dialogWhatsappCountryCode,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w700,
-                                                color: const Color(0xFF2E7D32),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 2),
-                                            const Icon(
-                                              Icons.keyboard_arrow_down_rounded,
-                                              size: 16,
-                                              color: Color(0xFF2E7D32),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: SizedBox(
-                                        height: 50,
-                                        child: TextFormField(
-                                          controller: waCtrl,
-                                          focusNode: waFocusNode,
-                                          enabled: !saving && !showOtpField,
-                                          keyboardType: TextInputType.phone,
-                                          maxLength: 15,
-                                          inputFormatters: [
-                                            FilteringTextInputFormatter.digitsOnly,
-                                            LengthLimitingTextInputFormatter(15),
-                                          ],
-                                          onChanged: (val) {
-                                            setS(() {
-                                              isWhatsAppVerified = (_whatsappCtrl.text.trim().isNotEmpty &&
-                                                  dialogWhatsappCountryCode == _whatsappCountryCode &&
-                                                  val.trim() == _whatsappCtrl.text.trim());
-                                            });
-                                          },
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF2E7D32),
-                                          ),
-                                          decoration: InputDecoration(
-                                            hintText: 'Enter WhatsApp number',
-                                            hintStyle: GoogleFonts.inter(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              color: const Color(0xFF2E7D32).withValues(alpha: 0.6),
-                                            ),
-                                            counterText: '',
-                                            filled: true,
-                                            fillColor: Colors.white,
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                            border: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: isWhatsAppVerified
-                                                    ? const Color(0xFF25D366)
-                                                    : const Color(0xFFDC2626),
-                                                width: 1.2,
-                                              ),
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: isWhatsAppVerified
-                                                    ? const Color(0xFF25D366)
-                                                    : const Color(0xFFDC2626),
-                                                width: 1.2,
-                                              ),
-                                            ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(12),
-                                              borderSide: BorderSide(
-                                                color: isWhatsAppVerified
-                                                    ? const Color(0xFF25D366)
-                                                    : const Color(0xFFDC2626),
-                                                width: 1.6,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
-                                if (!isWhatsAppVerified) ...[
-                                  Row(
-                                    children: [
-                                      Icon(Icons.info_outline, size: 12, color: Colors.red.shade700),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          waCtrl.text.trim().isEmpty
-                                              ? 'Please enter your WhatsApp number.'
-                                              : 'Unverified: WhatsApp OTP verification required before saving.',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 11,
-                                            color: Colors.red.shade700,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ] else ...[
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF25D366)),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Verified WhatsApp number for notifications & OTP',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 11,
-                                          color: const Color(0xFF2E7D32),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 16),
+                        _DField('Phone Number', ph,
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone),
+                        const SizedBox(height: 4),
                         Text('Gender',
                             style: GoogleFonts.inter(
                                 fontSize: 12,
@@ -1728,15 +615,12 @@ class _ProfileBodyState extends State<_ProfileBody> {
                         // ── Save Changes / OTP verification UI ─────────────────
                         if (showOtpField) ...[
                           const SizedBox(height: 16),
-                          Center(
-                            child: Text(
-                              'Enter the 6-digit verification code sent to your ${dialogIsWhatsApp ? "WhatsApp" : "phone"}',
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[700],
-                              ),
+                          Text(
+                            'Enter the 6-digit OTP sent to your phone to verify changes',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: Colors.grey[600],
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -1744,180 +628,50 @@ class _ProfileBodyState extends State<_ProfileBody> {
                             controller: otpCtrl,
                             length: 6,
                             onCompleted: (code) async {
-                              if (saving) return;
                               setS(() { saving = true; errMsg = null; });
-                              final verified = await pVm.verifyProfileOtp(userId, code);
+                              final verified = await profileVm.verifyProfileOtp(userId, code);
                               if (!ctx.mounted) return;
                               if (verified) {
-                                OtpAutofillService().stopListening();
-                                OtpAutofillService().markAutofillInitialized();
-
-                                if (isIndian) {
-                                  final effectiveWa = isWhatsAppSectionEnabled
-                                      ? (waCtrl.text.trim().isNotEmpty
-                                          ? InternationalPhoneHelper.formatForBackend(
-                                              phone: waCtrl.text.trim(),
-                                              countryCode: dialogWhatsappCountryCode,
-                                            )
-                                          : InternationalPhoneHelper.formatForBackend(
-                                              phone: ph.text.trim(),
-                                              countryCode: dialogCountryCode,
-                                            ))
-                                      : (waCtrl.text.trim().isNotEmpty
-                                          ? waCtrl.text.trim()
-                                          : null);
-
-                                  final updated = await pVm.updateProfile(userId, {
-                                    'first_name': fn.text.trim(),
-                                    'last_name': ln.text.trim(),
-                                    'email': em.text.trim(),
-                                    'phone': InternationalPhoneHelper.formatForBackend(
-                                      phone: ph.text.trim(),
-                                      countryCode: dialogCountryCode,
-                                    ),
-                                    'full_phone': InternationalPhoneHelper.toE164(
-                                      phone: ph.text.trim(),
-                                      countryCode: dialogCountryCode,
-                                    ),
-                                    'country_code': dialogCountryCode,
-                                    'whatsapp_number': effectiveWa,
-                                    'preferred_otp_method': dialogIsWhatsApp ? 'whatsapp' : 'phone',
-                                    'delivery_method': dialogIsWhatsApp ? 'whatsapp' : 'phone',
-                                    'gender': dialogGender,
+                                final updated = await profileVm.updateProfile(userId, {
+                                  'first_name':    fn.text.trim(),
+                                  'last_name':     ln.text.trim(),
+                                  'email':         em.text.trim(),
+                                  'phone':         ph.text.trim(),
+                                  'gender':        dialogGender,
+                                });
+                                if (!ctx.mounted) return;
+                                setS(() => saving = false);
+                                if (updated) {
+                                  if (context.mounted) {
+                                    setState(() {
+                                      _firstNameCtrl.text  = fn.text;
+                                      _lastNameCtrl.text   = ln.text;
+                                      _emailCtrl.text      = em.text;
+                                      _phoneCtrl.text      = ph.text;
+                                      _gender              = dialogGender;
+                                    });
+                                  }
+                                  profileVm.loadProfile(userId).then((_) {
+                                    if (context.mounted) _populate(profileVm.user);
                                   });
-                                  if (!ctx.mounted) return;
-                                  setS(() => saving = false);
-                                  if (updated) {
-                                    if (ctx.mounted) Navigator.pop(ctx);
-                                    if (mounted) {
-                                      setState(() {
-                                        _firstNameCtrl.text = fn.text;
-                                        _lastNameCtrl.text = ln.text;
-                                        _emailCtrl.text = em.text;
-                                        _phoneCtrl.text = ph.text;
-                                        _whatsappCtrl.text = waCtrl.text;
-                                        _countryCode = dialogCountryCode;
-                                        _whatsappCountryCode = dialogWhatsappCountryCode;
-                                        _preferredOtpMethod = dialogIsWhatsApp ? 'whatsapp' : 'phone';
-                                        _gender = dialogGender;
-                                        _lastPopulatedUserId = userId;
-                                      });
-                                      _showSnack('Personal details updated!');
-                                    }
-                                  } else {
-                                    setS(() {
-                                      errMsg = pVm.errorMessage ?? 'Update failed. Please try again.';
-                                    });
-                                  }
+                                  if (ctx.mounted) Navigator.pop(ctx);
+                                  if (context.mounted) _showSnack('Personal details updated!');
                                 } else {
-                                  // International User: Preserve existing phone number data. Do not submit phone-number update requests.
-                                  final updateData = <String, dynamic>{
-                                    'first_name': fn.text.trim(),
-                                    'last_name': ln.text.trim(),
-                                    'email': em.text.trim(),
-                                    'whatsapp_number': InternationalPhoneHelper.formatForBackend(
-                                      phone: waCtrl.text.trim(),
-                                      countryCode: dialogWhatsappCountryCode,
-                                    ),
-                                    'preferred_otp_method': 'whatsapp',
-                                    'delivery_method': 'whatsapp',
-                                    'gender': dialogGender,
-                                  };
-                                  if (pVm.user?.phone != null && pVm.user!.phone!.isNotEmpty) {
-                                    updateData['phone'] = pVm.user!.phone!;
-                                  }
-                                  if (pVm.user?.countryCode != null && pVm.user!.countryCode!.isNotEmpty) {
-                                    updateData['country_code'] = pVm.user!.countryCode!;
-                                  }
-
-                                  final updated = await pVm.updateProfile(userId, updateData);
-                                  if (!ctx.mounted) return;
-                                  setS(() => saving = false);
-                                  if (updated) {
-                                    if (ctx.mounted) Navigator.pop(ctx);
-                                    if (mounted) {
-                                      setState(() {
-                                        _firstNameCtrl.text = fn.text;
-                                        _lastNameCtrl.text = ln.text;
-                                        _emailCtrl.text = em.text;
-                                        _whatsappCtrl.text = waCtrl.text;
-                                        _whatsappCountryCode = dialogWhatsappCountryCode;
-                                        _preferredOtpMethod = 'whatsapp';
-                                        _gender = dialogGender;
-                                        _lastPopulatedUserId = userId;
-                                      });
-                                      _showSnack('WhatsApp number verified and profile updated successfully!');
-                                    }
-                                  } else {
-                                    setS(() {
-                                      errMsg = pVm.errorMessage ?? 'Update failed. Please try again.';
-                                    });
-                                  }
+                                  setS(() {
+                                    errMsg = profileVm.errorMessage ?? 'Update failed. Please try again.';
+                                  });
                                 }
                               } else {
                                 setS(() {
                                   saving = false;
-                                  errMsg = pVm.errorMessage ?? 'OTP verification failed. Please try again.';
+                                  errMsg = profileVm.errorMessage ?? 'OTP verification failed. Please try again.';
                                 });
                               }
                             },
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Didn't receive the code? ",
-                                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
-                              ),
-                              TextButton(
-                                onPressed: saving
-                                    ? null
-                                    : () async {
-                                        setS(() { saving = true; errMsg = null; });
-                                        final channel = isIndian ? (dialogIsWhatsApp ? 'whatsapp' : 'phone') : 'whatsapp';
-                                        final targetPhone = isIndian ? ph.text.trim() : waCtrl.text.trim();
-                                        final targetWa = isIndian
-                                            ? ((dialogIsWhatsApp && waCtrl.text.trim().isNotEmpty) ? waCtrl.text.trim() : null)
-                                            : waCtrl.text.trim();
-                                        final targetCountry = isIndian ? dialogCountryCode : dialogWhatsappCountryCode;
-
-                                        final resendOk = await pVm.sendProfileOtp(
-                                          userId,
-                                          targetPhone,
-                                          channel: channel,
-                                          countryCode: targetCountry,
-                                          whatsappNumber: targetWa,
-                                        );
-                                        if (!ctx.mounted) return;
-                                        setS(() => saving = false);
-                                        if (resendOk) {
-                                          if (context.mounted) {
-                                            _showSnack('OTP resent via ${channel == "whatsapp" ? "WhatsApp" : "SMS"}!');
-                                          }
-                                        } else {
-                                          setS(() {
-                                            errMsg = pVm.errorMessage ?? 'Failed to resend OTP.';
-                                          });
-                                        }
-                                      },
-                                child: Text(
-                                  'Resend OTP',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: (isIndian && !dialogIsWhatsApp)
-                                        ? const Color(0xFFDC2626)
-                                        : const Color(0xFF25D366),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 16),
                           TextButton(
                             onPressed: () {
-                              OtpAutofillService().stopListening();
                               setS(() {
                                 showOtpField = false;
                                 otpCtrl.clear();
@@ -1942,263 +696,54 @@ class _ProfileBodyState extends State<_ProfileBody> {
                                         style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                                     onPressed: () async {
                                       setS(() { saving = true; errMsg = null; });
+                                      final nameOrPhoneChanged =
+                                          fn.text.trim() != (_firstNameCtrl.text) ||
+                                          ln.text.trim() != (_lastNameCtrl.text) ||
+                                          ph.text.trim() != (_phoneCtrl.text);
 
-                                      if (isIndian) {
-                                        // 1. Validate Indian phone number
-                                        final phoneErr = InternationalPhoneHelper.validatePhoneNumber(
-                                          phone: ph.text.trim(),
-                                          countryCode: dialogCountryCode,
-                                          isWhatsApp: false,
-                                          fieldName: 'Phone number',
-                                        );
-                                        if (phoneErr != null) {
+                                      if (nameOrPhoneChanged) {
+                                        final requested = await profileVm.sendProfileOtp(userId, ph.text.trim());
+                                        if (!ctx.mounted) return;
+                                        setS(() => saving = false);
+                                        if (requested) {
                                           setS(() {
-                                            saving = false;
-                                            errMsg = phoneErr;
+                                            showOtpField = true;
+                                            otpCtrl.clear();
                                           });
-                                          return;
-                                        }
-
-                                        // 2. Validate WhatsApp number if separate entered
-                                        if (isWhatsAppSectionEnabled && waCtrl.text.trim().isNotEmpty) {
-                                          final waErr = InternationalPhoneHelper.validatePhoneNumber(
-                                            phone: waCtrl.text.trim(),
-                                            countryCode: dialogWhatsappCountryCode,
-                                            isWhatsApp: true,
-                                            fieldName: 'WhatsApp number',
-                                          );
-                                          if (waErr != null) {
-                                            setS(() {
-                                              saving = false;
-                                              errMsg = waErr;
-                                            });
-                                            return;
-                                          }
-                                        }
-
-                                        final phoneChanged =
-                                            ph.text.trim() != _phoneCtrl.text.trim() ||
-                                            dialogCountryCode != _countryCode;
-                                        final waChanged = isWhatsAppSectionEnabled &&
-                                            (waCtrl.text.trim() != _whatsappCtrl.text.trim() ||
-                                             dialogWhatsappCountryCode != _whatsappCountryCode);
-                                        final methodChanged =
-                                            (dialogIsWhatsApp ? 'whatsapp' : 'phone') != _preferredOtpMethod;
-
-                                        final requiresOtp = phoneChanged || waChanged || methodChanged;
-
-                                        if (requiresOtp) {
-                                          final channel = dialogIsWhatsApp ? 'whatsapp' : 'phone';
-                                          final targetWa = (dialogIsWhatsApp && waCtrl.text.trim().isNotEmpty)
-                                              ? waCtrl.text.trim()
-                                              : null;
-
-                                          final requested = await pVm.sendProfileOtp(
-                                            userId,
-                                            ph.text.trim(),
-                                            channel: channel,
-                                            countryCode: dialogCountryCode,
-                                            whatsappNumber: targetWa,
-                                          );
-                                          if (!ctx.mounted) return;
-                                          setS(() => saving = false);
-                                          if (requested) {
-                                            setS(() {
-                                              showOtpField = true;
-                                              otpCtrl.clear();
-                                            });
-                                            OtpAutofillService().startListening(
-                                              onCodeReceived: (code) {
-                                                if (!ctx.mounted) return;
-                                                otpCtrl.text = code;
-                                                OtpAutofillService().markAutofillInitialized();
-                                              },
-                                            );
-                                          } else {
-                                            setS(() {
-                                              errMsg = pVm.errorMessage ?? 'Failed to send OTP. Try again.';
-                                            });
-                                          }
                                         } else {
-                                          final effectiveWa = isWhatsAppSectionEnabled
-                                              ? (waCtrl.text.trim().isNotEmpty
-                                                  ? InternationalPhoneHelper.formatForBackend(
-                                                      phone: waCtrl.text.trim(),
-                                                      countryCode: dialogWhatsappCountryCode,
-                                                    )
-                                                  : InternationalPhoneHelper.formatForBackend(
-                                                      phone: ph.text.trim(),
-                                                      countryCode: dialogCountryCode,
-                                                    ))
-                                              : (waCtrl.text.trim().isNotEmpty
-                                                  ? waCtrl.text.trim()
-                                                  : null);
-
-                                          final updated = await pVm.updateProfile(userId, {
-                                            'first_name': fn.text.trim(),
-                                            'last_name': ln.text.trim(),
-                                            'email': em.text.trim(),
-                                            'phone': InternationalPhoneHelper.formatForBackend(
-                                              phone: ph.text.trim(),
-                                              countryCode: dialogCountryCode,
-                                            ),
-                                            'full_phone': InternationalPhoneHelper.toE164(
-                                              phone: ph.text.trim(),
-                                              countryCode: dialogCountryCode,
-                                            ),
-                                            'country_code': dialogCountryCode,
-                                            'whatsapp_number': effectiveWa,
-                                            'preferred_otp_method': dialogIsWhatsApp ? 'whatsapp' : 'phone',
-                                            'delivery_method': dialogIsWhatsApp ? 'whatsapp' : 'phone',
-                                            'gender': dialogGender,
+                                          setS(() {
+                                            errMsg = profileVm.errorMessage ?? 'Failed to send OTP. Try again.';
                                           });
-                                          if (!ctx.mounted) return;
-                                          setS(() => saving = false);
-                                          if (updated) {
-                                            if (ctx.mounted) Navigator.pop(ctx);
-                                            if (mounted) {
-                                              setState(() {
-                                                _firstNameCtrl.text = fn.text;
-                                                _lastNameCtrl.text = ln.text;
-                                                _emailCtrl.text = em.text;
-                                                _phoneCtrl.text = ph.text;
-                                                _whatsappCtrl.text = waCtrl.text;
-                                                _countryCode = dialogCountryCode;
-                                                _whatsappCountryCode = dialogWhatsappCountryCode;
-                                                _preferredOtpMethod = dialogIsWhatsApp ? 'whatsapp' : 'phone';
-                                                _gender = dialogGender;
-                                                _lastPopulatedUserId = userId;
-                                              });
-                                              _showSnack('Personal details updated!');
-                                            }
-                                          } else {
-                                            setS(() {
-                                              errMsg = pVm.errorMessage ?? 'Update failed. Please try again.';
-                                            });
-                                          }
                                         }
                                       } else {
-                                        // ── International User Save ─────────────────────
-                                        // Validate WhatsApp format if entered
-                                        if (waCtrl.text.trim().isNotEmpty) {
-                                          final waErr = InternationalPhoneHelper.validatePhoneNumber(
-                                            phone: waCtrl.text.trim(),
-                                            countryCode: dialogWhatsappCountryCode,
-                                            isWhatsApp: true,
-                                            fieldName: 'WhatsApp number',
-                                          );
-                                          if (waErr != null) {
-                                            setS(() {
-                                              saving = false;
-                                              errMsg = waErr;
-                                            });
-                                            return;
-                                          }
-                                        }
-
-                                        final waChanged =
-                                            waCtrl.text.trim() != _whatsappCtrl.text.trim() ||
-                                            dialogWhatsappCountryCode != _whatsappCountryCode;
-                                        final nameChanged =
-                                            fn.text.trim() != _firstNameCtrl.text.trim() ||
-                                            ln.text.trim() != _lastNameCtrl.text.trim();
-
-                                        // Require successful OTP verification before marking a changed WhatsApp number as verified
-                                        if (waChanged && waCtrl.text.trim().isNotEmpty) {
-                                          final requested = await pVm.sendProfileOtp(
-                                            userId,
-                                            waCtrl.text.trim(),
-                                            channel: 'whatsapp',
-                                            countryCode: dialogWhatsappCountryCode,
-                                            whatsappNumber: waCtrl.text.trim(),
-                                          );
-                                          if (!ctx.mounted) return;
-                                          setS(() => saving = false);
-                                          if (requested) {
-                                            setS(() {
-                                              showOtpField = true;
-                                              otpCtrl.clear();
-                                            });
-                                            OtpAutofillService().startListening(
-                                              onCodeReceived: (code) {
-                                                if (!ctx.mounted) return;
-                                                otpCtrl.text = code;
-                                                OtpAutofillService().markAutofillInitialized();
-                                              },
-                                            );
-                                          } else {
-                                            setS(() {
-                                              errMsg = pVm.errorMessage ?? 'Failed to send WhatsApp verification code. Try again.';
+                                        final updated = await profileVm.updateProfile(userId, {
+                                          'first_name':    fn.text.trim(),
+                                          'last_name':     ln.text.trim(),
+                                          'email':         em.text.trim(),
+                                          'phone':         ph.text.trim(),
+                                          'gender':        dialogGender,
+                                        });
+                                        if (!ctx.mounted) return;
+                                        setS(() => saving = false);
+                                        if (updated) {
+                                          if (context.mounted) {
+                                            setState(() {
+                                              _firstNameCtrl.text  = fn.text;
+                                              _lastNameCtrl.text   = ln.text;
+                                              _emailCtrl.text      = em.text;
+                                              _phoneCtrl.text      = ph.text;
+                                              _gender              = dialogGender;
                                             });
                                           }
-                                          return;
-                                        } else if (nameChanged && waCtrl.text.trim().isNotEmpty) {
-                                          final requested = await pVm.sendProfileOtp(
-                                            userId,
-                                            waCtrl.text.trim(),
-                                            channel: 'whatsapp',
-                                            countryCode: dialogWhatsappCountryCode,
-                                            whatsappNumber: waCtrl.text.trim(),
-                                          );
-                                          if (!ctx.mounted) return;
-                                          setS(() => saving = false);
-                                          if (requested) {
-                                            setS(() {
-                                              showOtpField = true;
-                                              otpCtrl.clear();
-                                            });
-                                          } else {
-                                            setS(() {
-                                              errMsg = pVm.errorMessage ?? 'Failed to send WhatsApp OTP.';
-                                            });
-                                          }
-                                          return;
+                                          profileVm.loadProfile(userId).then((_) {
+                                            if (context.mounted) _populate(profileVm.user);
+                                          });
+                                          if (ctx.mounted) Navigator.pop(ctx);
+                                          if (context.mounted) _showSnack('Personal details updated!');
                                         } else {
-                                          // Direct update: Do not submit phone-number update requests. Preserve existing phone-number data.
-                                          final updateData = <String, dynamic>{
-                                            'first_name': fn.text.trim(),
-                                            'last_name': ln.text.trim(),
-                                            'email': em.text.trim(),
-                                            'gender': dialogGender,
-                                          };
-                                          if (waCtrl.text.trim().isNotEmpty) {
-                                            updateData['whatsapp_number'] = InternationalPhoneHelper.formatForBackend(
-                                              phone: waCtrl.text.trim(),
-                                              countryCode: dialogWhatsappCountryCode,
-                                            );
-                                            updateData['preferred_otp_method'] = 'whatsapp';
-                                            updateData['delivery_method'] = 'whatsapp';
-                                          }
-                                          if (pVm.user?.phone != null && pVm.user!.phone!.isNotEmpty) {
-                                            updateData['phone'] = pVm.user!.phone!;
-                                          }
-                                          if (pVm.user?.countryCode != null && pVm.user!.countryCode!.isNotEmpty) {
-                                            updateData['country_code'] = pVm.user!.countryCode!;
-                                          }
-
-                                          final updated = await pVm.updateProfile(userId, updateData);
-                                          if (!ctx.mounted) return;
-                                          setS(() => saving = false);
-                                          if (updated) {
-                                            if (ctx.mounted) Navigator.pop(ctx);
-                                            if (mounted) {
-                                              setState(() {
-                                                _firstNameCtrl.text = fn.text;
-                                                _lastNameCtrl.text = ln.text;
-                                                _emailCtrl.text = em.text;
-                                                _whatsappCtrl.text = waCtrl.text;
-                                                _whatsappCountryCode = dialogWhatsappCountryCode;
-                                                _preferredOtpMethod = 'whatsapp';
-                                                _gender = dialogGender;
-                                                _lastPopulatedUserId = userId;
-                                              });
-                                              _showSnack('Personal details updated!');
-                                            }
-                                          } else {
-                                            setS(() {
-                                              errMsg = pVm.errorMessage ?? 'Update failed. Please try again.';
-                                            });
-                                          }
+                                          setS(() {
+                                            errMsg = profileVm.errorMessage ?? 'Update failed. Please try again.';
+                                          });
                                         }
                                       }
                                     },
@@ -2214,19 +759,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
           );
         });
       },
-    ).whenComplete(() {
-      OtpAutofillService().stopListening();
-      Future.delayed(const Duration(milliseconds: 600), () {
-        try { scrollController.dispose(); } catch (_) {}
-        try { waFocusNode.dispose(); } catch (_) {}
-        try { fn.dispose(); } catch (_) {}
-        try { ln.dispose(); } catch (_) {}
-        try { em.dispose(); } catch (_) {}
-        try { ph.dispose(); } catch (_) {}
-        try { waCtrl.dispose(); } catch (_) {}
-        try { otpCtrl.dispose(); } catch (_) {}
-      });
-    });
+    );
   }
 
   void _showAddressDialog() {
@@ -2247,7 +780,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
     if (pin.text.trim().length == 6) {
       Future.delayed(const Duration(milliseconds: 300), () async {
         try {
-          final authViewModel = context.read<AuthViewModel>();
+          final authViewModel = ref.read(authViewModelProvider);
           final response = await authViewModel.fetchPincodeDetails(pin.text.trim());
           if (response != null && response['success'] == true) {
             final data = response['data'];
@@ -2312,7 +845,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
                                 selectedOffice = null;
                               });
                               try {
-                                final authViewModel = ctx.read<AuthViewModel>();
+                                final authViewModel = ref.read(authViewModelProvider);
                                 final response = await authViewModel.fetchPincodeDetails(val);
                                 if (!ctx.mounted) return;
                                 if (response != null && response['success'] == true) {
@@ -2427,8 +960,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
                                         fontWeight:
                                             FontWeight.bold)),
                                 onPressed: () async {
-                                  final uid = ctx.read<AuthViewModel>().currentUser?.id;
-                                  final addrVm = ctx.read<ProfileViewModel>();
+                                  final uid = ref.read(authViewModelProvider).currentUser?.id;
+                                  final addrVm = ref.read(profileViewModelProvider);
                                   if (uid == null) return;
                                   setS(() {
                                     saving = true;
@@ -2455,21 +988,23 @@ class _ProfileBodyState extends State<_ProfileBody> {
                                   if (!ctx.mounted) return;
                                   setS(() => saving = false);
                                   if (ok) {
-                                    if (ctx.mounted) {
-                                      Navigator.pop(ctx);
-                                    }
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       setState(() {
-                                        _addressCtrl.text = finalAddress;
-                                        _pincodeCtrl.text = pin.text;
-                                        _districtCtrl.text = dist.text;
-                                        _stateCtrl.text = st.text;
+                                        _addressCtrl.text =
+                                            finalAddress;
+                                        _pincodeCtrl.text =
+                                            pin.text;
+                                        _districtCtrl.text =
+                                            dist.text;
+                                        _stateCtrl.text =
+                                            st.text;
                                       });
-                                      _showSnack('Address updated successfully!');
                                     }
-                                  } else {
-                                     setS(() => errMsg = ctx
-                                            .read<ProfileViewModel>()
+                                     if (ctx.mounted) {
+                                       Navigator.pop(ctx);
+                                     }
+                                   } else {
+                                     setS(() => errMsg = ref.read(profileViewModelProvider)
                                             .errorMessage ??
                                         'Save failed. Try again.');
                                    }
@@ -2521,8 +1056,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
     );
 
     if (confirmed == true && context.mounted) {
-      final authVm = context.read<AuthViewModel>();
-      final profileVm = context.read<ProfileViewModel>();
+      final authVm = ref.read(authViewModelProvider);
+      final profileVm = ref.read(profileViewModelProvider);
       final userId = (authVm.currentUser?.id?.isNotEmpty == true)
           ? authVm.currentUser!.id!
           : (profileVm.user?.id?.isNotEmpty == true ? profileVm.user!.id! : '');
@@ -2545,22 +1080,21 @@ class _ProfileBodyState extends State<_ProfileBody> {
       if (success) {
         if (context.mounted) {
           try {
-            context.read<MessageViewModel>().stopPolling();
+            ref.read(messageViewModelProvider).stopPolling();
           } catch (_) {}
-
-          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-            (route) => false,
-          );
-
           try {
-            profileVm.clearUser();
+            ref.read(profileViewModelProvider).clearUser();
           } catch (_) {}
 
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Account deleted successfully.', style: GoogleFonts.inter(color: Colors.white)),
             backgroundColor: Colors.green.shade600,
           ));
+
+          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+          );
         }
       } else {
         if (context.mounted) {
@@ -2606,16 +1140,8 @@ class _StickyTopBar extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white, size: 18),
-                  onPressed: () {
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    } else {
-                      try {
-                        context.read<DashboardViewModel>().setIndex(0);
-                      } catch (_) {}
-                    }
-                  },
+                  icon: const Icon(Icons.menu, color: Colors.white, size: 18),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
                 ),
               ),
               Text(
@@ -2626,23 +1152,19 @@ class _StickyTopBar extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              GestureDetector(
-                onTap: () => ProfileMenuBottomSheet.show(context),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: (imagePath != null && imagePath!.isNotEmpty)
-                    ? CachedNetworkImage(
-                        imageUrl: UploadUrlResolver.resolve(imagePath!, type: 'profile'),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: (imagePath != null && imagePath!.isNotEmpty)
+                    ? Image.network(
+                        UploadUrlResolver.resolve(imagePath!, type: 'profile'),
                         fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high,
-                        placeholder: (_, _) => Container(color: Colors.white24),
-                        errorWidget: (_, _, _) => Center(
+                        errorBuilder: (_, _, _) => Center(
                           child: Text(
                             initials.isEmpty ? 'U' : initials,
                             style: GoogleFonts.inter(
@@ -2663,7 +1185,6 @@ class _StickyTopBar extends StatelessWidget {
                           ),
                         ),
                       ),
-                ),
               ),
             ],
           ),
@@ -2674,20 +1195,20 @@ class _StickyTopBar extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  final String? userId;
   final String fullName;
   final String initials;
   final String? imagePath;
   final bool isUploading;
   final VoidCallback onCameraTap;
+  final String badgeText;
 
   const _Header({
-    this.userId,
     required this.fullName,
     required this.initials,
     required this.imagePath,
     required this.isUploading,
     required this.onCameraTap,
+    this.badgeText = 'Free User',
   });
 
   @override
@@ -2706,110 +1227,35 @@ class _Header extends StatelessWidget {
         children: [
           const SizedBox(height: 8),
 
-            // Rectangular Profile Avatar with Hero Animation matching bottom sheet
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    if (imagePath != null && imagePath!.isNotEmpty) {
-                      ProfileHeroRectDialog.show(
-                        context,
-                        imageUrl: imagePath!,
-                        heroTag: 'profile_hero_avatar_${userId ?? 'current'}',
-                        fullName: fullName,
-                        initials: initials,
-                      );
-                    } else {
-                      onCameraTap();
-                    }
-                  },
-                  child: Container(
-                    width: 84,
-                    height: 84,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 3.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Hero(
-                      tag: 'profile_hero_avatar_${userId ?? 'current'}',
-                      createRectTween: (begin, end) => ProfileHeroArcTween(begin: begin, end: end),
-                      flightShuttleBuilder: profileHeroFlightShuttleBuilder,
-                      child: ClipOval(
-                        child: isUploading
-                            ? Container(
-                                color: Colors.white,
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primaryRed,
-                                    strokeWidth: 2.5,
-                                  ),
-                                ),
+            // Circular Avatar with Rotating Ring
+            GestureDetector(
+              onTap: onCameraTap,
+              child: Stack(
+                children: [
+                  RotatingProfileAvatarRing(
+                    size: 90,
+                    borderWidth: 3.5,
+                    child: isUploading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                                color: AppColors.primaryRed,
+                                strokeWidth: 2.5))
+                        : (imagePath != null && imagePath!.isNotEmpty)
+                            ? Image.network(
+                                UploadUrlResolver.resolve(imagePath!, type: 'profile'),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    _Initials(initials: initials),
                               )
-                            : (imagePath != null && imagePath!.isNotEmpty)
-                                ? CachedNetworkImage(
-                                    imageUrl: UploadUrlResolver.resolve(imagePath!, type: 'profile'),
-                                    fit: BoxFit.cover,
-                                    filterQuality: FilterQuality.high,
-                                    placeholder: (ctx, url) => Container(
-                                      color: Colors.white,
-                                      child: const Center(
-                                        child: SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            color: AppColors.primaryRed,
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    errorWidget: (_, _, _) => Container(
-                                      color: Colors.white,
-                                      alignment: Alignment.center,
-                                      child: Text(
-                                        initials,
-                                        style: GoogleFonts.outfit(
-                                          color: AppColors.primaryRed,
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    color: Colors.white,
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      initials,
-                                      style: GoogleFonts.outfit(
-                                        color: AppColors.primaryRed,
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                      ),
-                    ),
+                            : _Initials(initials: initials),
                   ),
-                ),
-                // Camera badge
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: GestureDetector(
-                    onTap: onCameraTap,
+                  // Camera badge
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
                     child: Container(
-                      width: 28,
-                      height: 28,
+                      width: 26,
+                      height: 26,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
@@ -2817,84 +1263,47 @@ class _Header extends StatelessWidget {
                           color: AppColors.primaryRed,
                           width: 2,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: const Icon(
                         Icons.camera_alt,
                         color: AppColors.primaryRed,
-                        size: 15,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Name
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  fullName,
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
-
-            // Dynamic Membership Badge (Premium vs Free User)
-            Consumer<SubscriptionViewModel>(
-              builder: (context, subVm, _) {
-                final isPremium = subVm.isPremium;
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isPremium
-                        ? const Color(0xFFFFD700).withValues(alpha: 0.25)
-                        : Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isPremium
-                          ? const Color(0xFFFFD700).withValues(alpha: 0.8)
-                          : Colors.white.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isPremium ? Icons.workspace_premium_rounded : Icons.person_outline,
-                        color: isPremium ? const Color(0xFFFFD700) : Colors.white70,
                         size: 14,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isPremium ? 'Premium Member' : 'Free User',
-                        style: GoogleFonts.inter(
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Name
+            Text(fullName,
+                style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+
+            // User role badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.person_outline, color: Colors.white70, size: 13),
+                  const SizedBox(width: 4),
+                  Text(badgeText,
+                      style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
             ),
             const SizedBox(height: 22),
           ],
@@ -3002,6 +1411,7 @@ class _DField extends StatelessWidget {
                 fontSize: 14,
                 color: const Color(0xFF1E293B)),
             decoration: InputDecoration(
+
               prefixIcon: icon != null
                   ? Icon(icon,
                       color: AppColors.primaryRed
@@ -3090,9 +1500,27 @@ class _LoadingBtn extends StatelessWidget {
 }
 
 
+// ── Initials avatar ───────────────────────────────────────────
+class _Initials extends StatelessWidget {
+  final String initials;
+  const _Initials({required this.initials});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color(0xFFFFECEC),
+      alignment: Alignment.center,
+      child: Text(initials,
+          style: GoogleFonts.inter(
+              color: AppColors.primaryRed,
+              fontSize: 28,
+              fontWeight: FontWeight.bold)),
+    );
+  }
+}
 
 // ── Image Confirm Sheet ──────────────────────────────────────
-class _ImageConfirmSheet extends StatefulWidget {
+class _ImageConfirmSheet extends ConsumerStatefulWidget {
   final String imagePath;
   final String? croppedPath;
   final String userId;
@@ -3104,10 +1532,10 @@ class _ImageConfirmSheet extends StatefulWidget {
   });
 
   @override
-  State<_ImageConfirmSheet> createState() => _ImageConfirmSheetState();
+  ConsumerState<_ImageConfirmSheet> createState() => _ImageConfirmSheetState();
 }
 
-class _ImageConfirmSheetState extends State<_ImageConfirmSheet> {
+class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> {
   bool _isUploading = false;
 
   @override
@@ -3238,8 +1666,8 @@ class _ImageConfirmSheetState extends State<_ImageConfirmSheet> {
     });
 
     try {
-      final ok = await context
-          .read<ProfileViewModel>()
+      final ok = await ref
+          .read(profileViewModelProvider)
           .uploadProfileImageSafe(widget.userId, widget.imagePath);
 
       if (!context.mounted) return;
@@ -3247,7 +1675,7 @@ class _ImageConfirmSheetState extends State<_ImageConfirmSheet> {
       if (ok) {
         // Also sync card profile image
         try {
-          final cardVm = context.read<CardViewModel>();
+          final cardVm = ref.read(cardViewModelProvider);
           if (cardVm.currentCard != null) {
             await cardVm.handleUploadProfileImage(
               widget.croppedPath ?? widget.imagePath,
@@ -3267,7 +1695,7 @@ class _ImageConfirmSheetState extends State<_ImageConfirmSheet> {
         setState(() {
           _isUploading = false;
         });
-        final errorMsg = context.read<ProfileViewModel>().errorMessage ??
+        final errorMsg = ref.read(profileViewModelProvider).errorMessage ??
             'Upload failed. Please try again.';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(errorMsg, style: GoogleFonts.inter(color: Colors.white)),

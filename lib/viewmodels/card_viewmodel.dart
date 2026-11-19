@@ -9,6 +9,7 @@ import '../repositories/card_repository.dart';
 import '../repositories/user_repository.dart';
 import '../repositories/theme_repository.dart';
 import '../repositories/auth_repository.dart';
+import '../core/network/api_config.dart';
 import '../core/utils/upload_url_resolver.dart';
 import '../core/state/app_loading_service.dart';
 
@@ -398,7 +399,7 @@ class CardViewModel extends ChangeNotifier {
         email: masterProfile?.email ?? _selectedCardDetails?.email ?? '',
         designation: defaultDesignation,
         companyLogo: defaultLogo.isNotEmpty ? defaultLogo : null,
-        qrCode: 'https://thesmartcards.in?sc=$newCardNo',
+        qrCode: ApiConfig.cardShortUrl('$newCardNo'),
         tabLabel: 'Card $newCardNo',
         captionName: 'Card $newCardNo',
         isPrimary: false,
@@ -574,7 +575,8 @@ class CardViewModel extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      await _userRepository.deleteUserAdditionalCard(userId, currentCard!.cardId, {});
+      final targetCardId = currentCard!.workProfileId > 0 ? currentCard!.workProfileId : currentCard!.cardId;
+      await _userRepository.deleteUserAdditionalCard(userId, targetCardId, {});
       _successMessage = 'Card deleted successfully!';
       _currentIndex = 0;
       await fetchCards(userId);
@@ -597,11 +599,19 @@ class CardViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final newSuspendedState = !isSuspended;
-      await _userRepository.updateCardProfileDetails(
-        userId,
-        {'is_suspended': newSuspendedState ? 1 : 0},
-        workProfileId: currentCard!.workProfileId,
-      );
+      if (currentCard!.workProfileId > 0) {
+        await _userRepository.updateCardSuspension(
+          userId,
+          currentCard!.workProfileId,
+          suspend: newSuspendedState,
+        );
+      } else {
+        await _userRepository.updateCardProfileDetails(
+          userId,
+          {'is_suspended': newSuspendedState ? 1 : 0},
+          workProfileId: currentCard!.workProfileId,
+        );
+      }
       
       // Update local state without fetching all cards to be fast
       final updatedCard = currentCard!.copyWith(isSuspended: newSuspendedState);
@@ -627,11 +637,19 @@ class CardViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final newSuspendedState = !targetCard.isSuspended;
-      await _userRepository.updateCardProfileDetails(
-        userId,
-        {'is_suspended': newSuspendedState ? 1 : 0},
-        workProfileId: targetCard.workProfileId,
-      );
+      if (targetCard.workProfileId > 0) {
+        await _userRepository.updateCardSuspension(
+          userId,
+          targetCard.workProfileId,
+          suspend: newSuspendedState,
+        );
+      } else {
+        await _userRepository.updateCardProfileDetails(
+          userId,
+          {'is_suspended': newSuspendedState ? 1 : 0},
+          workProfileId: targetCard.workProfileId,
+        );
+      }
 
       final updatedCard = targetCard.copyWith(isSuspended: newSuspendedState);
       _cards[index] = updatedCard;

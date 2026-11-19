@@ -1,27 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../viewmodels/subscription_viewmodel.dart';
-import '../../viewmodels/card_viewmodel.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/responsive.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 import '../widgets/circular_profile_avatar.dart';
 import '../widgets/master_app_bar.dart';
 import '../../core/utils/upload_url_resolver.dart';
 
-class SubscriptionScreen extends StatefulWidget {
+class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({super.key});
 
   @override
-  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
+  ConsumerState<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
-class _SubscriptionScreenState extends State<SubscriptionScreen> {
+class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   final TextEditingController _couponController = TextEditingController();
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -50,8 +47,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    final subscriptionViewModel = context.read<SubscriptionViewModel>();
-    final authViewModel = context.read<AuthViewModel>();
+    final subscriptionViewModel = ref.read(subscriptionViewModelProvider);
+    final authViewModel = ref.read(authViewModelProvider);
     final userId = authViewModel.currentUser?.id ?? '1';
 
     final paymentData = {
@@ -76,7 +73,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    final subscriptionViewModel = context.read<SubscriptionViewModel>();
+    final subscriptionViewModel = ref.read(subscriptionViewModelProvider);
+    final authViewModel = ref.read(authViewModelProvider);
+    final userId = authViewModel.currentUser?.id;
+    final failureReason = response.message ?? 'Payment cancelled or failed';
+    final amount = subscriptionViewModel.totalAmount;
+
+    if (userId != null && userId.isNotEmpty) {
+      subscriptionViewModel.reportPaymentFailure(
+        userId,
+        reason: failureReason,
+        amount: amount,
+      );
+    }
+
     subscriptionViewModel.resetPaymentState();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -93,9 +103,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _loadSubscription() async {
-    final authViewModel = context.read<AuthViewModel>();
-    final profileViewModel = context.read<ProfileViewModel>();
-    final subscriptionViewModel = context.read<SubscriptionViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
+    final profileViewModel = ref.read(profileViewModelProvider);
+    final subscriptionViewModel = ref.read(subscriptionViewModelProvider);
     final userId = authViewModel.currentUser?.id;
     if (userId != null) {
       await Future.wait<void>([
@@ -106,7 +116,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _openCheckoutModal({bool preserveCoupon = false}) {
-    final vm = context.read<SubscriptionViewModel>();
+    final vm = ref.read(subscriptionViewModelProvider);
     vm.clearMessages();
     if (!preserveCoupon) {
       vm.resetCoupon();
@@ -122,8 +132,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<bool> _initiatePayment() async {
-    final subscriptionViewModel = context.read<SubscriptionViewModel>();
-    final authViewModel = context.read<AuthViewModel>();
+    final subscriptionViewModel = ref.read(subscriptionViewModelProvider);
+    final authViewModel = ref.read(authViewModelProvider);
 
     subscriptionViewModel.resetPaymentState();
     subscriptionViewModel.clearMessages();
@@ -245,7 +255,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop(); // Pop SubscriptionScreen
                   }
-                  context.read<SubscriptionViewModel>().resetPaymentState();
+                  ref.read(subscriptionViewModelProvider).resetPaymentState();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryRed,
@@ -281,9 +291,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildPremiumCheckoutSheet() {
-    return StatefulBuilder(
-      builder: (BuildContext context, StateSetter modalSetState) {
-        final vm = context.watch<SubscriptionViewModel>();
+    return Consumer(
+      builder: (BuildContext context, WidgetRef ref, Widget? child) {
+        final vm = ref.watch(subscriptionViewModelProvider);
 
         final String displayAmount = _formatAmount(vm.payableAmount);
 
@@ -538,7 +548,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
                                       ? null
                                       : () async {
-                                          final userId = context.read<AuthViewModel>().currentUser?.id;
+                                          final userId = ref.read(authViewModelProvider).currentUser?.id;
                                           if (userId != null && _couponController.text.trim().isNotEmpty) {
                                             await vm.applyCoupon(userId, _couponController.text.trim());
                                             if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {
@@ -649,22 +659,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeViewModel = context.watch<ThemeViewModel>();
+    final themeViewModel = ref.watch(themeViewModelProvider);
     final colors = themeViewModel.colors;
 
-    final authVm = context.watch<AuthViewModel>();
-    final profileVm = context.watch<ProfileViewModel>();
-    final cardVm = context.watch<CardViewModel>();
+    final authVm = ref.watch(authViewModelProvider);
+    final profileVm = ref.watch(profileViewModelProvider);
+    final cardVm = ref.watch(cardViewModelProvider);
     final user = profileVm.user ?? authVm.currentUser;
     final cardImage = cardVm.currentCard?.profileImageName;
     final profileImage = (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
 
-    final successMessage = context.select<SubscriptionViewModel, String?>(
-      (vm) => vm.successMessage,
-    );
-    final errorMessage = context.select<SubscriptionViewModel, String?>(
-      (vm) => vm.errorMessage,
-    );
+    final subVm = ref.watch(subscriptionViewModelProvider);
+    final successMessage = subVm.successMessage;
+    final errorMessage = subVm.errorMessage;
 
     // Check for new messages
     if (successMessage != null && successMessage != _lastSuccessMessage) {
@@ -692,7 +699,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               duration: const Duration(seconds: 3),
             ),
           );
-          context.read<SubscriptionViewModel>().clearMessages();
+          ref.read(subscriptionViewModelProvider).clearMessages();
         }
       });
     }
@@ -748,8 +755,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
-            child: Consumer<SubscriptionViewModel>(
-              builder: (context, vm, child) {
+            child: Consumer(
+              builder: (context, ref, child) {
+                final vm = ref.watch(subscriptionViewModelProvider);
                 final displayName = user?.displayName ?? 'User';
                 final email = user?.email ?? '';
 
@@ -954,7 +962,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                                   onPressed: (vm.isPaymentButtonDisabled || vm.status == SubscriptionStatus.loading)
                                       ? null
                                       : () async {
-                                          final userId = context.read<AuthViewModel>().currentUser?.id;
+                                          final userId = ref.read(authViewModelProvider).currentUser?.id;
                                           if (userId != null && _couponController.text.trim().isNotEmpty) {
                                             await vm.applyCoupon(userId, _couponController.text.trim());
                                             if (mounted && vm.appliedCoupon != null && vm.appliedCoupon!.success) {

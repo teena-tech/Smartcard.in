@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
 import '../../core/constants/app_colors.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../viewmodels/theme_viewmodel.dart';
 
 class ThemeToggleSwitch extends StatelessWidget {
@@ -15,7 +17,23 @@ class ThemeToggleSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeViewModel = context.watch<ThemeViewModel>();
+    final hasScope = context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+        context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+    if (hasScope) {
+      return Consumer(
+        builder: (context, ref, _) {
+          final themeViewModel = ref.watch(themeViewModelProvider);
+          return _buildSwitch(context, themeViewModel);
+        },
+      );
+    }
+
+    final themeViewModel = legacy.Provider.of<ThemeViewModel>(context);
+    return _buildSwitch(context, themeViewModel);
+  }
+
+  Widget _buildSwitch(BuildContext context, ThemeViewModel themeViewModel) {
     final isDark = themeViewModel.themeMode != AppThemeMode.light;
 
     return Semantics(

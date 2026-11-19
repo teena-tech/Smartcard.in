@@ -1,5 +1,6 @@
 import '../../models/scanned_contact_model.dart';
 import 'app_validators.dart';
+import 'phone_normalizer.dart';
 
 class ContactParser {
   /// Parses raw text extracted from a business card and returns a [ScannedContactModel].
@@ -53,9 +54,9 @@ class ContactParser {
 
     void addPhoneCandidate(String candidate, {bool isWa = false, bool isLand = false}) {
       final clean = candidate.replaceAll(RegExp(r'^(mob(ile)?|tel(ephone)?|ph(one)?|cell|p|m|t|alt|f|fax|wa|whatsapp|landline|work|office|contact)\s*[:\-\.]?\s*', caseSensitive: false), '').trim();
-      final digits = clean.replaceAll(RegExp(r'\D'), '');
+      final digits = PhoneNormalizer.digitsOnly(clean);
       if (digits.length >= 7 && digits.length <= 16) {
-        final norm = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
+        final norm = PhoneNormalizer.last10(clean);
         if (seenPhoneDigits.add(norm)) {
           final formatted = _formatPhoneNumber(clean);
           allDetectedPhones.add(formatted);

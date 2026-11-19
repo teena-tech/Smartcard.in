@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/message_viewmodel.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/upload_url_resolver.dart';
+import '../../core/providers/app_riverpod_providers.dart';
+import '../../viewmodels/message_viewmodel.dart';
 
-class MessagesScreen extends StatefulWidget {
+class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
 
   @override
-  State<MessagesScreen> createState() => _MessagesScreenState();
+  ConsumerState<MessagesScreen> createState() => _MessagesScreenState();
 }
 
-class _MessagesScreenState extends State<MessagesScreen>
+class _MessagesScreenState extends ConsumerState<MessagesScreen>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
 
@@ -41,7 +41,7 @@ class _MessagesScreenState extends State<MessagesScreen>
     ).animate(CurvedAnimation(parent: _bannerController, curve: Curves.easeOutBack));
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final vm = context.read<MessageViewModel>();
+      final vm = ref.read(messageViewModelProvider);
       // Do a fresh load when the screen opens
       vm.loadMessages();
       // Register for new-message notifications
@@ -51,7 +51,7 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   @override
   void dispose() {
-    context.read<MessageViewModel>().removeNewMessageListener(_onNewMessages);
+    ref.read(messageViewModelProvider).removeNewMessageListener(_onNewMessages);
     _bannerController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -100,8 +100,8 @@ class _MessagesScreenState extends State<MessagesScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final viewModel = context.watch<MessageViewModel>();
+    final colors = ref.watch(themeViewModelProvider).colors;
+    final viewModel = ref.watch(messageViewModelProvider);
 
     return Container(
       width: double.infinity,

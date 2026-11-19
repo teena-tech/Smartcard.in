@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/theme_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 
-class StatisticsGrid extends StatefulWidget {
+class StatisticsGrid extends ConsumerStatefulWidget {
   final String? userId;
   final int totalCards;
   final int totalViews;
@@ -23,10 +23,10 @@ class StatisticsGrid extends StatefulWidget {
   });
 
   @override
-  State<StatisticsGrid> createState() => _StatisticsGridState();
+  ConsumerState<StatisticsGrid> createState() => _StatisticsGridState();
 }
 
-class _StatisticsGridState extends State<StatisticsGrid> with SingleTickerProviderStateMixin {
+class _StatisticsGridState extends ConsumerState<StatisticsGrid> with SingleTickerProviderStateMixin {
   late AnimationController _rotationController;
   int _persistedViews = 0;
   int _persistedShared = 0;
@@ -116,7 +116,7 @@ class _StatisticsGridState extends State<StatisticsGrid> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+    final colors = ref.watch(themeViewModelProvider).colors;
 
     // 1. Lifetime Views
     int displayViews = widget.totalViews > 0

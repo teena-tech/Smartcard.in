@@ -1,38 +1,36 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart'
     hide ImageSource;
-import '../../../viewmodels/dashboard_viewmodel.dart';
-import '../../../viewmodels/theme_viewmodel.dart';
-import '../../../viewmodels/auth_viewmodel.dart';
+import '../../../core/providers/app_riverpod_providers.dart';
 import '../../../viewmodels/card_viewmodel.dart';
 import '../../../models/card_model.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/upload_url_resolver.dart';
-import '../../widgets/manage_cards/widgets/manage_cards_header.dart';
-import '../../widgets/manage_cards/widgets/manage_cards_summary.dart';
-import '../../widgets/manage_cards/widgets/manage_cards_edit_sheet.dart';
-import '../../widgets/manage_cards/widgets/manage_cards_video_widget.dart';
+import 'widgets/manage_cards_header.dart';
+import 'widgets/manage_cards_summary.dart';
+import 'widgets/manage_cards_edit_sheet.dart';
+import 'widgets/manage_cards_video_widget.dart';
 import '../../widgets/image_confirm_sheet.dart';
 import '../../widgets/image_cropper_widget.dart';
 import '../../widgets/master_app_bar.dart';
-import '../../widgets/global_bottom_nav.dart';
+import '../../widgets/master_bottom_nav.dart';
 
-class ManageCardsScreen extends StatefulWidget {
+class ManageCardsScreen extends ConsumerStatefulWidget {
   final bool isTab;
   final CardModel? initialCard;
   const ManageCardsScreen({super.key, this.isTab = false, this.initialCard});
 
   @override
-  State<ManageCardsScreen> createState() => _ManageCardsScreenState();
+  ConsumerState<ManageCardsScreen> createState() => _ManageCardsScreenState();
 }
 
-class _ManageCardsScreenState extends State<ManageCardsScreen> {
+class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
   @override
   void initState() {
     super.initState();
@@ -40,11 +38,11 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       if (widget.initialCard?.isOrganization == true) {
         return;
       }
-      final authViewModel = context.read<AuthViewModel>();
+      final authViewModel = ref.read(authViewModelProvider);
       final user = authViewModel.currentUser;
       if (user != null) {
         final name = '${user.firstName ?? ""} ${user.lastName ?? ""}'.trim();
-        context.read<CardViewModel>().init(
+        ref.read(cardViewModelProvider).init(
           userId: user.id ?? "",
           fallbackName: name,
           fallbackPhone: user.phone ?? "",
@@ -96,7 +94,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
       );
       if (picked == null || !context.mounted) return;
 
-      final viewModel = context.read<CardViewModel>();
+      final viewModel = ref.read(cardViewModelProvider);
       CroppedFile? croppedFile;
 
       if (sectionId == 'section-profile-image') {
@@ -164,7 +162,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   }
 
   void _showImageSourceSheet(String sectionId) {
-    final viewModel = context.read<CardViewModel>();
+    final viewModel = ref.read(cardViewModelProvider);
     if (viewModel.currentCard?.isOrganization == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -265,8 +263,8 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                 ),
                 onTap: () async {
                   Navigator.pop(ctx);
-                  final viewModel = context.read<CardViewModel>();
-                  final authVm = context.read<AuthViewModel>();
+                  final viewModel = ref.read(cardViewModelProvider);
+                  final authVm = ref.read(authViewModelProvider);
                   final currentUserId = authVm.currentUser?.id.toString() ?? viewModel.userId;
                   if (sectionId == 'section-profile-image') {
                     await viewModel.handleRemoveProfileImage(currentUserId);
@@ -287,7 +285,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
   }
 
   void _showEditSheet(BuildContext context, String sectionId) {
-    final viewModel = context.read<CardViewModel>();
+    final viewModel = ref.read(cardViewModelProvider);
     final currentCard = widget.initialCard ?? viewModel.currentCard;
     if (currentCard?.isOrganization == true) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -438,7 +436,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                       await viewModel.handleDeleteCard();
                       if (context.mounted) {
                         try {
-                          context.read<DashboardViewModel>().setIndex(2);
+                          ref.read(tabIndexProvider.notifier).setIndex(2);
                         } catch (_) {}
                       }
                     },
@@ -486,9 +484,9 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeViewModel = context.watch<ThemeViewModel>();
+    final themeViewModel = ref.watch(themeViewModelProvider);
     final colors = themeViewModel.colors;
-    final viewModel = context.watch<CardViewModel>();
+    final viewModel = ref.watch(cardViewModelProvider);
 
     // Listen for error/success messages
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -626,8 +624,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                               ),
                             ),
                             onPressed: () {
-                              final authViewModel = context
-                                  .read<AuthViewModel>();
+                              final authViewModel = ref.read(authViewModelProvider);
                               final user = authViewModel.currentUser;
                               if (user != null) {
                                 final name =
@@ -1357,7 +1354,7 @@ class _ManageCardsScreenState extends State<ManageCardsScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          // ─── Footer Action Buttons (mirrors React UserEditFooterActions) ───
+                          // â”€â”€â”€ Footer Action Buttons (mirrors React UserEditFooterActions) â”€â”€â”€
                           if (!isOrganization)
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
-import 'package:provider/provider.dart';
-import '../../core/services/api_config.dart';
-import '../../viewmodels/landing_viewmodel.dart';
-import '../../viewmodels/auth_viewmodel.dart';
+import '../../core/network/api_config.dart';
+import '../../core/utils/upload_url_resolver.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import 'login_screen.dart';
@@ -12,14 +12,14 @@ import 'register_screen.dart';
 import 'home_screen.dart';
 import '../widgets/lottie_loader.dart';
 
-class LandingScreen extends StatefulWidget {
+class LandingScreen extends ConsumerStatefulWidget {
   const LandingScreen({super.key});
 
   @override
-  State<LandingScreen> createState() => _LandingScreenState();
+  ConsumerState<LandingScreen> createState() => _LandingScreenState();
 }
 
-class _LandingScreenState extends State<LandingScreen> {
+class _LandingScreenState extends ConsumerState<LandingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   Timer? _autoPlayTimer;
@@ -28,7 +28,7 @@ class _LandingScreenState extends State<LandingScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LandingViewModel>().fetchSlides().then((_) {
+      ref.read(landingViewModelProvider).fetchSlides().then((_) {
         _startAutoPlay();
       });
     });
@@ -43,7 +43,7 @@ class _LandingScreenState extends State<LandingScreen> {
       }
       if (!_pageController.hasClients) return;
       try {
-        final viewModel = context.read<LandingViewModel>();
+        final viewModel = ref.read(landingViewModelProvider);
         final slides = viewModel.slides;
         if (slides.isEmpty) return;
 
@@ -73,59 +73,49 @@ class _LandingScreenState extends State<LandingScreen> {
   }
 
   Widget _buildImage(String path) {
-    if (path.isEmpty) {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty) {
       return Container(color: Colors.grey.shade300);
     }
 
-    // Full Image URL
-    if (path.startsWith('http')) {
-      return CachedNetworkImage(
-        imageUrl: path,
+    // Local bundled Flutter asset
+    if (trimmed.startsWith('assets/')) {
+      return Image.asset(
+        trimmed,
         fit: BoxFit.cover,
         alignment: Alignment.center,
         width: double.infinity,
         height: double.infinity,
-        placeholder: (context, url) =>
-            const Center(child: LottieLoader(size: 40)),
-        errorWidget: (context, url, error) =>
-            Container(color: Colors.grey.shade300),
+        errorBuilder: (context, error, stackTrace) {
+          return Container(color: Colors.grey.shade300);
+        },
       );
     }
 
-    // Relative URL Example: /uploads/slide1.jpg
-    if (path.startsWith('/')) {
-      final imageUrl = '${ApiConfig.baseUrl}$path';
+    // Full or relative server URL (handles /uploads/..., shared-uploads/..., and relative filenames)
+    final imageUrl = trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? trimmed
+        : (trimmed.startsWith('/')
+            ? '${ApiConfig.baseUrl}$trimmed'
+            : UploadUrlResolver.resolve(trimmed, type: 'background'));
 
-      return CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.cover,
-        alignment: Alignment.center,
-        width: double.infinity,
-        height: double.infinity,
-        placeholder: (context, url) =>
-            const Center(child: LottieLoader(size: 40)),
-        errorWidget: (context, url, error) =>
-            Container(color: Colors.grey.shade300),
-      );
-    }
-
-    // Asset Image
-    return Image.asset(
-      path,
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
       fit: BoxFit.cover,
       alignment: Alignment.center,
       width: double.infinity,
       height: double.infinity,
-      errorBuilder: (context, error, stackTrace) {
-        return Container(color: Colors.grey.shade300);
-      },
+      placeholder: (context, url) =>
+          const Center(child: LottieLoader(size: 40)),
+      errorWidget: (context, url, error) =>
+          Container(color: Colors.grey.shade300),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<LandingViewModel>();
-    final authViewModel = context.watch<AuthViewModel>();
+    final viewModel = ref.watch(landingViewModelProvider);
+    final authViewModel = ref.watch(authViewModelProvider);
     final bool isLoggedIn = authViewModel.isAuthenticated;
 
     if (viewModel.isLoading) {

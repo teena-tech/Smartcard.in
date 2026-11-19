@@ -1,33 +1,26 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/network/api_config.dart';
 import '../../../models/app_theme_item.dart';
-import '../../../viewmodels/auth_viewmodel.dart';
-import '../../../viewmodels/card_viewmodel.dart';
-import '../../../viewmodels/customize_viewmodel.dart';
-import '../../../viewmodels/theme_viewmodel.dart';
-import '../../../viewmodels/subscription_viewmodel.dart';
-import '../../widgets/global_bottom_nav.dart';
+import '../../../core/providers/app_riverpod_providers.dart';
+import '../../widgets/master_bottom_nav.dart';
 import '../../widgets/master_app_bar.dart';
 import '../subscription_screen.dart';
 import 'customize_menu_screen.dart';
 
-
-
-
-
-class CustomizeThemeScreen extends StatefulWidget {
+class CustomizeThemeScreen extends ConsumerStatefulWidget {
   const CustomizeThemeScreen({super.key});
 
   @override
-  State<CustomizeThemeScreen> createState() => _CustomizeThemeScreenState();
+  ConsumerState<CustomizeThemeScreen> createState() => _CustomizeThemeScreenState();
 }
 
-class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with SingleTickerProviderStateMixin {
+class _CustomizeThemeScreenState extends ConsumerState<CustomizeThemeScreen> with SingleTickerProviderStateMixin {
   bool _loading = true;
   bool _saving = false;
   List<AppThemeItem> _themes = [];
@@ -49,10 +42,10 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authVm = context.read<AuthViewModel>();
+      final authVm = ref.read(authViewModelProvider);
       final userId = authVm.currentUser?.id;
       if (userId != null && userId.isNotEmpty) {
-        context.read<SubscriptionViewModel>().fetchSubscription(userId);
+        ref.read(subscriptionViewModelProvider).fetchSubscription(userId);
       }
       _loadThemes();
     });
@@ -68,9 +61,9 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
   Future<void> _loadThemes() async {
     setState(() => _loading = true);
 
-    final customizeVm = context.read<CustomizeViewModel>();
-    final authVm = context.read<AuthViewModel>();
-    final cardVm = context.read<CardViewModel>();
+    final customizeVm = ref.read(customizeViewModelProvider);
+    final authVm = ref.read(authViewModelProvider);
+    final cardVm = ref.read(cardViewModelProvider);
 
     final userId = authVm.currentUser?.id ?? '';
     final workProfileId = cardVm.currentCard?.workProfileId ?? cardVm.currentCard?.userId;
@@ -130,7 +123,7 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
       }
       // Active template is strictly identified by template_id / template_key
       if (activeIdx < 0 && cardVm.currentCard?.isPrimary == true) {
-        final themeVm = context.read<ThemeViewModel>();
+        final themeVm = ref.read(themeViewModelProvider);
         final selectedId = themeVm.selectedThemeId;
         activeIdx = items.indexWhere((t) => t.id == selectedId);
       }
@@ -160,23 +153,15 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
 
 
   void _onPreviewPressed() async {
-    final cardVm = context.read<CardViewModel>();
+    final cardVm = ref.read(cardViewModelProvider);
     final card = cardVm.currentCard;
     if (card == null) return;
 
-    String liveLink = card.profileUrl ?? 'https://thesmartcards.com/profile/${card.workProfileId}';
-    final dbQr = card.qrCode ?? '';
-    if (dbQr.isNotEmpty) {
-      try {
-        final dbUri = Uri.parse(dbQr);
-        final scVal = dbUri.queryParameters['sc'];
-        if (scVal != null && scVal.isNotEmpty) {
-          liveLink = 'https://thesmartcards.com/?sc=$scVal';
-        } else if (dbQr.startsWith('http://') || dbQr.startsWith('https://')) {
-          liveLink = dbQr;
-        }
-      } catch (_) {}
-    }
+    final liveLink = ApiConfig.resolveLiveCardUrl(
+      qrCode: card.qrCode,
+      profileUrl: card.profileUrl,
+      workProfileId: '${card.workProfileId}',
+    );
 
     try {
       final uri = Uri.parse(liveLink);
@@ -204,7 +189,7 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
     if (_themes.isEmpty || _currentIndex >= _themes.length) return;
 
     final theme = _themes[_currentIndex];
-    final subVm = context.read<SubscriptionViewModel>();
+    final subVm = ref.read(subscriptionViewModelProvider);
     final isPremiumUser = subVm.subscription?.isActive == true || subVm.subscription?.membership == 'PREMIUM';
 
     if (!theme.isFree && !isPremiumUser) {
@@ -245,10 +230,10 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
       return;
     }
 
-    final themeVm = context.read<ThemeViewModel>();
-    final authVm = context.read<AuthViewModel>();
-    final cardVm = context.read<CardViewModel>();
-    final customizeVm = context.read<CustomizeViewModel>();
+    final themeVm = ref.read(themeViewModelProvider);
+    final authVm = ref.read(authViewModelProvider);
+    final cardVm = ref.read(cardViewModelProvider);
+    final customizeVm = ref.read(customizeViewModelProvider);
 
     setState(() => _saving = true);
 
@@ -415,8 +400,8 @@ class _CustomizeThemeScreenState extends State<CustomizeThemeScreen> with Single
 
   @override
   Widget build(BuildContext context) {
-    final themeVm = context.watch<ThemeViewModel>();
-    final subVm = context.watch<SubscriptionViewModel>();
+    final themeVm = ref.watch(themeViewModelProvider);
+    final subVm = ref.watch(subscriptionViewModelProvider);
     final isPremiumUser = subVm.subscription?.isActive == true || subVm.subscription?.membership == 'PREMIUM';
 
     final activeTheme = _themes.isNotEmpty && _currentIndex < _themes.length

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sms_autofill/sms_autofill.dart';
 import 'package:smart_auth/smart_auth.dart';
 
 /// Singleton service to manage the OTP Autofill lifecycle, persistent authorization state, and platform SMS retrieval.
@@ -21,7 +20,6 @@ class OtpAutofillService {
   /// Key used in persistent storage (SharedPreferences)
   static const String prefKeyOtpAutofillInitialized = 'otp_autofill_initialized';
 
-  late final SmsAutoFill _smsAutoFill = SmsAutoFill();
   StreamSubscription<String>? _subscription;
   Timer? _timeoutTimer;
   bool _isListening = false;
@@ -136,7 +134,7 @@ class OtpAutofillService {
       if (smartAuthSig.hasData && smartAuthSig.data != null && smartAuthSig.data!.isNotEmpty) {
         return smartAuthSig.data;
       }
-      return await _smsAutoFill.getAppSignature;
+      return null;
     } catch (e) {
       debugPrint('⚠️ [OtpAutofillService] Error getting app signature: $e');
       return null;
@@ -240,7 +238,6 @@ class OtpAutofillService {
         _subscription = null;
       }
       if (defaultTargetPlatform == TargetPlatform.android) {
-        await _smsAutoFill.unregisterListener();
         await SmartAuth.instance.removeUserConsentApiListener();
       }
       _isListening = false;

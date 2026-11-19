@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/upload_url_resolver.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/message_viewmodel.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../screens/messages_screen.dart';
 
-class RecentMessagesList extends StatelessWidget {
+class RecentMessagesList extends ConsumerWidget {
   final List<Map<String, dynamic>> messages;
 
   const RecentMessagesList({super.key, required this.messages});
@@ -55,8 +53,8 @@ class RecentMessagesList extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeViewModelProvider).colors;
 
     final sorted = _sorted(messages);
     final display = sorted.take(5).toList();
@@ -84,8 +82,9 @@ class RecentMessagesList extends StatelessWidget {
 
     void goToMessages() {
       try {
-        context.read<MessageViewModel>().loadMessages();
-        context.read<DashboardViewModel>().setIndex(5);
+        ref.read(messageViewModelProvider).loadMessages();
+        ref.read(tabIndexProvider.notifier).setIndex(5);
+        ref.read(dashboardViewModelProvider).setIndex(5);
       } catch (_) {
         Navigator.push(context, MaterialPageRoute(builder: (_) => const MessagesScreen()));
       }

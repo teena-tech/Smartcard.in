@@ -1,24 +1,24 @@
 import 'dart:async';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/network/api_config.dart';
 import '../../../core/utils/upload_url_resolver.dart';
-import '../../../viewmodels/auth_viewmodel.dart';
-import '../../../viewmodels/card_viewmodel.dart';
-import '../../../viewmodels/customize_viewmodel.dart';
-import '../../../viewmodels/theme_viewmodel.dart';
+import '../../../core/providers/app_riverpod_providers.dart';
 import '../../widgets/profile_menu_bottom_sheet.dart';
 import '../../widgets/customize_flow_widgets.dart';
-import '../../widgets/global_bottom_nav.dart';
+import '../../widgets/master_bottom_nav.dart';
 import '../../../core/utils/customize_utils.dart';
-import '../../widgets/ai/editor_toolbar.dart';
+import '../../../repositories/theme_repository.dart';
+import 'widgets/editor_toolbar.dart';
 
 const List<String> _defaultLogoPalette = [
   '#2563EB',
@@ -30,14 +30,14 @@ const List<String> _defaultLogoPalette = [
   '#EC4899',
 ];
 
-class CustomizeAiScreen extends StatefulWidget {
+class CustomizeAiScreen extends ConsumerStatefulWidget {
   const CustomizeAiScreen({super.key});
 
   @override
-  State<CustomizeAiScreen> createState() => _CustomizeAiScreenState();
+  ConsumerState<CustomizeAiScreen> createState() => _CustomizeAiScreenState();
 }
 
-class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
+class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ImagePicker _picker = ImagePicker();
 
@@ -84,8 +84,8 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   Future<void> _ensureCardContextLoaded() async {
-    final authVm = context.read<AuthViewModel>();
-    final cardVm = context.read<CardViewModel>();
+    final authVm = ref.read(authViewModelProvider);
+    final cardVm = ref.read(cardViewModelProvider);
     final user = authVm.currentUser;
     if (user == null) return;
 
@@ -104,9 +104,9 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   Future<void> _loadData() async {
-    final authVm = context.read<AuthViewModel>();
-    final cardVm = context.read<CardViewModel>();
-    final customizeVm = context.read<CustomizeViewModel>();
+    final authVm = ref.read(authViewModelProvider);
+    final cardVm = ref.read(cardViewModelProvider);
+    final customizeVm = ref.read(customizeViewModelProvider);
     final user = authVm.currentUser;
     final userId = user?.id ?? '';
     final workProfileId = cardVm.currentCard?.workProfileId ?? cardVm.currentCard?.userId;
@@ -216,7 +216,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     if (_uploadBytes != null) return '';
     if (_backgroundImages.isEmpty) return '';
     if (_currentImageIndex >= 0 && _currentImageIndex < _backgroundImages.length) {
-      final savedBgImage = context.read<CustomizeViewModel>().themeData?['bg_image']?.toString().trim() ?? '';
+      final savedBgImage = ref.read(customizeViewModelProvider).themeData?['bg_image']?.toString().trim() ?? '';
       final isLibraryImage = _backgroundImages.any((item) => resolveBackgroundImageKey(item) == savedBgImage);
       if (!isLibraryImage && savedBgImage.isNotEmpty && _currentImageIndex == 0) {
         return UploadUrlResolver.resolve(savedBgImage, type: 'card-bg');
@@ -244,7 +244,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
 
   bool get _hasChanges {
     if (_uploadBytes != null) return true;
-    final customizeVm = context.read<CustomizeViewModel>();
+    final customizeVm = ref.read(customizeViewModelProvider);
     final themeData = customizeVm.themeData ?? {};
     
     // Check background image enabled status
@@ -295,12 +295,12 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   String get _previewInitials {
-    final cardVm = context.read<CardViewModel>();
+    final cardVm = ref.read(cardViewModelProvider);
     final details = cardVm.selectedCardDetails;
     final first = details?.firstName.trim() ?? '';
     final last = details?.lastName.trim() ?? '';
     final name = '$first $last'.trim();
-    final fallbackUser = context.read<AuthViewModel>().currentUser;
+    final fallbackUser = ref.read(authViewModelProvider).currentUser;
     final displayName = name.isNotEmpty
         ? name
         : '${fallbackUser?.firstName ?? ''} ${fallbackUser?.lastName ?? ''}'
@@ -315,7 +315,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   String get _previewName {
-    final cardVm = context.read<CardViewModel>();
+    final cardVm = ref.read(cardViewModelProvider);
     final details = cardVm.selectedCardDetails;
     if (details != null && details.companyName.trim().isNotEmpty) {
       return details.companyName.trim();
@@ -324,7 +324,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     final last = details?.lastName.trim() ?? '';
     final name = '$first $last'.trim();
     if (name.isNotEmpty && !name.startsWith('Card ')) return name;
-    final fallbackUser = context.read<AuthViewModel>().currentUser;
+    final fallbackUser = ref.read(authViewModelProvider).currentUser;
     final fallback =
         '${fallbackUser?.firstName ?? ''} ${fallbackUser?.lastName ?? ''}'
             .trim();
@@ -332,7 +332,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   String get _previewDesignation {
-    final cardVm = context.read<CardViewModel>();
+    final cardVm = ref.read(cardViewModelProvider);
     final details = cardVm.selectedCardDetails;
     final value = details?.designation.trim().isNotEmpty == true
         ? details!.designation.trim()
@@ -341,7 +341,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   String get _previewCompanyLogo {
-    final details = context.read<CardViewModel>().selectedCardDetails;
+    final details = ref.read(cardViewModelProvider).selectedCardDetails;
     final logoName = details?.companyLogoName.trim() ?? '';
     return UploadUrlResolver.resolve(
       logoName,
@@ -351,7 +351,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   String get _previewProfileImage {
-    final details = context.read<CardViewModel>().selectedCardDetails;
+    final details = ref.read(cardViewModelProvider).selectedCardDetails;
     final imageName = details?.profileImageName.trim() ?? '';
     return UploadUrlResolver.resolve(
       imageName,
@@ -633,9 +633,9 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   }
 
   Future<void> _extractLogoColors(Uint8List bytes, String fileName) async {
-    final authVm = context.read<AuthViewModel>();
-    final cardVm = context.read<CardViewModel>();
-    final customizeVm = context.read<CustomizeViewModel>();
+    final authVm = ref.read(authViewModelProvider);
+    final cardVm = ref.read(cardViewModelProvider);
+    final customizeVm = ref.read(customizeViewModelProvider);
     final userId = authVm.currentUser?.id ?? '';
     final workProfileId = cardVm.currentCard?.userId;
 
@@ -775,7 +775,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        final colors = context.read<ThemeViewModel>().colors;
+        final colors = ref.read(themeViewModelProvider).colors;
         return AlertDialog(
           backgroundColor: colors.card,
           title: Text(title, style: GoogleFonts.inter(color: colors.text)),
@@ -819,9 +819,9 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
   Future<void> _saveChanges() async {
     _resetAlerts();
 
-    final authVm = context.read<AuthViewModel>();
-    final cardVm = context.read<CardViewModel>();
-    final customizeVm = context.read<CustomizeViewModel>();
+    final authVm = ref.read(authViewModelProvider);
+    final cardVm = ref.read(cardViewModelProvider);
+    final customizeVm = ref.read(customizeViewModelProvider);
     final userId = authVm.currentUser?.id ?? '';
     final workProfileId = cardVm.currentCard?.workProfileId ?? cardVm.currentCard?.userId;
 
@@ -1042,8 +1042,29 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(color: isSelected ? AppColors.primaryRed : Colors.transparent, width: 3),
-                              image: url.isNotEmpty ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover) : null,
+                              color: Colors.grey.shade200,
                             ),
+                            clipBehavior: Clip.antiAlias,
+                            child: url.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: url,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, _) => Container(
+                                      color: Colors.grey.shade100,
+                                      child: const Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, _, __) => Container(
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(Icons.broken_image, size: 24, color: Colors.grey),
+                                    ),
+                                  )
+                                : const Center(child: Icon(Icons.image, size: 24, color: Colors.grey)),
                           ),
                         );
                       },
@@ -1457,8 +1478,8 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final cardVm = context.watch<CardViewModel>();
+    final colors = ref.watch(themeViewModelProvider).colors;
+    final cardVm = ref.watch(cardViewModelProvider);
     final details = cardVm.selectedCardDetails;
     
     final selectedImageUrl = _selectedImageUrl;
@@ -1512,7 +1533,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                     )
                                   : selectedImageUrl.isNotEmpty
                                       ? DecorationImage(
-                                          image: NetworkImage(selectedImageUrl),
+                                          image: CachedNetworkImageProvider(selectedImageUrl),
                                           fit: BoxFit.cover,
                                         )
                                       : null)
@@ -1750,17 +1771,11 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                 child: GestureDetector(
                                   onTap: () async {
                                     final card = cardVm.currentCard;
-                                    String liveLink = 'https://thesmartcards.com/profile/${card?.userId ?? cardVm.userId}';
-                                    final dbQr = card?.qrCode ?? '';
-                                    if (dbQr.isNotEmpty) {
-                                      try {
-                                        final dbUri = Uri.parse(dbQr);
-                                        final scVal = dbUri.queryParameters['sc'];
-                                        if (scVal != null && scVal.isNotEmpty) {
-                                          liveLink = 'https://thesmartcards.com/?sc=$scVal';
-                                        }
-                                      } catch (_) {}
-                                    }
+                                    final liveLink = ApiConfig.resolveLiveCardUrl(
+                                      qrCode: card?.qrCode,
+                                      profileUrl: card?.profileUrl,
+                                      workProfileId: '${card?.userId ?? cardVm.userId}',
+                                    );
                                     try {
                                       final uri = Uri.parse(liveLink);
                                       if (await canLaunchUrl(uri)) {
@@ -1826,7 +1841,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 10),
-                                      // Save Button (✓)
+                                      // Save Button (âœ“)
                                       GestureDetector(
                                         onTap: _saving ? null : _saveChanges,
                                         child: Container(
@@ -1938,7 +1953,7 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  // Save Button (✓)
+                                  // Save Button (âœ“)
                                   GestureDetector(
                                     behavior: HitTestBehavior.opaque,
                                     onTap: _saving ? null : () async {
@@ -2008,9 +2023,187 @@ class _CustomizeAiScreenState extends State<CustomizeAiScreen> {
               onColorsTap: () => setState(() => _activeSheet = _activeSheet == 'colors' ? '' : 'colors'),
               onOverlayTap: () => setState(() => _activeSheet = _activeSheet == 'overlay' ? '' : 'overlay'),
               onLogoTap: () => setState(() => _activeSheet = _activeSheet == 'logo' ? '' : 'logo'),
+              onAiSuggestTap: _showAiSuggestDialog,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAiSuggestDialog() {
+    final themeRepo = ThemeRepository();
+    String selectedIndustry = 'tech';
+    bool isGenerating = false;
+    Map<String, dynamic>? aiResult;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final colors = AppColors.of(isDark ? AppThemeMode.dark : AppThemeMode.light);
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: colors.section,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: Color(0xFF6366F1), size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          'AI Smart Theme Designer',
+                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: colors.muted),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Select your industry or style to auto-generate colors and typography.',
+                  style: GoogleFonts.inter(fontSize: 13, color: colors.muted),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: ['tech', 'finance', 'realestate', 'healthcare', 'creative', 'corporate'].map((ind) {
+                    final isSel = selectedIndustry == ind;
+                    return ChoiceChip(
+                      label: Text(
+                        ind[0].toUpperCase() + ind.substring(1),
+                        style: TextStyle(color: isSel ? Colors.white : colors.text, fontSize: 12),
+                      ),
+                      selected: isSel,
+                      selectedColor: const Color(0xFF6366F1),
+                      backgroundColor: colors.card,
+                      onSelected: (val) {
+                        if (val) setSheetState(() => selectedIndustry = ind);
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 20),
+                if (aiResult != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF6366F1).withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Color(int.parse('0xFF${(aiResult!['bg_color'] ?? '#0F172A').replaceAll('#', '')}')),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Recommended Palette',
+                                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: colors.text),
+                              ),
+                              Text(
+                                'Background: ${aiResult!['bg_color']} | Text: ${aiResult!['text_color']}',
+                                style: GoogleFonts.inter(fontSize: 11, color: colors.muted),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6366F1),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: isGenerating
+                            ? null
+                            : () async {
+                                setSheetState(() => isGenerating = true);
+                                try {
+                                  final result = await themeRepo.suggestAiDesign(industry: selectedIndustry);
+                                  setSheetState(() {
+                                    aiResult = result;
+                                    isGenerating = false;
+                                  });
+                                } catch (_) {
+                                  setSheetState(() => isGenerating = false);
+                                }
+                              },
+                        child: isGenerating
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text(aiResult == null ? 'Generate Design' : 'Re-Generate'),
+                      ),
+                    ),
+                    if (aiResult != null) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF10B981),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () {
+                            final bgHex = (aiResult!['bg_color'] ?? '#0F172A').replaceAll('#', '');
+                            final textHex = (aiResult!['text_color'] ?? '#FFFFFF').replaceAll('#', '');
+                            setState(() {
+                              _bgColor = Color(int.parse('0xFF$bgHex'));
+                              _textColor = Color(int.parse('0xFF$textHex'));
+                              _backgroundColorEnabled = true;
+                              _textColorEnabled = true;
+                            });
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('AI Suggested Design Applied! Tap Save to persist.')),
+                            );
+                          },
+                          child: const Text('Apply Design'),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/views/widgets/manage_cards/widgets/manage_cards_video_widget.dart';
+import 'package:smartcard_flutter/views/screens/manage_cards/widgets/manage_cards_video_widget.dart';
 
 void main() {
   group('VideoPlatformHelper tests', () {

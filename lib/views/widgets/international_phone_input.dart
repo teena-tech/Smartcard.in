@@ -28,7 +28,6 @@ class InternationalPhoneInput extends StatefulWidget {
   final String? whatsappLabel;
   final bool showModeSelector;
   final bool showChannelStatusBanner;
-  final bool disableCountryPicker;
 
   const InternationalPhoneInput({
     super.key,
@@ -48,7 +47,6 @@ class InternationalPhoneInput extends StatefulWidget {
     this.whatsappLabel,
     this.showModeSelector = true,
     this.showChannelStatusBanner = true,
-    this.disableCountryPicker = false,
   });
 
   @override
@@ -104,7 +102,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
   }
 
   CountryData _getPhoneCountry() {
-    if (widget.disableCountryPicker || !widget.isWhatsAppMode) {
+    if (!widget.isWhatsAppMode) {
       return InternationalPhoneHelper.findByCode('+91');
     }
     return InternationalPhoneHelper.findByCode(widget.selectedCountryCode);
@@ -215,7 +213,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
     required bool isWhatsAppStyle,
     required bool showCountryDropdownArrow,
     required String hintText,
-    required VoidCallback? onCountryTap,
+    required VoidCallback onCountryTap,
   }) {
     final hasFocus = focusNode.hasFocus;
     final bgColor =
@@ -239,7 +237,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
         children: [
           InkWell(
             key: countryKey,
-            onTap: (widget.enabled && onCountryTap != null) ? onCountryTap : null,
+            onTap: widget.enabled ? onCountryTap : null,
             borderRadius: const BorderRadius.horizontal(
               left: Radius.circular(13),
             ),
@@ -352,25 +350,25 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
       mainAxisSize: MainAxisSize.min,
       children: [
         // ── Header / Delivery Selector Row ───────────────────
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                isWhatsApp
-                    ? (widget.whatsappLabel ?? 'WhatsApp Number')
-                    : (widget.phoneLabel ?? 'Phone Number'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isWhatsApp ? greenText : const Color(0xFF1F2937),
+        if (widget.showModeSelector) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  isWhatsApp
+                      ? (widget.whatsappLabel ?? 'WhatsApp Number')
+                      : (widget.phoneLabel ?? 'Phone Number'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isWhatsApp ? greenText : const Color(0xFF1F2937),
+                  ),
                 ),
               ),
-            ),
-            if (widget.showModeSelector) ...[
               const SizedBox(width: 8),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -402,9 +400,9 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                 ],
               ),
             ],
-          ],
-        ),
-        const SizedBox(height: 10),
+          ),
+          const SizedBox(height: 10),
+        ],
 
         // ── Unified Primary Phone Input Box ──────────────────
         _buildUnifiedPhoneBox(
@@ -413,28 +411,26 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
           controller: widget.phoneController,
           focusNode: _phoneFocusNode,
           isWhatsAppStyle: isWhatsApp,
-          showCountryDropdownArrow: !widget.disableCountryPicker,
+          showCountryDropdownArrow: true,
           hintText: isWhatsApp
               ? 'Enter WhatsApp number'
               : 'Enter mobile number',
-          onCountryTap: widget.disableCountryPicker
-              ? null
-              : () {
-                  CountryCodeDropdownDialog.show(
-                    context,
-                    anchorKey: _phoneCountryKey,
-                    selectedCode: isWhatsApp ? widget.selectedCountryCode : '+91',
-                    isWhatsAppMode: isWhatsApp,
-                    onSelectCountry: (item) {
-                      final chosen = InternationalPhoneHelper.findByCode(item.code);
-                      if (!isWhatsApp && item.code != '+91') {
-                        _showSmsIndiaOnlyNotice(pendingCountry: chosen);
-                        return;
-                      }
-                      widget.onCountryCodeChanged(chosen);
-                    },
-                  );
-                },
+          onCountryTap: () {
+            CountryCodeDropdownDialog.show(
+              context,
+              anchorKey: _phoneCountryKey,
+              selectedCode: isWhatsApp ? widget.selectedCountryCode : '+91',
+              isWhatsAppMode: isWhatsApp,
+              onSelectCountry: (item) {
+                final chosen = InternationalPhoneHelper.findByCode(item.code);
+                if (!isWhatsApp && item.code != '+91') {
+                  _showSmsIndiaOnlyNotice(pendingCountry: chosen);
+                  return;
+                }
+                widget.onCountryCodeChanged(chosen);
+              },
+            );
+          },
         ),
 
         // ── WhatsApp Mode Separate Number Option (if enabled) ──

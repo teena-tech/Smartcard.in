@@ -68,7 +68,7 @@ class LastPayment {
   factory LastPayment.fromJson(Map<String, dynamic> json) {
     return LastPayment(
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
-      paymentDate: json['payment_date']?.toString() ?? '',
+      paymentDate: (json['paid_at'] ?? json['payment_date'])?.toString() ?? '',
     );
   }
 

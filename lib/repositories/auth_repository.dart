@@ -1,15 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
-import '../core/services/dio_client.dart';
-import '../core/services/api_config.dart';
+import '../core/network/dio_client.dart';
+import '../core/network/api_config.dart';
 import '../models/user_model.dart';
 import '../core/utils/international_phone_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthRepository {
-  final DioClient _dioClient = DioClient();
+  final DioClient _dioClient;
+
+  AuthRepository([DioClient? dioClient]) : _dioClient = dioClient ?? DioClient();
 
   /// Sends a login OTP request
   Future<String> sendLoginOtp(
@@ -205,7 +207,18 @@ class AuthRepository {
           'full_phone': e164,
         },
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        if (data is Map) {
+          final exists =
+              data['exists'] == true || data['exists'] == 1 || data['exists'] == '1';
+          if (exists) {
+            return false;
+          }
+        }
+        return true;
+      }
+      return false;
     } on DioException catch (e) {
       throw DioClient.getErrorMessage(e, 'Phone check failed');
     }
@@ -367,8 +380,15 @@ class AuthRepository {
     try {
       final response = await _dioClient.dio.get(ApiConfig.welcomeSlides);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        if (response.data is List) {
-          return List<Map<String, dynamic>>.from(response.data);
+        final data = response.data;
+        final rawList = data is List
+            ? data
+            : (data is Map ? (data['data'] ?? data['slides'] ?? data['items']) : null);
+        if (rawList is List) {
+          return rawList
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
         }
       }
       return [];
@@ -377,6 +397,29 @@ class AuthRepository {
     } catch (e) {
       return [];
     }
+  }
+
+  Future<bool> hasSessionTokens() async {
+    String? token;
+    String? sessionId;
+    try {
+      const storage = FlutterSecureStorage();
+      token = await storage.read(key: 'auth_token');
+      sessionId = await storage.read(key: 'session_id');
+    } catch (_) {}
+
+    if (kIsWeb && (token == null || sessionId == null)) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        token ??= prefs.getString('auth_token');
+        sessionId ??= prefs.getString('session_id');
+      } catch (_) {}
+    }
+
+    return token != null &&
+        token.isNotEmpty &&
+        sessionId != null &&
+        sessionId.isNotEmpty;
   }
 
   // UI Proxy Methods

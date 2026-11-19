@@ -8,6 +8,7 @@ import '../utils/business_card_validator.dart';
 import '../utils/contact_parser.dart';
 import 'edge_detection_service.dart';
 import 'qr_extraction_service.dart';
+import 'scanner_api_service.dart';
 import '../../features/scanner/services/image_processing_service.dart';
 
 class ScanProcessingResult {
@@ -111,7 +112,33 @@ class ScanProcessingService {
     }
 
     if (BusinessCardValidator.validateText(rawText) || rawText.length >= 6) {
-      final contact = ContactParser.parse(rawText).copyWith(imagePath: cropped);
+      var contact = ContactParser.parse(rawText).copyWith(imagePath: cropped);
+      if (contact.name.isEmpty || contact.phone.isEmpty) {
+        try {
+          final aiParsed = await ScannerApiService.instance.parseVisitingCardWithAi(rawText);
+          if (aiParsed != null) {
+            final aiName = (aiParsed['name'] as String?)?.trim() ?? '';
+            final aiPhone = (aiParsed['phone'] as String?)?.trim() ?? '';
+            final aiEmail = (aiParsed['email'] as String?)?.trim() ?? '';
+            final aiCompany = (aiParsed['company'] as String?)?.trim() ?? '';
+            final aiDesignation = (aiParsed['designation'] as String?)?.trim() ?? '';
+            final aiWebsite = (aiParsed['website'] as String?)?.trim() ?? '';
+            final aiAddress = (aiParsed['address'] as String?)?.trim() ?? '';
+
+            contact = contact.copyWith(
+              name: contact.name.isEmpty && aiName.isNotEmpty ? aiName : null,
+              phone: contact.phone.isEmpty && aiPhone.isNotEmpty ? aiPhone : null,
+              email: contact.email.isEmpty && aiEmail.isNotEmpty ? aiEmail : null,
+              company: contact.company.isEmpty && aiCompany.isNotEmpty ? aiCompany : null,
+              designation: contact.designation.isEmpty && aiDesignation.isNotEmpty ? aiDesignation : null,
+              website: contact.website.isEmpty && aiWebsite.isNotEmpty ? aiWebsite : null,
+              address: contact.address.isEmpty && aiAddress.isNotEmpty ? aiAddress : null,
+            );
+          }
+        } catch (e) {
+          debugPrint('AI Visiting Card fallback error: $e');
+        }
+      }
       return ScanProcessingResult(contact: contact, imagePath: cropped);
     }
 

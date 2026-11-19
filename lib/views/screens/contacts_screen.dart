@@ -2,7 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/app_riverpod_providers.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../viewmodels/dashboard_viewmodel.dart';
+import '../../viewmodels/theme_viewmodel.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/responsive.dart';
 import '../../core/utils/permission_helper.dart';
@@ -11,11 +15,8 @@ import '../../models/scanned_contact_model.dart';
 import '../../providers/contact_provider.dart';
 import '../../providers/group_provider.dart';
 import '../../viewmodels/contact_viewmodel.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
-import '../../viewmodels/theme_viewmodel.dart';
 
 import '../widgets/alphabet_scroll_bar.dart';
-import '../widgets/contact_tile.dart';
 import '../widgets/contact_list_tile.dart';
 import '../widgets/empty_state_widget.dart';
 import '../../core/services/reactive_contact_sync_service.dart';
@@ -48,6 +49,11 @@ class ContactsScreen extends StatefulWidget {
 }
 
 class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  bool get _hasScope => context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null || context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+  ContactProvider get _cp => _hasScope ? ProviderScope.containerOf(context, listen: false).read(contactProviderRiverpod) : legacy.Provider.of<ContactProvider>(context, listen: false);
+  ContactViewModel get _vm => _hasScope ? ProviderScope.containerOf(context, listen: false).read(contactViewModelProvider) : legacy.Provider.of<ContactViewModel>(context, listen: false);
+  GroupProvider get _gp => _hasScope ? ProviderScope.containerOf(context, listen: false).read(groupProviderRiverpod) : legacy.Provider.of<GroupProvider>(context, listen: false);
+  DashboardViewModel? get _dashboardVm => _hasScope ? ProviderScope.containerOf(context, listen: false).read(dashboardViewModelProvider) : legacy.Provider.of<DashboardViewModel?>(context, listen: false);
   @override
   bool get wantKeepAlive => true;
 
@@ -156,11 +162,7 @@ class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObse
   void _checkAndRequestContactPermissionIfActive() {
     if (_hasCheckedPermissionOnActive || !mounted) return;
 
-    DashboardViewModel? dashboardVm;
-    try {
-      dashboardVm = context.read<DashboardViewModel>();
-    } catch (_) {}
-
+    final dashboardVm = _dashboardVm;
     final bool isContactsActive = dashboardVm == null || dashboardVm.currentIndex == 4;
     if (!isContactsActive) return;
 
@@ -168,9 +170,9 @@ class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObse
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final cp = context.read<ContactProvider>();
-      final vm = context.read<ContactViewModel>();
-      final gp = context.read<GroupProvider>();
+      final cp = _cp;
+      final vm = _vm;
+      final gp = _gp;
       final currentState = await PermissionHelper.checkContactsPermission();
 
       if (currentState == ContactPermissionState.granted) {
@@ -194,7 +196,7 @@ class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObse
 
   /// Explicitly requests permission and immediately triggers full auto-load
   Future<void> _requestPermissionAndAutoLoad() async {
-    final cp = context.read<ContactProvider>();
+    final cp = _cp;
     final granted = await cp.requestPermissionAndLoad();
     if (mounted && granted) {
       await _refreshDataAll(silent: false, skipDeviceSync: false);
@@ -207,7 +209,7 @@ class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObse
     if (state == AppLifecycleState.resumed && mounted) {
       PermissionHelper.checkContactsPermission().then((permState) {
         if (!mounted) return;
-        final cp = context.read<ContactProvider>();
+        final cp = _cp;
         if (permState == ContactPermissionState.granted && cp.permissionState != ContactPermissionState.granted) {
           cp.checkPermission();
           _refreshDataAll(silent: false, skipDeviceSync: false);
@@ -221,8 +223,8 @@ class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObse
 
   Future<void> _syncDevicePhonesAndMatch({bool force = false}) async {
     if (!mounted) return;
-    final cp = context.read<ContactProvider>();
-    final vm = context.read<ContactViewModel>();
+    final cp = _cp;
+    final vm = _vm;
 
     final phoneToName = <String, String>{};
     final phoneToDevId = <String, String>{};
@@ -259,10 +261,10 @@ class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObse
 
   Future<void> _refreshDataAll({bool silent = true, bool skipDeviceSync = false}) async {
     if (!mounted) return;
-    final cp = context.read<ContactProvider>();
-    final gp = context.read<GroupProvider>();
-    final vm = context.read<ContactViewModel>();
-    final dashboardVm = context.read<DashboardViewModel>();
+    final cp = _cp;
+    final gp = _gp;
+    final vm = _vm;
+    final dashboardVm = _dashboardVm ?? DashboardViewModel();
 
     final future = () async {
       try {
@@ -406,13 +408,37 @@ class _ContactsScreenState extends State<ContactsScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final theme = Theme.of(context);
-    final contactProvider = context.watch<ContactProvider>();
-    final groupProvider = context.watch<GroupProvider>();
-    final contactViewModel = context.watch<ContactViewModel>();
-    final colors = context.watch<ThemeViewModel>().colors;
+    if (_hasScope) {
+      return Consumer(
+        builder: (context, ref, _) => _buildContent(
+          context,
+          contactProvider: ref.watch(contactProviderRiverpod),
+          groupProvider: ref.watch(groupProviderRiverpod),
+          contactViewModel: ref.watch(contactViewModelProvider),
+          colors: ref.watch(themeColorsProvider),
+          dashboardViewModel: ref.watch(dashboardViewModelProvider),
+        ),
+      );
+    }
+    return _buildContent(
+      context,
+      contactProvider: legacy.Provider.of<ContactProvider>(context),
+      groupProvider: legacy.Provider.of<GroupProvider>(context),
+      contactViewModel: legacy.Provider.of<ContactViewModel>(context),
+      colors: legacy.Provider.of<ThemeViewModel>(context).colors,
+      dashboardViewModel: legacy.Provider.of<DashboardViewModel?>(context),
+    );
+  }
 
-    final dashboardViewModel = Provider.of<DashboardViewModel?>(context, listen: true);
+  Widget _buildContent(
+    BuildContext context, {
+    required ContactProvider contactProvider,
+    required GroupProvider groupProvider,
+    required ContactViewModel contactViewModel,
+    required AppColors colors,
+    required DashboardViewModel? dashboardViewModel,
+  }) {
+    final theme = Theme.of(context);
     if (dashboardViewModel != null && dashboardViewModel.currentIndex == 4 && !_hasCheckedPermissionOnActive) {
       _checkAndRequestContactPermissionIfActive();
     }

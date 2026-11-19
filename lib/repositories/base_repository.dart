@@ -1,4 +1,4 @@
-import 'package:smartcard_flutter/core/services/dio_client.dart';
+import 'package:smartcard_flutter/core/network/dio_client.dart';
 import 'package:smartcard_flutter/core/network/api_exceptions.dart';
 import 'package:dio/dio.dart';
 
@@ -6,15 +6,15 @@ import 'package:dio/dio.dart';
 /// It uses the singleton [DioClient] to get a configured [Dio] instance with
 /// authentication headers and detailed request/response logging.
 ///
-/// Sub‑classes can call [_handleResponse] to parse the response body and
-/// [_handleError] to convert DioException into a user‑friendly error message.
+/// Subâ€‘classes can call [_handleResponse] to parse the response body and
+/// [_handleError] to convert DioException into a userâ€‘friendly error message.
 abstract class BaseRepository {
   final Dio _dio = DioClient().dio;
 
   /// Parses the successful response and returns the data part. Adjust this
   /// method if the API wraps data in a specific envelope.
   dynamic _handleResponse(Response response) {
-    // Assuming the API returns JSON with a top‑level "data" field.
+    // Assuming the API returns JSON with a topâ€‘level "data" field.
     if (response.data is Map<String, dynamic>) {
       return response.data['data'] ?? response.data;
     }

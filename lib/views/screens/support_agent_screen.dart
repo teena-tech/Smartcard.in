@@ -1,80 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/agent_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
-import '../../viewmodels/support_viewmodel.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../widgets/common_app_bar.dart';
+import '../../core/providers/app_riverpod_providers.dart';
+import '../widgets/master_app_bar.dart';
 import '../../core/constants/app_colors.dart';
 import 'home_screen.dart';
 import '../../core/utils/responsive.dart';
 import 'support_chat_screen.dart';
 import 'contact_company_screen.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 import '../../core/utils/upload_url_resolver.dart';
 
-class SupportAgentScreen extends StatefulWidget {
+class SupportAgentScreen extends ConsumerStatefulWidget {
   const SupportAgentScreen({super.key});
 
   @override
-  State<SupportAgentScreen> createState() => _SupportAgentScreenState();
+  ConsumerState<SupportAgentScreen> createState() => _SupportAgentScreenState();
 }
 
-class _SupportAgentScreenState extends State<SupportAgentScreen> {
+class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authViewModel = context.read<AuthViewModel>();
+      final authViewModel = ref.read(authViewModelProvider);
       final userId = authViewModel.currentUser?.id;
       if (userId != null) {
-        context.read<SupportViewModel>().fetchSupportContext(userId);
+        ref.read(supportViewModelProvider).fetchSupportContext(userId);
       }
-      final district = context.read<ProfileViewModel>().user?.district;
-      context.read<AgentViewModel>().loadAgentsForDistrict(district);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final supportVm = context.watch<SupportViewModel>();
-    final agentVm = context.watch<AgentViewModel>();
+    final colors = ref.watch(themeViewModelProvider).colors;
+    final supportVm = ref.watch(supportViewModelProvider);
     
     final contextData = supportVm.supportContext;
     final isLoading = supportVm.isLoading;
     final hasAssignedAgent = contextData?['has_assigned_agent'] == true;
     final assignedAgent = contextData?['assigned_agent'];
 
-    // Combine district_agents from supportContext and AgentViewModel agents
     List<dynamic> districtAgentsList = [];
     if (contextData != null && contextData['district_agents'] is List && (contextData['district_agents'] as List).isNotEmpty) {
       districtAgentsList = List<dynamic>.from(contextData['district_agents']);
-    }
-    
-    // Add agents from AgentViewModel if not already in the list
-    final existingIds = districtAgentsList.map((e) => e['id']?.toString()).toSet();
-    for (final a in agentVm.agents) {
-      if (!existingIds.contains(a.id.toString())) {
-        districtAgentsList.add({
-          'id': a.id,
-          'name': a.name,
-          'code': a.agentCode ?? '-',
-          'phone': a.phone ?? '-',
-          'email': a.email ?? '-',
-          'district': a.district ?? '-',
-          'status': 'active',
-        });
-      }
     }
 
     return Scaffold(
       backgroundColor: colors.backgroundStart,
       bottomNavigationBar: const GlobalBottomNav(),
-      appBar: CommonAppBar(
+      appBar: MasterAppBar(
+        style: MasterHeaderStyle.standard,
         titleText: 'SUPPORT AGENT',
         showProfile: true,
         onProfileTap: () {

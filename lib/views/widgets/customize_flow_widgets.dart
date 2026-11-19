@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../models/card_model.dart';
-import 'package:provider/provider.dart';
-import '../../../viewmodels/theme_viewmodel.dart';
+import '../../../core/providers/app_riverpod_providers.dart';
 import '../screens/customize/customize_menu_screen.dart';
 import 'master_app_bar.dart';
 
@@ -49,7 +49,7 @@ class SmartCardsFlowAppBar extends StatelessWidget implements PreferredSizeWidge
 }
 
 
-class CardProfileTabsStrip extends StatelessWidget {
+class CardProfileTabsStrip extends ConsumerWidget {
   final List<CardModel> cards;
   final int? selectedCardId;
   final Function(int) onSelectCard;
@@ -62,8 +62,8 @@ class CardProfileTabsStrip extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = ref.watch(themeViewModelProvider).colors;
     
     if (cards.isEmpty) {
       return const SizedBox.shrink();

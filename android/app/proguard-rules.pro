@@ -1,3 +1,7 @@
+# ── Application Classes ────────────────────────────────────────────────────────
+-keep class com.antz_media_solutions.SmartCards.** { *; }
+-dontwarn com.antz_media_solutions.SmartCards.**
+
 # ── Keep Essential Attributes ────────────────────────────────────────────────
 -keepattributes Signature,Annotation,*Annotation*,EnclosingMethod,InnerClasses,Exceptions
 
@@ -50,10 +54,17 @@
 -keep class androidx.camera.** { *; }
 -keep class com.google.zxing.** { *; }
 
+# ── Firebase Stack ────────────────────────────────────────────────────────────
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+-keep class io.flutter.plugins.firebase.** { *; }
+
 # ── Flutter Contacts & SQLite / Storage ───────────────────────────────────────
 -keep class co.quis.flutter_contacts.** { *; }
 -keep class com.tekartik.sqflite.** { *; }
 -keep class com.it_ne.flutter_secure_storage.** { *; }
+-keep class com.it_nomads.fluttersecurestorage.** { *; }
+-dontwarn com.it_nomads.fluttersecurestorage.**
 
 # ── Flutter DotEnv & Generative AI ───────────────────────────────────────────
 -keep class com.github.dime.flutterdotenv.** { *; }
@@ -61,10 +72,12 @@
 
 # ── Media, Cropper & Scanner Plugins ─────────────────────────────────────────
 -keep class com.yalantis.ucrop.** { *; }
+-keep class vn.hunghd.flutter.plugins.imagecropper.** { *; }
 -keep class dev.nfet.flutter.mobile_scanner.** { *; }
 -keep class com.pierfrancescosoffritti.androidyoutubeplayer.** { *; }
--keep class com.rive.** { *; }
 -keep class com.airbnb.lottie.** { *; }
+-keep class xyz.luan.audioplayers.** { *; }
+-dontwarn xyz.luan.audioplayers.**
 
 # ── SMS Retriever / User Consent API ─────────────────────────────────────────
 -keep class com.google.android.gms.auth.api.phone.** { *; }
@@ -77,4 +90,6 @@
 # ── Google Play Core / In-App Update ──────────────────────────────────────────
 -keep class com.google.android.play.core.** { *; }
 -dontwarn com.google.android.play.core.**
+-keep class dev.feelfreelinux.in_app_update.** { *; }
+-dontwarn dev.feelfreelinux.in_app_update.**
 

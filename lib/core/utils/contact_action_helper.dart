@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/app_colors.dart';
+import '../network/api_config.dart';
 import 'intent_launcher.dart';
 import '../../models/app_contact.dart';
 import '../../models/scanned_contact_model.dart';
@@ -316,10 +317,7 @@ class ContactActionHelper {
     } else if (contact is ScannedContactModel) {
       addUrl(contact.website, 'Company Website');
       if (contact.cardUrl != null && contact.cardUrl!.isNotEmpty) {
-        final cardLink = contact.cardUrl!.startsWith('http')
-            ? contact.cardUrl!
-            : 'https://thesmartcards.com/c/${contact.cardUrl!}';
-        addUrl(cardLink, 'SmartCard Profile');
+        addUrl(ApiConfig.formatSmartCardUrl(contact.cardUrl), 'SmartCard Profile');
       }
       if (contact.matchedCards != null) {
         for (int i = 0; i < contact.matchedCards!.length; i++) {

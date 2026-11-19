@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartcard_flutter/core/utils/international_phone_helper.dart';
-import 'package:smartcard_flutter/core/services/dio_client.dart';
+import 'package:smartcard_flutter/core/network/dio_client.dart';
 import 'package:smartcard_flutter/models/user_model.dart';
 import 'package:smartcard_flutter/repositories/auth_repository.dart';
 import 'package:smartcard_flutter/repositories/user_repository.dart';
@@ -14,7 +14,7 @@ void main() {
 
   setUpAll(() {
     dotenv.loadFromString(
-      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n',
+      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n',
     );
   });
 

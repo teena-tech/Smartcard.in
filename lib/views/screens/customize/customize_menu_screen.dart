@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../viewmodels/auth_viewmodel.dart';
-import '../../../viewmodels/card_viewmodel.dart';
-import '../../../viewmodels/theme_viewmodel.dart';
+import '../../../core/providers/app_riverpod_providers.dart';
 import '../../widgets/profile_menu_bottom_sheet.dart';
 import '../../widgets/customize_flow_widgets.dart';
-import '../../widgets/global_bottom_nav.dart';
+import '../../widgets/master_bottom_nav.dart';
 import '../../../core/utils/card_expansion_route.dart';
 import 'customize_ai_screen.dart';
 import 'customize_theme_screen.dart';
-class CustomizeMenuScreen extends StatefulWidget {
+
+class CustomizeMenuScreen extends ConsumerStatefulWidget {
   const CustomizeMenuScreen({super.key});
 
   @override
-  State<CustomizeMenuScreen> createState() => _CustomizeMenuScreenState();
+  ConsumerState<CustomizeMenuScreen> createState() => _CustomizeMenuScreenState();
 }
 
-class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
+class _CustomizeMenuScreenState extends ConsumerState<CustomizeMenuScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
@@ -32,8 +31,8 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
   }
 
   Future<void> _ensureCardContextLoaded() async {
-    final authVm = context.read<AuthViewModel>();
-    final cardVm = context.read<CardViewModel>();
+    final authVm = ref.read(authViewModelProvider);
+    final cardVm = ref.read(cardViewModelProvider);
     final user = authVm.currentUser;
     if (user == null) return;
 
@@ -52,7 +51,7 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
   }
 
   void _navigateTo(Widget page) {
-    final cardVm = context.read<CardViewModel>();
+    final cardVm = ref.read(cardViewModelProvider);
     if (cardVm.currentCard?.isOrganization == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -71,13 +70,14 @@ class _CustomizeMenuScreenState extends State<CustomizeMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeVm = context.watch<ThemeViewModel>();
+    final themeVm = ref.watch(themeViewModelProvider);
     final colors = themeVm.colors;
-    final initials = context.read<AuthViewModel>().currentUser == null
+    final currentUser = ref.watch(authViewModelProvider).currentUser;
+    final initials = currentUser == null
         ? 'U'
         : [
-            context.read<AuthViewModel>().currentUser?.firstName,
-            context.read<AuthViewModel>().currentUser?.lastName,
+            currentUser.firstName,
+            currentUser.lastName,
           ]
             .whereType<String>()
             .map((part) => part.trim())

@@ -9,16 +9,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../models/contact_model.dart';
 import '../../models/user_model.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../../viewmodels/card_viewmodel.dart';
-import '../../viewmodels/message_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/vcard_photo_service.dart';
 import '../../core/utils/file_downloader.dart';
@@ -29,22 +26,11 @@ import '../widgets/common_drawer.dart';
 import '../widgets/master_app_bar.dart';
 
 /// Simple QR card viewer — manual swipe only, zero auto-scroll by design.
-///
-/// Uses [Selector] so it only rebuilds when [CardViewModel.cards] changes.
-/// Changes to [CardViewModel.currentIndex] (driven by the home auto-carousel)
-/// are completely ignored, so nothing on this screen ever moves on its own.
-class MyCardsScreen extends StatefulWidget {
+class MyCardsScreen extends ConsumerStatefulWidget {
   final bool isStandalone;
   const MyCardsScreen({super.key, this.isStandalone = true});
 
-  /// Formats the Contact QR clipboard text per user's required professional format:
-  /// Hello, here are my contact details:
-  ///
-  /// Name
-  /// Designation | Company
-  /// 📞 Phone
-  ///
-  /// Looking forward to connecting with you!
+  /// Formats the Contact QR clipboard text with icons and digital card link.
   static String buildContactCopyText({
     required String name,
     required String designation,
@@ -57,35 +43,27 @@ class MyCardsScreen extends StatefulWidget {
     final cleanCompany =
         company.trim().toLowerCase() == 'null' ? '' : company.trim();
     final cleanPhone = phone.trim();
+    final cleanUrl = cardUrl.trim();
 
-    final buffer = StringBuffer();
-    buffer.writeln('Hello, here are my contact details:\n');
-
-    if (cleanName.isNotEmpty) {
-      buffer.writeln(cleanName);
-    }
-
-    final subtitleParts = <String>[
-      if (cleanDesignation.isNotEmpty) cleanDesignation,
-      if (cleanCompany.isNotEmpty) cleanCompany,
+    final lines = <String>[
+      if (cleanName.isNotEmpty) '👤 $cleanName',
+      if (cleanDesignation.isNotEmpty) '💻 $cleanDesignation',
+      if (cleanCompany.isNotEmpty) '🏢 $cleanCompany',
+      if (cleanPhone.isNotEmpty) '📞 $cleanPhone',
     ];
-    if (subtitleParts.isNotEmpty) {
-      buffer.writeln(subtitleParts.join(' | '));
-    }
 
-    if (cleanPhone.isNotEmpty) {
-      buffer.writeln('📞 $cleanPhone');
+    if (cleanUrl.isNotEmpty) {
+      if (lines.isNotEmpty) lines.add('');
+      lines.add('🔗 View Digital Card: $cleanUrl');
     }
-
-    buffer.writeln('\nLooking forward to connecting with you!');
-    return buffer.toString().trim();
+    return lines.join('\n');
   }
 
   @override
-  State<MyCardsScreen> createState() => _MyCardsScreenState();
+  ConsumerState<MyCardsScreen> createState() => _MyCardsScreenState();
 }
 
-class _MyCardsScreenState extends State<MyCardsScreen> {
+class _MyCardsScreenState extends ConsumerState<MyCardsScreen> {
   final Map<int, GlobalKey> _contactQrKeys = {};
   final Map<int, GlobalKey> _webQrKeys = {};
   late final PageController _pageController;
@@ -107,7 +85,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!context.mounted) return;
-      final msgVm = context.read<MessageViewModel>();
+      final msgVm = ref.read(messageViewModelProvider);
       if (msgVm.messages.isEmpty && !msgVm.isLoading) {
         msgVm.loadMessages();
       }
@@ -283,6 +261,11 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     return null;
   }
 
+  // TEMP TEST: Hardcoded public HTTPS .jpg URL in Contact QR (PHOTO;VALUE=URI:)
+  // for testing Google Lens / Camera behavior with a direct .jpg HTTP path.
+  static const String _tempDummyHardcodedJpegUrl =
+      'https://randomuser.me/api/portraits/men/32.jpg';
+
   static ContactModel _buildShareContactModel(
     CardModel card, {
     required String primaryPhone,
@@ -310,8 +293,8 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
       card,
       primaryPhone: primaryPhone,
       designation: designation,
-      profileImageUrl: null,
-    ).toVCard(includePhotoUri: false, inlinePhotoBase64: null);
+      profileImageUrl: _tempDummyHardcodedJpegUrl,
+    ).toVCard();
   }
 
   Future<void> _shareContactVCard(
@@ -326,26 +309,32 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     }
     try {
       final originRect = _getShareOriginRect();
-      final displayName = card.name.trim().isNotEmpty
-          ? card.name.trim()
-          : card.companyName.trim();
-      final shareText = MyCardsScreen.buildContactCopyText(
-        name: displayName,
+      final contact = _buildShareContactModel(
+        card,
+        primaryPhone: primaryPhone,
         designation: designation,
-        company: card.companyName,
-        phone: primaryPhone,
-        cardUrl: card.qrData,
+        profileImageUrl: profileImageUrl,
       );
 
-      // ignore: deprecated_member_use
-      await Share.share(
-        shareText,
-        subject: '$displayName - Contact Details',
-        sharePositionOrigin: originRect,
+      final vcfContent = await contact.toVCardWithPhoto(forQrCode: false);
+      final tempDir = await getTemporaryDirectory();
+      final sanitizedName = card.name
+          .replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')
+          .toLowerCase();
+      final vcfFile = File('${tempDir.path}/$sanitizedName.vcf');
+      await vcfFile.writeAsString(vcfContent);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(vcfFile.path, mimeType: 'text/vcard')],
+          text: contact.toPlainText(),
+          subject: '${card.name} - Digital Business Card',
+          sharePositionOrigin: originRect,
+        ),
       );
 
       if (!mounted) return;
-      final profileVm = context.read<ProfileViewModel>();
+      final profileVm = ref.read(profileViewModelProvider);
       final targetUserId = profileVm.user?.id ?? card.accountUserId.toString();
       profileVm.incrementShareCount(targetUserId);
     } catch (e) {
@@ -364,61 +353,34 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
     final url = card.qrData;
     // ignore: deprecated_member_use
     Share.share(url);
-    final profileVm = context.read<ProfileViewModel>();
+    final profileVm = ref.read(profileViewModelProvider);
     final targetUserId = profileVm.user?.id ?? card.accountUserId.toString();
     profileVm.incrementShareCount(targetUserId);
   }
 
-  Future<void> _downloadPng(
-    GlobalKey key,
-    CardModel card, {
-    required String qrContent,
-    required String suffix,
-  }) async {
+  Future<void> _downloadPng(GlobalKey key, CardModel card, {required String suffix}) async {
     if (card.isSuspended) {
       _showSuspendedSnackBar('Card is suspended. Unsuspend in Manage Cards to download PNG.');
       return;
     }
     try {
-      Uint8List? bytes;
       final boundary = key.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      if (boundary != null) {
-        try {
-          final image = await boundary.toImage(pixelRatio: 3.0);
-          final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-          if (byteData != null) {
-            bytes = byteData.buffer.asUint8List();
-          }
-        } catch (_) {}
-      }
-
-      if (bytes == null) {
-        final painter = QrPainter(
-          data: qrContent,
-          version: QrVersions.auto,
-          errorCorrectionLevel: QrErrorCorrectLevel.M,
-          color: const Color(0xFF20263A),
-          emptyColor: Colors.white,
-        );
-        final picData = await painter.toImageData(1024);
-        if (picData != null) {
-          bytes = picData.buffer.asUint8List();
-        }
-      }
-
-      if (bytes == null) {
+      if (boundary == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Could not generate QR code PNG image.')),
         );
         return;
       }
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
 
       final cleanName = (card.companyName.isNotEmpty ? card.companyName : card.name)
           .replaceAll(RegExp(r'[^\w\.-]'), '_');
       final fileName = '${cleanName}_${suffix}_QR.png';
 
-      await saveFileToDevice(fileName, bytes);
+      await saveFileToDevice(fileName, byteData.buffer.asUint8List());
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -426,21 +388,16 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
         SnackBar(
           backgroundColor: const Color(0xFF16A34A),
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(milliseconds: 2500),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          margin: const EdgeInsets.all(16),
           content: Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Download successfully',
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  'PNG image downloaded successfully! ($fileName)',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -472,25 +429,11 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
       return;
     }
     try {
-      var result = QrValidator.validate(
-        data: qrContent,
-        version: QrVersions.auto,
-        errorCorrectionLevel: QrErrorCorrectLevel.M,
-      );
-      if (result.status != QrValidationStatus.valid) {
-        result = QrValidator.validate(
+      final result = QrValidator.validate(
           data: qrContent,
           version: QrVersions.auto,
-          errorCorrectionLevel: QrErrorCorrectLevel.L,
-        );
-      }
-      if (result.status != QrValidationStatus.valid || result.qrCode == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not generate SVG QR code.')),
-        );
-        return;
-      }
+          errorCorrectionLevel: QrErrorCorrectLevel.M);
+      if (result.status != QrValidationStatus.valid) return;
       final qr = QrImage(result.qrCode!);
       final n = qr.moduleCount;
       final buf = StringBuffer()
@@ -511,9 +454,7 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
       final fileName = '${cleanName}_${suffix}_QR.svg';
 
       await saveFileToDevice(
-        fileName,
-        Uint8List.fromList(utf8.encode(buf.toString())),
-      );
+          fileName, Uint8List.fromList(utf8.encode(buf.toString())));
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -521,21 +462,16 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
         SnackBar(
           backgroundColor: const Color(0xFF16A34A),
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(milliseconds: 2500),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          margin: const EdgeInsets.all(16),
           content: Row(
             children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Download successfully',
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  'SVG image downloaded successfully! ($fileName)',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -561,23 +497,19 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.watch<ThemeViewModel>().colors;
-    final user = context.select<ProfileViewModel, UserModel?>((vm) => vm.user);
+    final colors = ref.watch(themeViewModelProvider).colors;
+    final user = ref.watch(profileViewModelProvider).user;
+    final cards = ref.watch(cardViewModelProvider).cards;
 
-    // Selector fires ONLY when cards list changes.
-    // Home carousel's setCurrentIndex() is invisible to this widget.
-    return Selector<CardViewModel, List<CardModel>>(
-      selector: (_, vm) => vm.cards,
-      builder: (context, cards, _) {
-        if (cards.isEmpty) {
-          return _wrap(
-            child: Center(
-              child: Text('No cards available.',
-                  style: GoogleFonts.inter(color: colors.muted)),
-            ),
-            colors: colors,
-          );
-        }
+    if (cards.isEmpty) {
+      return _wrap(
+        child: Center(
+          child: Text('No cards available.',
+              style: GoogleFonts.inter(color: colors.muted)),
+        ),
+        colors: colors,
+      );
+    }
 
         // Clamp page in case cards shrink
         if (_page >= cards.length) {
@@ -628,9 +560,9 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                       profileImageUrl: profileImageUrl,
                     ),
                     onShareWeb: () => _shareWebLink(card),
-                    onDownloadContactPng: () => _downloadPng(contactKey, card, qrContent: vCardData, suffix: 'Contact'),
+                    onDownloadContactPng: () => _downloadPng(contactKey, card, suffix: 'Contact'),
                     onDownloadContactSvg: () => _downloadSvg(vCardData, card, suffix: 'Contact'),
-                    onDownloadWebPng: () => _downloadPng(webKey, card, qrContent: card.qrData, suffix: 'Web'),
+                    onDownloadWebPng: () => _downloadPng(webKey, card, suffix: 'Web'),
                     onDownloadWebSvg: () => _downloadSvg(card.qrData, card, suffix: 'Web'),
                   );
 
@@ -664,12 +596,93 @@ class _MyCardsScreenState extends State<MyCardsScreen> {
                 },
               ),
             ),
+            // ── Bottom White Card Strip (Which Card + Red Highlight) ────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFFC40000).withValues(alpha: 0.22),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFC40000),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        'Card ${_page + 1}/${cards.length}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        (cards[_page].companyName.trim().isNotEmpty
+                                ? cards[_page].companyName.trim()
+                                : cards[_page].name.trim())
+                            .toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFC40000),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    if (cards.length > 1) ...[
+                      const SizedBox(width: 10),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(cards.length, (i) {
+                          final active = i == _page;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: active ? 9 : 7,
+                            height: active ? 9 : 7,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: active ? const Color(0xFFC40000) : Colors.white,
+                              border: active
+                                  ? null
+                                  : Border.all(
+                                      color: Colors.black.withValues(alpha: 0.24),
+                                      width: 1.0,
+                                    ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ],
         );
 
-        return _wrap(child: body, colors: colors);
-      },
-    );
+    return _wrap(child: body, colors: colors);
   }
 
   Widget _wrap({required Widget child, required AppColors colors}) {
@@ -963,16 +976,15 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
     required GlobalKey qrKey,
     required String qrData,
     required bool isSuspended,
-    required bool isContact,
   }) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 30,
             offset: const Offset(0, 10),
           ),
@@ -997,7 +1009,7 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
                       data: qrData,
                       version: QrVersions.auto,
                       errorCorrectionLevel: QrErrorCorrectLevel.L,
-                      size: 215,
+                      size: 220,
                       eyeStyle: const QrEyeStyle(
                         eyeShape: QrEyeShape.square,
                         color: Color(0xFF20263A),
@@ -1008,26 +1020,7 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
                       ),
                       backgroundColor: Colors.white,
                     ),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFDE8E8),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0xFFDC2626).withValues(alpha: 0.35),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Text(
-                        isContact ? 'Contact-QR' : 'Digital card',
-                        style: GoogleFonts.inter(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFFDC2626),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 4),
                   ],
                 ),
               ),
@@ -1083,10 +1076,10 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        padding: const EdgeInsets.all(3),
         child: SizedBox(
-          width: 32,
-          height: 32,
+          width: 22,
+          height: 22,
           child: Center(
             child: isActive
                 ? Stack(
@@ -1161,7 +1154,7 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
               pulse: pulse,
               onTap: () => _animateToMode(0),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 2),
             _buildIndicatorDot(
               isActive: !isContact,
               spinProgress: spinProgress,
@@ -1175,9 +1168,9 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
   }
 
   Widget _buildCompanyHeader(CardModel card, AppColors colors, bool isContact) {
-    final titleText = card.companyName.trim().isNotEmpty
-        ? card.companyName.trim()
-        : card.name.trim();
+    final titleText =
+        (card.companyName.trim().isNotEmpty ? card.companyName.trim() : card.name.trim())
+            .toUpperCase();
     final rawLogo = card.companyLogo?.trim() ?? '';
     final resolvedLogo = (rawLogo.isNotEmpty &&
             rawLogo.toLowerCase() != 'null' &&
@@ -1189,68 +1182,83 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          constraints: const BoxConstraints(
-            minWidth: 54,
-            maxWidth: 140,
-            minHeight: 54,
-            maxHeight: 54,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            border: resolvedLogo.isNotEmpty
-                ? null
-                : Border.all(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    width: 1.0,
-                  ),
+            color: Colors.white.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: const Color(0xFFC40000).withValues(alpha: 0.16),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: resolvedLogo.isNotEmpty
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: CachedNetworkImage(
-                    imageUrl: resolvedLogo,
-                    fit: BoxFit.contain,
-                    errorWidget: (_, _, _) => Center(
-                      child: Text(
-                        'company logo',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (resolvedLogo.isNotEmpty) ...[
+                Container(
+                  width: 34,
+                  height: 34,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.08),
                     ),
                   ),
-                )
-              : Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: Text(
-                      'company logo',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        fontSize: 10,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(7),
+                    child: CachedNetworkImage(
+                      imageUrl: resolvedLogo,
+                      fit: BoxFit.contain,
+                      errorWidget: (_, _, _) => const Icon(
+                        Icons.business_rounded,
+                        size: 20,
+                        color: Color(0xFFC40000),
                       ),
                     ),
                   ),
                 ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          titleText,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: GoogleFonts.inter(
-            fontSize: 16.5,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E293B),
-            letterSpacing: 0.3,
+                const SizedBox(width: 10),
+              ],
+              Flexible(
+                child: Text(
+                  titleText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: colors.text,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFC40000).withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  isContact ? 'CONTACT QR' : 'WEB CODE',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFFC40000),
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -1297,121 +1305,82 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
           const SizedBox(height: 12),
         ],
 
-        // 1. Company Name on top + Company Logo box directly below
+        // 1. Organization Logo + Name + Active QR Type Frame
         _buildCompanyHeader(card, colors, isContact),
         const SizedBox(height: 16),
 
-        // 2. QR Code Frame (with inline Contact QR / Web QR Code pill)
+        // 3. QR Code Frame
         _buildQrCard(
           qrKey: isContact ? widget.contactQrKey : widget.webQrKey,
           qrData: isContact ? vCardData : card.qrData,
           isSuspended: isSuspended,
-          isContact: isContact,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
 
-        // 3. Pill down below QR code (with copy button)
+        // 4. Pill down below QR code (with copy button)
         Opacity(
           opacity: isSuspended ? 0.5 : 1.0,
           child: Container(
             width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.only(left: 16, right: 8, top: 4, bottom: 4),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: colors.panel.withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.border),
             ),
             child: Row(
               children: [
                 if (isContact) ...[
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDC2626),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.badge_rounded,
-                      size: 13,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      contactLabel,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                  ),
-                ] else ...[
                   const Icon(
-                    Icons.link_rounded,
+                    Icons.contact_phone_rounded,
                     size: 16,
-                    color: Color(0xFFDC2626),
+                    color: AppColors.primaryRed,
                   ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      card.qrData.trim().isNotEmpty
-                          ? (card.qrData.trim().startsWith('http://')
-                              ? card.qrData.trim().replaceFirst('http://', 'https://')
-                              : (card.qrData.trim().startsWith('https://')
-                                  ? card.qrData.trim()
-                                  : 'https://${card.qrData.trim()}'))
-                          : 'https://thesmartcards.com',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1E293B),
-                      ),
+                ],
+                Expanded(
+                  child: Text(
+                    isContact ? contactLabel : card.qrData,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: colors.text,
                     ),
                   ),
-                ],
+                ),
                 const SizedBox(width: 8),
-                InkWell(
-                  onTap: isSuspended ? null : () => _handleCopy(isContact),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      isSuspended ? Icons.block : Icons.copy_rounded,
-                      size: 18,
-                      color: isSuspended ? Colors.grey : const Color(0xFFDC2626),
-                    ),
+                IconButton(
+                  onPressed: isSuspended ? null : () => _handleCopy(isContact),
+                  icon: Icon(
+                    isSuspended ? Icons.block : Icons.copy_rounded,
+                    size: 18,
+                  ),
+                  color: isSuspended ? Colors.grey : AppColors.primaryRed,
+                  tooltip: isSuspended ? 'Suspended' : 'Copy',
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colors.border.withValues(alpha: 0.3),
                   ),
                 ),
                 if (!isSuspended && _showCopyDelete) ...[
                   const SizedBox(width: 6),
-                  InkWell(
-                    onTap: _clearCopiedFromBox,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFC40000).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.delete_outline_rounded,
-                        size: 16,
-                        color: Color(0xFFC40000),
-                      ),
+                  IconButton(
+                    onPressed: _clearCopiedFromBox,
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      size: 18,
+                    ),
+                    color: const Color(0xFFC40000),
+                    tooltip: 'Delete',
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                    style: IconButton.styleFrom(
+                      backgroundColor:
+                          const Color(0xFFC40000).withValues(alpha: 0.12),
                     ),
                   ),
                 ],
@@ -1419,20 +1388,21 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
             ),
           ),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 24),
 
-        // 4. Action buttons: Share, PNG, SVG
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        // 5. Action buttons: Share, PNG, SVG
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 16,
+          runSpacing: 16,
           children: [
             _ActionBtn(
-              icon: isSuspended ? Icons.block : Icons.share_rounded,
+              icon: isSuspended ? Icons.block : Icons.share,
               label: 'Share',
               onTap: isContact ? widget.onShareContact : widget.onShareWeb,
               colors: colors,
               disabled: isSuspended,
             ),
-            const SizedBox(width: 20),
             _ActionBtn(
               icon: isSuspended ? Icons.block : Icons.download_rounded,
               label: 'PNG',
@@ -1440,28 +1410,8 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
               colors: colors,
               disabled: isSuspended,
             ),
-            const SizedBox(width: 20),
             _ActionBtn(
-              customIcon: isSuspended
-                  ? const Icon(Icons.block, color: Colors.grey, size: 22)
-                  : Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                        border: Border.all(color: const Color(0xFF1E293B), width: 1.6),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'SVG',
-                        style: GoogleFonts.inter(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF1E293B),
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                    ),
+              icon: isSuspended ? Icons.block : Icons.download_rounded,
               label: 'SVG',
               onTap: isContact ? widget.onDownloadContactSvg : widget.onDownloadWebSvg,
               colors: colors,
@@ -1485,8 +1435,8 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
     );
 
     final contactLabel = widget.primaryPhone.isNotEmpty
-        ? 'Contact-QR • ${widget.primaryPhone}'
-        : 'Contact-QR • ${card.name}';
+        ? 'Contact QR • ${widget.primaryPhone}'
+        : 'Contact QR • ${card.name}';
 
     final contactFace = _buildCardFace(
       mode: 0,
@@ -1559,13 +1509,85 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
                               );
                             },
                           ),
-                        ],
-                      ),
+                          const SizedBox(height: 16),
+
+                          // 6. Continuous smooth bloody-red bidirectional swipe cue
+                          AnimatedBuilder(
+                            animation: Listenable.merge([_flipController, _dotSpin]),
+                            builder: (context, _) {
+                              final isContact =
+                                  _isContactForValue(_flipController.value);
+                              final pulse = _continuousPulse(_dotSpin.value);
+                              final beatScale = 1.0 + 0.04 * pulse;
+                              const bloodyRed = Color(0xFFC40000);
+                              return GestureDetector(
+                                onTap: () => _animateToMode(isContact ? 1 : 0),
+                                behavior: HitTestBehavior.opaque,
+                                child: Transform.scale(
+                                  scale: beatScale,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 7,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.94),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: bloodyRed.withValues(alpha: 0.35),
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFFFF1A1A)
+                                              .withValues(alpha: 0.14 + 0.14 * pulse),
+                                          blurRadius: 10,
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          isContact
+                                              ? Icons.keyboard_arrow_up_rounded
+                                              : Icons.keyboard_arrow_down_rounded,
+                                          size: 18,
+                                          color: bloodyRed,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          isContact
+                                              ? 'Contact QR  •  Swipe ↑ Web Code'
+                                              : 'Web Code  •  Swipe ↓ Contact QR',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                            color: bloodyRed.withValues(
+                                              alpha: 0.88 + 0.12 * pulse,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(
+                                          Icons.swap_vert_rounded,
+                                          size: 16,
+                                          color: bloodyRed,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
+          ),
             // Right side vertical reels indicator dots
             Positioned(
               right: 12,
@@ -1583,16 +1605,14 @@ class _CardQrPageState extends State<_CardQrPage> with TickerProviderStateMixin 
 }
 
 class _ActionBtn extends StatelessWidget {
-  final IconData? icon;
-  final Widget? customIcon;
+  final IconData icon;
   final String label;
   final VoidCallback onTap;
   final AppColors colors;
   final bool disabled;
 
   const _ActionBtn({
-    this.icon,
-    this.customIcon,
+    required this.icon,
     required this.label,
     required this.onTap,
     required this.colors,
@@ -1604,7 +1624,6 @@ class _ActionBtn extends StatelessWidget {
     return Opacity(
       opacity: disabled ? 0.45 : 1.0,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
             onTap: disabled
@@ -1615,36 +1634,22 @@ class _ActionBtn extends StatelessWidget {
                   },
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              width: 52,
-              height: 52,
-              alignment: Alignment.center,
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: colors.panel,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                border: Border.all(color: colors.border),
               ),
-              child: customIcon ??
-                  Icon(
-                    icon ?? Icons.circle,
-                    color: disabled ? Colors.grey : const Color(0xFF1E293B),
-                    size: 22,
-                  ),
+              child: Icon(icon, color: disabled ? Colors.grey : colors.text, size: 24),
             ),
           ),
           const SizedBox(height: 6),
           Text(
             label,
             style: GoogleFonts.inter(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-              color: disabled ? Colors.grey : const Color(0xFF1E293B),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: disabled ? Colors.grey : Colors.black,
             ),
           ),
         ],

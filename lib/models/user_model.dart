@@ -24,6 +24,28 @@ class UserModel {
   final String? countryCode;
   final String? whatsappNumber;
   final String? preferredOtpMethod; // 'phone' or 'whatsapp'
+  final int? roleId;
+
+  String get roleName {
+    switch (roleId) {
+      case 1:
+        return 'Super Admin';
+      case 2:
+        return 'Admin';
+      case 3:
+        return 'User Admin';
+      case 4:
+        return 'Company Admin';
+      case 5:
+        return 'Retailer';
+      case 6:
+        return 'Free User';
+      case 7:
+        return 'Paid User';
+      default:
+        return 'SmartCard User';
+    }
+  }
 
   String get displayName => "${firstName ?? ''} ${lastName ?? ''}".trim();
 
@@ -64,6 +86,7 @@ class UserModel {
     this.countryCode,
     this.whatsappNumber,
     this.preferredOtpMethod,
+    this.roleId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -89,6 +112,7 @@ class UserModel {
       countryCode:        json['country_code']?.toString() ?? json['countryCode']?.toString(),
       whatsappNumber:     json['whatsapp_number']?.toString() ?? json['whatsapp']?.toString(),
       preferredOtpMethod: json['preferred_otp_method']?.toString() ?? json['delivery_method']?.toString() ?? json['otp_channel']?.toString(),
+      roleId:             int.tryParse(json['role_id']?.toString() ?? ''),
     );
   }
 
@@ -108,6 +132,7 @@ class UserModel {
       'profile_image':        profileImage,
       'gender':               gender,
       'date_of_birth':        dateOfBirth,
+      'dob':                  dateOfBirth,
       'profession':           profession,
       'pincode':              pincode,
       'district':             district,
@@ -115,6 +140,7 @@ class UserModel {
       'country_code':         countryCode,
       'whatsapp_number':      whatsappNumber,
       'preferred_otp_method': preferredOtpMethod,
+      'role_id':              roleId,
     };
   }
 
@@ -140,6 +166,7 @@ class UserModel {
     String? countryCode,
     String? whatsappNumber,
     String? preferredOtpMethod,
+    int?    roleId,
   }) {
     return UserModel(
       id:                 id                 ?? this.id,
@@ -164,6 +191,7 @@ class UserModel {
       countryCode:        countryCode        ?? this.countryCode,
       whatsappNumber:     whatsappNumber     ?? this.whatsappNumber,
       preferredOtpMethod: preferredOtpMethod ?? this.preferredOtpMethod,
+      roleId:             roleId             ?? this.roleId,
     );
   }
 }

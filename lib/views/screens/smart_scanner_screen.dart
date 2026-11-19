@@ -3,15 +3,16 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../core/providers/app_riverpod_providers.dart';
 
-import '../../bloc/scan_bloc.dart';
+import '../../core/providers/scanner_provider.dart';
 import '../../core/utils/business_card_validator.dart';
 import '../../viewmodels/dashboard_viewmodel.dart';
 import '../widgets/card_tracker_overlay.dart';
@@ -26,14 +27,14 @@ import '../widgets/duplicate_scan_popup_dialog.dart';
 import 'contact_preview_screen.dart';
 
 /// Instant QR scanner + business card edge detection (auto + manual).
-class SmartScannerScreen extends StatefulWidget {
+class SmartScannerScreen extends ConsumerStatefulWidget {
   const SmartScannerScreen({super.key});
 
   @override
-  State<SmartScannerScreen> createState() => _SmartScannerScreenState();
+  ConsumerState<SmartScannerScreen> createState() => _SmartScannerScreenState();
 }
 
-class _SmartScannerScreenState extends State<SmartScannerScreen>
+class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
     with WidgetsBindingObserver {
   MobileScannerController? _qrController;
 
@@ -68,7 +69,11 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) return;
-      _dashboardViewModel = Provider.of<DashboardViewModel>(context, listen: false);
+      final hasScope = context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+          context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+      _dashboardViewModel = hasScope
+          ? ProviderScope.containerOf(context, listen: false).read(dashboardViewModelProvider)
+          : legacy.Provider.of<DashboardViewModel>(context, listen: false);
       _dashboardViewModel?.addListener(_onTabChanged);
 
       if (kIsWeb) {
@@ -117,7 +122,8 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
     if (_mlkitBusy || _isDisposed || !context.mounted || !_hasPermission) return;
     if (_isProcessingQr || _cardLocked) return;
     // Only run when scan tab is active
-    if (_dashboardViewModel?.currentIndex != 1) return;
+    final isScanTab = ref.read(tabIndexProvider) == 1 || (_dashboardViewModel?.currentIndex == 1);
+    if (!isScanTab) return;
 
     // Use the last screenshot if available via the MobileScanner image stream
     // Since we can't grab a frame directly, we use a temp camera capture
@@ -171,7 +177,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
   void _handleCameraLifecycle() {
     if (!context.mounted || _isDisposed) return;
 
-    final isScanTab = _dashboardViewModel?.currentIndex == 1;
+    final isScanTab = ref.read(tabIndexProvider) == 1 || (_dashboardViewModel?.currentIndex == 1);
     final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? false;
 
     if (isScanTab && isCurrentRoute) {
@@ -221,7 +227,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
       _cardLocked = false;
       _detectedCardRect = null;
       _lastCapturedImagePath = null;
-      context.read<ScanBloc>().add(ResetScanState());
+      ref.read(scannerNotifierProvider.notifier).resetScanState();
     }
     _handleCameraLifecycle();
   }
@@ -441,7 +447,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
     } catch (_) {}
     HapticFeedback.mediumImpact();
 
-    context.read<ScanBloc>().add(ProcessQrCode(qrValue: code));
+    ref.read(scannerNotifierProvider.notifier).processQrCode(code);
   }
 
   int _getAndroidSdkVersion() {
@@ -609,16 +615,14 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
         final finalPath = userCropped?.path ?? autoPath;
 
         if (context.mounted) {
-          context.read<ScanBloc>().add(
-            ProcessGalleryImage(
-              imagePath: finalPath,
-              manualEdgeAdjust: false,
-            ),
+          ref.read(scannerNotifierProvider.notifier).processGalleryImage(
+            imagePath: finalPath,
+            manualEdgeAdjust: false,
           );
         }
       }
     } else if (context.mounted) {
-      context.read<ScanBloc>().add(ResetScanState());
+      ref.read(scannerNotifierProvider.notifier).resetScanState();
       _handleCameraLifecycle();
     }
   }
@@ -640,7 +644,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
   Future<void> _scanCardWithEdgeCamera() async {
     await _releaseCameraForExternalAction();
     if (context.mounted) {
-      context.read<ScanBloc>().add(const ProcessEdgeCameraScan());
+      ref.read(scannerNotifierProvider.notifier).processEdgeCameraScan();
     }
   }
 
@@ -662,12 +666,20 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
         await _qrController?.stop();
       } catch (_) {}
 
-      final contactVm = context.read<ContactViewModel>();
-      final contactProvider = context.read<ContactProvider>();
+      final hasScope = context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+          context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+      final contactVm = hasScope
+          ? ProviderScope.containerOf(context, listen: false).read(contactViewModelProvider)
+          : legacy.Provider.of<ContactViewModel>(context, listen: false);
+      final contactProvider = hasScope
+          ? ProviderScope.containerOf(context, listen: false).read(contactProviderRiverpod)
+          : legacy.Provider.of<ContactProvider>(context, listen: false);
       await contactVm.recordScan();
 
       try {
-        final profileVm = context.read<ProfileViewModel>();
+        final profileVm = hasScope
+            ? ProviderScope.containerOf(context, listen: false).read(profileViewModelProvider)
+            : legacy.Provider.of<ProfileViewModel>(context, listen: false);
         final uid = profileVm.user?.id;
         if (uid != null && uid.isNotEmpty) {
           profileVm.incrementScanCount(uid);
@@ -708,6 +720,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
             if (Navigator.of(context).canPop()) {
               Navigator.of(context).pop(true);
             } else {
+              ref.read(tabIndexProvider.notifier).setIndex(4);
               _dashboardViewModel?.setIndex(4);
             }
             return;
@@ -715,6 +728,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
           _resetQrScanner();
         } else if (action == DuplicateScanAction.exit) {
           _resetQrScanner();
+          ref.read(tabIndexProvider.notifier).setIndex(0);
           _dashboardViewModel?.setIndex(0);
           Navigator.of(context).popUntil((route) => route.isFirst);
         } else {
@@ -756,7 +770,7 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
     _lastCapturedImagePath = null;
     if (context.mounted) {
       setState(() {});
-      context.read<ScanBloc>().add(ResetScanState());
+      ref.read(scannerNotifierProvider.notifier).resetScanState();
       _handleCameraLifecycle();
     }
   }
@@ -832,65 +846,75 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: BlocConsumer<ScanBloc, ScanState>(
-        listener: (context, state) async {
-          if (state is ScanSuccess) {
-            HapticFeedback.heavyImpact();
-            await _saveAndPreview(state);
-          } else if (state is ScanFailure) {
-            _isProcessingQr = false;
-            _lastQr = null;
-            _handleCameraLifecycle();
-            if (context.mounted) {
-              if (state.error != 'Card scan cancelled') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      state.error,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    backgroundColor: Colors.orangeAccent,
-                  ),
-                );
-              }
-            }
-          } else if (state is ScanTimeout) {
-            _resetQrScanner();
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    state.reason,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: Colors.deepOrange,
-                  duration: const Duration(seconds: 5),
-                ),
-              );
-            }
-          } else if (state is ScanSaveResult) {
-            if (context.mounted) {
-              _showSaveResultSnackBar(state);
-              if (state.phoneSaved || state.apiSaved) {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop(true);
-                } else {
-                  _dashboardViewModel?.setIndex(4);
-                }
-              }
-            }
-          }
-        },
-        builder: (context, state) {
-          final processing = state is ScanProcessing;
+    ref.listen<int>(tabIndexProvider, (previous, current) {
+      _onTabChanged();
+    });
 
-          if (!_permissionChecked) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFF5252)),
+    ref.listen<ScanState>(scannerNotifierProvider, (previous, state) async {
+      if (state is ScanSuccess) {
+        HapticFeedback.heavyImpact();
+        await _saveAndPreview(state);
+      } else if (state is ScanFailure) {
+        _isProcessingQr = false;
+        _lastQr = null;
+        _handleCameraLifecycle();
+        if (context.mounted) {
+          if (state.error != 'Card scan cancelled') {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  state.error,
+                  style: const TextStyle(color: Colors.white),
+                ),
+                backgroundColor: Colors.orangeAccent,
+              ),
             );
           }
+        }
+      } else if (state is ScanTimeout) {
+        _resetQrScanner();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                state.reason,
+                style: const TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.deepOrange,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      } else if (state is ScanSaveResult) {
+        if (context.mounted) {
+          _showSaveResultSnackBar(state);
+          if (state.phoneSaved || state.apiSaved) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop(true);
+            } else {
+              ref.read(tabIndexProvider.notifier).setIndex(4);
+              _dashboardViewModel?.setIndex(4);
+            }
+          }
+        }
+      }
+    });
+
+    final state = ref.watch(scannerNotifierProvider);
+    final processing = state is ScanProcessing;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: _buildScannerContent(context, state, processing),
+    );
+  }
+
+  Widget _buildScannerContent(BuildContext context, ScanState state, bool processing) {
+    if (!_permissionChecked) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFFFF5252)),
+      );
+    }
 
           if (!_hasPermission) {
             return Center(
@@ -1067,9 +1091,6 @@ class _SmartScannerScreenState extends State<SmartScannerScreen>
                 ),
             ],
           );
-        },
-      ),
-    );
   }
 }
 

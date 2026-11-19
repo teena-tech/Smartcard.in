@@ -1,30 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
-import '../../viewmodels/subscription_viewmodel.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import 'subscription_screen.dart';
 import '../widgets/circular_profile_avatar.dart';
 import '../../core/utils/upload_url_resolver.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
     // Load profile and subscription data when settings screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authVm = context.read<AuthViewModel>();
-      final profileVm = context.read<ProfileViewModel>();
-      final subVm = context.read<SubscriptionViewModel>();
+      final authVm = ref.read(authViewModelProvider);
+      final profileVm = ref.read(profileViewModelProvider);
+      final subVm = ref.read(subscriptionViewModelProvider);
       final userId = authVm.currentUser?.id;
       if (userId != null) {
         if (profileVm.user == null) {
@@ -41,8 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final darkBlue = const Color(0xFF1E233A);
     final mutedText = Colors.grey.shade600;
 
-    final profileViewModel = context.watch<ProfileViewModel>();
-    final subscriptionViewModel = context.watch<SubscriptionViewModel>();
+    final profileViewModel = ref.watch(profileViewModelProvider);
+    final subscriptionViewModel = ref.watch(subscriptionViewModelProvider);
     final user = profileViewModel.user;
     final profileImage = user?.profileImage;
 
@@ -79,7 +76,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          context.read<DashboardViewModel>().setIndex(3);
+                          ref.read(tabIndexProvider.notifier).setIndex(3);
+                          ref.read(dashboardViewModelProvider).setIndex(3);
                         },
                         child: CircularProfileAvatar(
                           radius: 35,
@@ -209,10 +207,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingItem(
               context: context,
               title: 'Profile',
-              subtitle: 'Update your personal details, photo, address, and password.',
+              subtitle: 'Update your personal details, photo, and address.',
               icon: Icons.person_outline,
               onTap: () {
-                context.read<DashboardViewModel>().setIndex(3);
+                ref.read(tabIndexProvider.notifier).setIndex(3);
+                ref.read(dashboardViewModelProvider).setIndex(3);
               },
             ),
 

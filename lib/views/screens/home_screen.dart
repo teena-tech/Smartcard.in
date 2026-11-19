@@ -1,17 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/app_colors.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/theme_viewmodel.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../../core/network/api_config.dart';
+import '../../core/providers/app_riverpod_providers.dart';
+import '../widgets/master_bottom_nav.dart';
 import '../widgets/master_app_bar.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
-import '../../viewmodels/card_viewmodel.dart';
-import '../../viewmodels/contact_viewmodel.dart';
-import '../../viewmodels/message_viewmodel.dart';
 import '../widgets/premium_card_widget.dart';
 import '../widgets/statistics_grid.dart';
 import '../widgets/recent_activity_list.dart';
@@ -32,30 +27,28 @@ import 'settings_screen.dart';
 import 'about_screen.dart';
 import '../../core/utils/responsive.dart';
 import '../widgets/auto_loop_carousel.dart';
-import '../../viewmodels/subscription_viewmodel.dart';
 import '../widgets/premium_upgrade_dialog.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../providers/contact_provider.dart';
 import '../../core/services/reactive_contact_sync_service.dart';
 import '../../core/services/app_update_service.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   final int initialIndex;
   const HomeScreen({super.key, this.initialIndex = 0});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // ignore: unused_element
   Future<void> _handleCreateNewCard() async {
-    final authUser = context.read<AuthViewModel>().currentUser;
-    final cardVm = context.read<CardViewModel>();
-    final subVm = context.read<SubscriptionViewModel>();
+    final authUser = ref.read(authViewModelProvider).currentUser;
+    final cardVm = ref.read(cardViewModelProvider);
+    final subVm = ref.read(subscriptionViewModelProvider);
     final userId = authUser?.id ?? '';
 
     if (userId.isNotEmpty && subVm.subscription == null) {
@@ -97,13 +90,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (widget.initialIndex != 0) {
-        context.read<DashboardViewModel>().setIndex(widget.initialIndex);
+        ref.read(tabIndexProvider.notifier).setIndex(widget.initialIndex);
+        ref.read(dashboardViewModelProvider).setIndex(widget.initialIndex);
       }
       try {
         ReactiveContactSyncService().initialize(
-          contactProvider: context.read<ContactProvider>(),
-          contactViewModel: context.read<ContactViewModel>(),
-          dashboardViewModel: context.read<DashboardViewModel>(),
+          contactProvider: ref.read(contactProviderRiverpod),
+          contactViewModel: ref.read(contactViewModelProvider),
+          dashboardViewModel: ref.read(dashboardViewModelProvider),
         );
       } catch (e) {
         debugPrint('ReactiveContactSyncService init error: $e');
@@ -123,9 +117,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed && mounted) {
       try {
         ReactiveContactSyncService().handleDatabaseChange(
-          contactProvider: context.read<ContactProvider>(),
-          contactViewModel: context.read<ContactViewModel>(),
-          dashboardViewModel: context.read<DashboardViewModel>(),
+          contactProvider: ref.read(contactProviderRiverpod),
+          contactViewModel: ref.read(contactViewModelProvider),
+          dashboardViewModel: ref.read(dashboardViewModelProvider),
         );
       } catch (e) {
         debugPrint('AppLifecycle sync error: $e');
@@ -136,26 +130,37 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final themeViewModel = context.watch<ThemeViewModel>();
+    final themeViewModel = ref.watch(themeViewModelProvider);
     final colors = themeViewModel.colors;
-    final dashboardViewModel = context.watch<DashboardViewModel>();
+    final dashboardViewModel = ref.watch(dashboardViewModelProvider);
+    final tabIndex = ref.watch(tabIndexProvider);
+    final activeIndex = tabIndex;
+
+    void setTab(int idx) {
+      ref.read(tabIndexProvider.notifier).setIndex(idx);
+      dashboardViewModel.setIndex(idx);
+    }
 
     final List<Widget> pages = [
       _HomeBody(
         onProfileTap: () => ProfileMenuBottomSheet.show(context),
-        onScanTap: () => dashboardViewModel.setIndex(1),
+        onScanTap: () => setTab(1),
         onShareTap: () async {
-          final cardVm = context.read<CardViewModel>();
-          final profileVm = context.read<ProfileViewModel>();
+          final cardVm = ref.read(cardViewModelProvider);
+          final profileVm = ref.read(profileViewModelProvider);
           final currentCard = cardVm.currentCard;
           final targetUserId = profileVm.user?.id ?? currentCard?.accountUserId.toString() ?? '';
           if (currentCard != null) {
-            final url = currentCard.qrData.isNotEmpty ? currentCard.qrData : 'https://thesmartcards.in/profile/${currentCard.userId}';
+            final url = currentCard.qrData.isNotEmpty
+                ? currentCard.qrData
+                : ApiConfig.cardProfileUrl('${currentCard.userId}');
             await Share.share(url);
             profileVm.incrementShareCount(targetUserId);
           } else if (cardVm.cards.isNotEmpty) {
             final card = cardVm.cards.first;
-            final url = card.qrData.isNotEmpty ? card.qrData : 'https://thesmartcards.in/profile/${card.userId}';
+            final url = card.qrData.isNotEmpty
+                ? card.qrData
+                : ApiConfig.cardProfileUrl('${card.userId}');
             await Share.share(url);
             profileVm.incrementShareCount(targetUserId);
           } else {
@@ -164,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             );
           }
         },
-        isActive: dashboardViewModel.currentIndex == 0,
+        isActive: activeIndex == 0,
       ),
       const SmartScannerScreen(),
       const SmartCardListScreen(isTab: true),
@@ -180,8 +185,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     return WillPopScope(
       onWillPop: () async {
-        if (dashboardViewModel.currentIndex != 0) {
-          dashboardViewModel.setIndex(0);
+        if (activeIndex != 0) {
+          setTab(0);
           return false;
         }
         return true;
@@ -190,22 +195,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         key: _scaffoldKey,
         backgroundColor: colors.backgroundStart,
         // Dynamic AppBar based on selected tab
-        appBar: (dashboardViewModel.currentIndex == 3)
+        appBar: (activeIndex == 3)
             ? null
             : MasterAppBar(
-                titleText: _getTitle(dashboardViewModel.currentIndex),
+                titleText: _getTitle(activeIndex),
                 style: MasterHeaderStyle.gradient,
                 showBackButton: false,
                 showThemeToggle: false,
                 onProfileTap: () => ProfileMenuBottomSheet.show(context),
               ),
         body: IndexedStack(
-          index: dashboardViewModel.currentIndex,
+          index: activeIndex,
           children: pages,
         ),
-        floatingActionButton: dashboardViewModel.currentIndex == 0 
+        floatingActionButton: activeIndex == 0 
             ? _ExpandableFAB(
-                onScanTap: () => dashboardViewModel.setIndex(1),
+                onScanTap: () => setTab(1),
                 onCreateTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const new_manage_cards.ManageCardsScreen()));
                 },
@@ -235,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-class _HomeBody extends StatefulWidget {
+class _HomeBody extends ConsumerStatefulWidget {
   final VoidCallback onProfileTap;
   final VoidCallback onScanTap;
   final VoidCallback onShareTap;
@@ -249,37 +254,37 @@ class _HomeBody extends StatefulWidget {
   });
 
   @override
-  State<_HomeBody> createState() => _HomeBodyState();
+  ConsumerState<_HomeBody> createState() => _HomeBodyState();
 }
 
-class _HomeBodyState extends State<_HomeBody> {
+class _HomeBodyState extends ConsumerState<_HomeBody> {
   @override
   void initState() {
     super.initState();
     
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authViewModel = context.read<AuthViewModel>();
+      final authViewModel = ref.read(authViewModelProvider);
       if (authViewModel.isAuthenticated) {
         final user = authViewModel.currentUser;
         final userId = user?.id;
         if (userId == null || userId.isEmpty) return;
 
         AppLoadingService.instance.run(() => Future.wait([
-          context.read<CardViewModel>().fetchCards(
+          ref.read(cardViewModelProvider).fetchCards(
             userId,
             fallbackName: user?.displayName,
             fallbackPhone: user?.phone ?? '',
             fallbackEmail: user?.email,
           ),
-          context.read<ProfileViewModel>().loadProfile(userId),
-          context.read<SubscriptionViewModel>().fetchSubscription(userId),
-          context.read<ContactViewModel>().loadContactsFromBackend(),
-          context.read<MessageViewModel>().loadMessages(),
+          ref.read(profileViewModelProvider).loadProfile(userId),
+          ref.read(subscriptionViewModelProvider).fetchSubscription(userId),
+          ref.read(contactViewModelProvider).loadContactsFromBackend(),
+          ref.read(messageViewModelProvider).loadMessages(),
         ]));
 
         // Start global polling so new admin messages are detected
         // even when the Messages tab is not open.
-        final msgVm = context.read<MessageViewModel>();
+        final msgVm = ref.read(messageViewModelProvider);
         if (!msgVm.isPolling) {
           msgVm.startPolling();
         }
@@ -294,31 +299,31 @@ class _HomeBodyState extends State<_HomeBody> {
   }
 
   Future<void> _handleRefresh() async {
-    final authViewModel = context.read<AuthViewModel>();
+    final authViewModel = ref.read(authViewModelProvider);
     if (authViewModel.isAuthenticated) {
       final user = authViewModel.currentUser;
       final userId = user?.id;
       if (userId == null || userId.isEmpty) return;
-      context.read<CardViewModel>().fetchCards(
+      ref.read(cardViewModelProvider).fetchCards(
         userId,
         fallbackName: user?.displayName,
         fallbackPhone: user?.phone ?? '',
         fallbackEmail: user?.email,
       );
-      context.read<ProfileViewModel>().loadProfile(userId);
-      context.read<ContactViewModel>().loadContactsFromBackend();
-      context.read<MessageViewModel>().loadMessages();
+      ref.read(profileViewModelProvider).loadProfile(userId);
+      ref.read(contactViewModelProvider).loadContactsFromBackend();
+      ref.read(messageViewModelProvider).loadMessages();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeViewModel = context.watch<ThemeViewModel>();
+    final themeViewModel = ref.watch(themeViewModelProvider);
     final colors = themeViewModel.colors;
-    final profileViewModel = context.watch<ProfileViewModel>();
-    final cardViewModel = context.watch<CardViewModel>();
-    final contactViewModel = context.watch<ContactViewModel>();
-    final messageViewModel = context.watch<MessageViewModel>();
+    final profileViewModel = ref.watch(profileViewModelProvider);
+    final cardViewModel = ref.watch(cardViewModelProvider);
+    final contactViewModel = ref.watch(contactViewModelProvider);
+    final messageViewModel = ref.watch(messageViewModelProvider);
     final profile = profileViewModel.user;
 
     return RefreshIndicator(
@@ -355,7 +360,8 @@ class _HomeBodyState extends State<_HomeBody> {
                       label: 'Manage Card',
                       colors: colors,
                       onTap: () {
-                        context.read<DashboardViewModel>().setIndex(2);
+                        ref.read(tabIndexProvider.notifier).setIndex(2);
+                        ref.read(dashboardViewModelProvider).setIndex(2);
                       },
                       isPrimary: false,
                     ),
@@ -451,7 +457,8 @@ class _HomeBodyState extends State<_HomeBody> {
                           void handleCardTap() {
                             profileViewModel.incrementCardViews(card.accountUserId.toString());
                             cardViewModel.setCurrentIndex(realIndex);
-                            context.read<DashboardViewModel>().setIndex(9); // Navigate to Shared Card Screen
+                            ref.read(tabIndexProvider.notifier).setIndex(9); // Navigate to Shared Card Screen
+                            ref.read(dashboardViewModelProvider).setIndex(9);
                           }
                           return PremiumCardWidget(
                             card: card,
@@ -523,7 +530,8 @@ class _HomeBodyState extends State<_HomeBody> {
                     ),
                     TextButton(
                       onPressed: () {
-                         context.read<DashboardViewModel>().setIndex(5); // Messages tab
+                        ref.read(tabIndexProvider.notifier).setIndex(5); // Messages tab
+                        ref.read(dashboardViewModelProvider).setIndex(5);
                       },
                       child: Text(
                         'View All',
@@ -574,7 +582,8 @@ class _HomeBodyState extends State<_HomeBody> {
                     ),
                     TextButton(
                       onPressed: () {
-                         context.read<DashboardViewModel>().setIndex(1); // Navigate to scan tab
+                        ref.read(tabIndexProvider.notifier).setIndex(1); // Navigate to scan tab
+                        ref.read(dashboardViewModelProvider).setIndex(1);
                       },
                       child: Text(
                         'View All',

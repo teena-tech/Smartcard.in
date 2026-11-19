@@ -117,7 +117,9 @@ class ProfileViewModel extends ChangeNotifier {
       final updatedUser =
           await _repository.updateUserProfile(userId, updateData);
       if (updatedUser != null) {
-        _user = updatedUser;
+        if (updatedUser.id != null && updatedUser.id!.isNotEmpty) {
+          _user = updatedUser;
+        }
         _setState(ProfileState.loaded,
             success: 'Profile updated successfully.');
         return true;
@@ -193,7 +195,7 @@ class ProfileViewModel extends ChangeNotifier {
   /// Returns true on success. Never throws — all errors are
   /// surfaced via [errorMessage] so the UI never crashes.
   Future<bool> uploadProfileImageSafe(
-      String userId, String imagePath) async {
+      String userId, String imagePath, {int? workProfileId}) async {
     _isUploadingImage = true;
     _errorMessage     = null;
     notifyListeners();
@@ -201,7 +203,7 @@ class ProfileViewModel extends ChangeNotifier {
 
     try {
       final response =
-          await _repository.uploadProfileImage(userId, imagePath, null);
+          await _repository.uploadProfileImage(userId, imagePath, null, workProfileId: workProfileId);
       if (response != null) {
         // Reload profile to get fresh image URL
         await loadProfile(userId);
@@ -232,13 +234,8 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
     AppLoadingService.instance.startTask();
     try {
-      // 1. Send update to API to clear profile image on backend
-      try {
-        await _repository.updateUserProfile(userId, {
-          'profile_image': '',
-          'image': '',
-        });
-      } catch (_) {}
+      // 1. Delete profile image via dedicated media endpoint
+      await _repository.deleteProfileImage(userId);
 
       // 2. Clear local profile image state immediately
       if (_user != null) {
@@ -262,8 +259,8 @@ class ProfileViewModel extends ChangeNotifier {
 
   // ── Legacy upload (kept for CardViewModel compatibility) ───
   Future<bool> uploadProfileImage(
-      String userId, String imagePath) async {
-    return uploadProfileImageSafe(userId, imagePath);
+      String userId, String imagePath, {int? workProfileId}) async {
+    return uploadProfileImageSafe(userId, imagePath, workProfileId: workProfileId);
   }
 
   // ── OTP flow ───────────────────────────────────────────────

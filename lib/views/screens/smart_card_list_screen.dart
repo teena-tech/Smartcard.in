@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/providers/app_riverpod_providers.dart';
 import '../../models/card_model.dart';
-import '../../viewmodels/card_viewmodel.dart';
-import '../../viewmodels/auth_viewmodel.dart';
-import '../../viewmodels/profile_viewmodel.dart';
-import '../../viewmodels/subscription_viewmodel.dart';
-import '../../providers/workspace_provider.dart';
+import '../../core/network/api_config.dart';
 import '../../core/utils/app_haptics.dart';
 import '../widgets/premium_card_widget.dart';
 import '../widgets/digital_corporate_card_widget.dart';
@@ -16,21 +13,21 @@ import '../../core/utils/card_expansion_route.dart';
 import 'customize/customize_menu_screen.dart';
 import 'home_screen.dart';
 import '../widgets/master_app_bar.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 import 'manage_cards/manage_card_screens.dart' as new_manage_cards;
 
-class SmartCardListScreen extends StatefulWidget {
+class SmartCardListScreen extends ConsumerStatefulWidget {
   final bool isTab;
   const SmartCardListScreen({super.key, this.isTab = false});
 
   @override
-  State<SmartCardListScreen> createState() => _SmartCardListScreenState();
+  ConsumerState<SmartCardListScreen> createState() => _SmartCardListScreenState();
 }
 
-class _SmartCardListScreenState extends State<SmartCardListScreen> {
+class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
   void _openCardProfileDetail(CardModel card, int index) {
     try {
-      final cardViewModel = context.read<CardViewModel>();
+      final cardViewModel = ref.read(cardViewModelProvider);
       if (index >= 0) {
         cardViewModel.setCurrentIndex(index);
       }
@@ -47,9 +44,9 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
   }
 
   Future<void> _handleCreateNewCard() async {
-    final authUser = context.read<AuthViewModel>().currentUser;
-    final cardViewModel = context.read<CardViewModel>();
-    final subscriptionViewModel = context.read<SubscriptionViewModel>();
+    final authUser = ref.read(authViewModelProvider).currentUser;
+    final cardViewModel = ref.read(cardViewModelProvider);
+    final subscriptionViewModel = ref.read(subscriptionViewModelProvider);
     final cards = cardViewModel.cards;
     final userId = authUser?.id ?? '';
 
@@ -82,7 +79,6 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
   /// Non-Editable Preview Sheet: Shows full interactive card preview without customize controls
   void _showOrganizationNonEditablePreview(BuildContext context, CardModel card) {
     AppHaptics.selection();
-    final ws = context.read<WorkspaceProvider>();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -170,7 +166,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Card styling, theme colors, and layout are centrally locked by ${card.companyName.isNotEmpty ? card.companyName : ws.organizationName} to maintain brand guidelines. Visual modifications are read-only.',
+                            'Card styling, theme colors, and layout are centrally locked by ${card.companyName.isNotEmpty ? card.companyName : "Organization"} to maintain brand guidelines. Visual modifications are read-only.',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               color: const Color(0xFFBAE6FD),
@@ -238,7 +234,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cardViewModel = context.watch<CardViewModel>();
+    final cardViewModel = ref.watch(cardViewModelProvider);
     final allCards = cardViewModel.cards;
 
     Widget body = Container(
@@ -322,7 +318,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
 
                       final card = allCards[index];
                       final originalIndex = index;
-                      final sub = context.read<SubscriptionViewModel>().subscription;
+                      final sub = ref.read(subscriptionViewModelProvider).subscription;
                       final isUserPremium = sub != null && (sub.isActive || sub.membership.toUpperCase() == 'PREMIUM');
                       final canEditCard = card.isPrimary || isUserPremium;
 
@@ -406,7 +402,7 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                                                         ),
                                                       );
                                                       if (!context.mounted) return;
-                                                      final authVm = context.read<AuthViewModel>();
+                                                      final authVm = ref.read(authViewModelProvider);
                                                       if (authVm.currentUser?.id != null) {
                                                         final userModel = authVm.currentUser!;
                                                         cardViewModel.fetchCards(
@@ -459,20 +455,12 @@ class _SmartCardListScreenState extends State<SmartCardListScreen> {
                                                 borderRadius: const BorderRadius.only(bottomRight: Radius.circular(20)),
                                                 onTap: () async {
                                                   cardViewModel.setCurrentIndex(originalIndex >= 0 ? originalIndex : index);
-                                                  context.read<ProfileViewModel>().incrementCardViews(card.accountUserId.toString());
-                                                  String liveLink = card.profileUrl ?? 'https://thesmartcards.com/profile/${card.workProfileId}';
-                                                  final dbQr = card.qrCode ?? '';
-                                                  if (dbQr.isNotEmpty) {
-                                                    try {
-                                                      final dbUri = Uri.parse(dbQr);
-                                                      final scVal = dbUri.queryParameters['sc'];
-                                                      if (scVal != null && scVal.isNotEmpty) {
-                                                        liveLink = 'https://thesmartcards.com/?sc=$scVal';
-                                                      } else if (dbQr.startsWith('http://') || dbQr.startsWith('https://')) {
-                                                        liveLink = dbQr;
-                                                      }
-                                                    } catch (_) {}
-                                                  }
+                                                  ref.read(profileViewModelProvider).incrementCardViews(card.accountUserId.toString());
+                                                  final liveLink = ApiConfig.resolveLiveCardUrl(
+                                                    qrCode: card.qrCode,
+                                                    profileUrl: card.profileUrl,
+                                                    workProfileId: '${card.workProfileId}',
+                                                  );
                                                   try {
                                                     final uri = Uri.parse(liveLink);
                                                     if (await canLaunchUrl(uri)) {

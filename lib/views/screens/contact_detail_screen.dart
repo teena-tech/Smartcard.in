@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:provider/provider.dart' as legacy;
+import '../../core/providers/app_riverpod_providers.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,13 +21,14 @@ import '../../viewmodels/theme_viewmodel.dart';
 import '../../viewmodels/contact_viewmodel.dart';
 import '../../viewmodels/profile_viewmodel.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/network/api_config.dart';
 import '../../core/utils/contact_action_helper.dart';
 import '../../core/utils/intent_launcher.dart';
 import '../../core/utils/upload_url_resolver.dart';
 import '../../core/utils/avatar_helper.dart';
 import '../../core/utils/safe_base64.dart';
 import '../widgets/genie_hero_route.dart';
-import '../widgets/global_bottom_nav.dart';
+import '../widgets/master_bottom_nav.dart';
 import '../widgets/delete_confirm_dialog.dart';
 import '../widgets/quick_action_bar.dart';
 import '../../core/services/contact_photo_resolver.dart';
@@ -248,6 +251,25 @@ class ContactDetailScreen extends StatefulWidget {
 }
 
 class _ContactDetailScreenState extends State<ContactDetailScreen> {
+  bool get _hasScope =>
+      context.findAncestorWidgetOfExactType<UncontrolledProviderScope>() != null ||
+      context.findAncestorWidgetOfExactType<ProviderScope>() != null;
+
+  ContactProvider get _contactProvider => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(contactProviderRiverpod)
+      : legacy.Provider.of<ContactProvider>(context, listen: false);
+
+  ContactViewModel get _contactViewModel => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(contactViewModelProvider)
+      : legacy.Provider.of<ContactViewModel>(context, listen: false);
+
+  ProfileViewModel get _profileViewModel => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(profileViewModelProvider)
+      : legacy.Provider.of<ProfileViewModel>(context, listen: false);
+
+  GroupProvider get _groupProvider => _hasScope
+      ? ProviderScope.containerOf(context, listen: false).read(groupProviderRiverpod)
+      : legacy.Provider.of<GroupProvider>(context, listen: false);
   static final Map<String, String> _devicePhotoCache = {};
   late ScannedContactModel _contact;
   String? _liveDevicePhoto;
@@ -271,7 +293,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       if (isSmartCard && ownerId.isNotEmpty) {
         _hasRecordedView = true;
         try {
-          context.read<ProfileViewModel>().incrementCardViews(ownerId);
+          _profileViewModel.incrementCardViews(ownerId);
         } catch (_) {}
       }
     });
@@ -280,7 +302,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
       if (mounted) {
         final phoneDigits = _contact.phone.replaceAll(RegExp(r'\D'), '');
         if (phoneDigits.isNotEmpty) {
-          context.read<ContactViewModel>().matchPhoneContactsWithServer(
+          _contactViewModel.matchPhoneContactsWithServer(
             force: true,
             devicePhones: [phoneDigits, _contact.phone],
           );
@@ -375,7 +397,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
     // Fallback to ContactProvider cached photo only if full HD fetch fails
     try {
-      final contactProvider = context.read<ContactProvider>();
+      final contactProvider = _contactProvider;
       final cleanPhone = _contact.phone.replaceAll(RegExp(r'\D'), '');
       if (cleanPhone.isNotEmpty) {
         final p10 = cleanPhone.length >= 10 ? cleanPhone.substring(cleanPhone.length - 10) : cleanPhone;
@@ -406,21 +428,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
 
 
-  String _formatFullSmartCardUrl(String? rawUrl) {
-    if (rawUrl == null || rawUrl.trim().isEmpty) return 'https://thesmartcards.com';
-    final trimmed = rawUrl.trim();
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
-    }
-    if (trimmed.startsWith('?sc=') || trimmed.startsWith('sc=')) {
-      final q = trimmed.startsWith('?') ? trimmed : '?$trimmed';
-      return 'https://thesmartcards.com$q';
-    }
-    if (trimmed.startsWith('/c/') || trimmed.startsWith('/')) {
-      return 'https://thesmartcards.com$trimmed';
-    }
-    return 'https://thesmartcards.com/c/$trimmed';
-  }
+  String _formatFullSmartCardUrl(String? rawUrl) =>
+      ApiConfig.formatSmartCardUrl(rawUrl);
 
   List<Map<String, dynamic>> _getContactCards(ScannedContactModel contact) {
     if (contact.matchedCards != null && contact.matchedCards!.isNotEmpty) {
@@ -723,15 +732,15 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   }
 
   void _toggleFavorite() {
-    context.read<ContactViewModel>().toggleFavorite(_contact.id);
+    _contactViewModel.toggleFavorite(_contact.id);
     setState(() {
       _contact = _contact.copyWith(isFavorite: !_contact.isFavorite);
     });
   }
 
   void _showManageGroupsModal(BuildContext context, AppContact appContact) {
-    final groupProvider = context.read<GroupProvider>();
-    final contactProvider = context.read<ContactProvider>();
+    final groupProvider = _groupProvider;
+    final contactProvider = _contactProvider;
 
     final allGroups = groupProvider.groups;
     final Set<String> currentSelectedGroupIds = Set.from(appContact.groupIds);
@@ -864,7 +873,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
   Widget _buildPhoneNumbersCard(BuildContext context, ScannedContactModel contact, dynamic colors) {
     AppContact? linkedAppContact;
     try {
-      final cp = context.read<ContactProvider>();
+      final cp = _contactProvider;
       linkedAppContact = cp.findContactByDeviceContactIdOrDetails(
             contact.deviceContactId,
             contact.phone,
@@ -1165,7 +1174,27 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final contactViewModel = context.watch<ContactViewModel>();
+    if (_hasScope) {
+      return Consumer(
+        builder: (context, ref, _) => _buildWithData(
+          context,
+          contactViewModel: ref.watch(contactViewModelProvider),
+          colors: ref.watch(themeColorsProvider),
+        ),
+      );
+    }
+    return _buildWithData(
+      context,
+      contactViewModel: legacy.Provider.of<ContactViewModel>(context),
+      colors: legacy.Provider.of<ThemeViewModel>(context).colors,
+    );
+  }
+
+  Widget _buildWithData(
+    BuildContext context, {
+    required ContactViewModel contactViewModel,
+    required AppColors colors,
+  }) {
     final all = contactViewModel.allContacts;
 
 
@@ -1210,7 +1239,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
 
     // Also look up device contact in ContactProvider to ensure any second/alternative numbers on device are attached
     try {
-      final cp = context.read<ContactProvider>();
+      final cp = _contactProvider;
       final devContact = cp.findContactByDeviceContactIdOrDetails(
             displayContact.deviceContactId,
             displayContact.phone,
@@ -1233,7 +1262,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     } catch (_) {}
 
     final appContact = _toAppContact(displayContact);
-    final colors = context.watch<ThemeViewModel>().colors;
+    // colors provided via parameter
 
     final bool isSmartCardUser = displayContact.isSmartCardUser ||
         displayContact.isMatched ||
@@ -1362,16 +1391,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
                                                 title: Text(isSmartCardUser ? 'Remove from Smart Card' : 'Add to Smart Card'),
                                                 onTap: () async {
                                                   Navigator.pop(ctx);
-                                                  final cvm = context.read<ContactViewModel>();
-                                                  final appC = appContact ?? AppContact(
-                                                    id: displayContact.deviceContactId ?? displayContact.id,
-                                                    displayName: displayContact.name,
-                                                    phones: [if (displayContact.phone.isNotEmpty) ContactPhone(number: displayContact.phone)],
-                                                    emails: [if (displayContact.email.isNotEmpty) ContactEmail(address: displayContact.email)],
-                                                    company: displayContact.company.isNotEmpty ? displayContact.company : null,
-                                                    jobTitle: displayContact.designation.isNotEmpty ? displayContact.designation : null,
-                                                  );
-                                                  await cvm.toggleSmartCardMembership(appC);
+                                                  final cvm = _contactViewModel;
+                                                  await cvm.toggleSmartCardMembership(appContact);
                                                   if (mounted) {
                                                     setState(() {
                                                       _contact = _contact.copyWith(
@@ -2121,8 +2142,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen> {
     );
 
     try {
-      final contactVm = context.read<ContactViewModel>();
-      final provider = context.read<ContactProvider>();
+      final contactVm = _contactViewModel;
+      final provider = _contactProvider;
 
       await contactVm.deleteContact(_contact.id, target: _contact);
 
