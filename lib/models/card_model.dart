@@ -34,17 +34,14 @@ class CardModel {
   bool get isCorporate => isOrganization;
 
   /// The URL to encode into the QR code and display/share.
-  /// Reads directly from database `qr_code` field (e.g., https://thesmartcards.in/?sc=...) 
-  /// matching the Preview button logic.
+  /// Normalized to the canonical https://thesmartcards.in domain.
   String get qrData {
     final rawQr = (qrCode ?? '').trim();
     if (rawQr.isNotEmpty) {
-      if (rawQr.startsWith('http://') || rawQr.startsWith('https://')) {
-        return rawQr;
-      }
+      return ApiConfig.formatSmartCardUrl(rawQr);
     }
     if (profileUrl != null && profileUrl!.isNotEmpty) {
-      return profileUrl!;
+      return ApiConfig.formatSmartCardUrl(profileUrl);
     }
     return ApiConfig.cardProfileUrl('$workProfileId');
   }

@@ -41,15 +41,24 @@ class ApiConfig {
   /// Formats a raw card identifier, query string, path, or full URL into a canonical SmartCard URL.
   static String formatSmartCardUrl(String? rawUrl) {
     if (rawUrl == null || rawUrl.trim().isEmpty) return publicWebBaseUrl;
-    final trimmed = rawUrl.trim();
+    var trimmed = rawUrl.trim();
+    // Dynamically normalize legacy .com domain to current .in domain
+    if (trimmed.contains('thesmartcards.com')) {
+      trimmed = trimmed.replaceAll('thesmartcards.com', 'thesmartcards.in');
+    }
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      final uri = Uri.tryParse(trimmed);
+      if (uri != null && (uri.host.contains('thesmartcards') || uri.host.contains('scard'))) {
+        final pathAndQuery = uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
+        return '$publicWebBaseUrl$pathAndQuery';
+      }
       return trimmed;
     }
     if (trimmed.startsWith('?sc=') || trimmed.startsWith('sc=')) {
       final q = trimmed.startsWith('?') ? trimmed : '?$trimmed';
       return '$publicWebBaseUrl/$q';
     }
-    if (trimmed.startsWith('/c/') || trimmed.startsWith('/')) {
+    if (trimmed.startsWith('/c/') || trimmed.startsWith('/profile/') || trimmed.startsWith('/')) {
       return '$publicWebBaseUrl$trimmed';
     }
     return '$publicWebBaseUrl/c/$trimmed';
@@ -70,15 +79,12 @@ class ApiConfig {
           return cardShortUrl(slug);
         }
       }
-      if (trimmedQr.startsWith('http://') || trimmedQr.startsWith('https://')) {
-        return trimmedQr;
-      }
-      return cardShortUrl(trimmedQr);
+      return formatSmartCardUrl(trimmedQr);
     }
 
     final trimmedProfile = (profileUrl ?? '').trim();
     if (trimmedProfile.isNotEmpty) {
-      return trimmedProfile;
+      return formatSmartCardUrl(trimmedProfile);
     }
     return cardProfileUrl(workProfileId);
   }
