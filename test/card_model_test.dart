@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/models/card_model.dart';
+import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
 
 void main() {
   group('CardModel Unit Tests', () {
@@ -78,16 +78,16 @@ void main() {
         captionName: 'Secondary Card',
         templateId: '2',
         templateKey: 'template_02',
-        profileUrl: 'https://thesmartcards.com/profile/15',
+        profileUrl: 'https://thesmartcards.in/profile/15',
       );
 
       expect(primaryCard.workProfileId, equals(10));
       expect(primaryCard.templateKey, equals('template_01'));
-      expect(primaryCard.qrData, equals('https://thesmartcards.com/profile/10'));
+      expect(primaryCard.qrData, equals('https://thesmartcards.in/profile/10'));
 
       expect(secondaryCard.workProfileId, equals(15));
       expect(secondaryCard.templateKey, equals('template_02'));
-      expect(secondaryCard.qrData, equals('https://thesmartcards.com/profile/15'));
+      expect(secondaryCard.qrData, equals('https://thesmartcards.in/profile/15'));
 
       final updatedSecondary = secondaryCard.copyWith(
         templateId: '4',

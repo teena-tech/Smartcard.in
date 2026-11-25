@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:in_app_update/in_app_update.dart' as play_update;
-import '../../views/widgets/app_update_dialog.dart';
+import 'package:smartcard_flutter/core/widgets/app_update_dialog.dart';
 
 /// Enum representing the status of the iOS App Store update check.
 enum AppUpdateStatus {

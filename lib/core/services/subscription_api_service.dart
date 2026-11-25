@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'dio_client.dart';
-import 'api_config.dart';
+import 'package:smartcard_flutter/core/services/dio_client.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
 
 class SubscriptionApiService {
   SubscriptionApiService._();

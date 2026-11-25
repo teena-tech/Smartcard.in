@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/views/widgets/card_tracker_overlay.dart';
+import 'package:smartcard_flutter/features/smart_scanner_screen/presentation/view/widgets/card_tracker_overlay.dart';
 
 void main() {
   group('CardTrackerOverlay Tests', () {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants/app_colors.dart';
+import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
 class AvatarHelper {
   /// Extracts the single uppercase first letter of the first name.

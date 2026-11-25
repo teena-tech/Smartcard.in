@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/models/app_theme_item.dart';
+import 'package:smartcard_flutter/features/customize_theme_screen/data/models/app_theme_item.dart';
 
 void main() {
   group('Theme Permission & Premium Access Unit Tests', () {

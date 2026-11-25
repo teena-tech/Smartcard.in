@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:smartcard_flutter/views/widgets/international_phone_input.dart';
-import 'package:smartcard_flutter/views/widgets/otp_channel_banner.dart';
-import 'package:smartcard_flutter/views/widgets/otp_input_field.dart';
-import 'package:smartcard_flutter/views/widgets/primary_button.dart';
+import 'package:smartcard_flutter/features/register_screen/presentation/view/widgets/international_phone_input.dart';
+import 'package:smartcard_flutter/features/register_screen/presentation/view/widgets/otp_channel_banner.dart';
+import 'package:smartcard_flutter/core/widgets/otp_input_field.dart';
+import 'package:smartcard_flutter/core/widgets/primary_button.dart';
 
 void main() {
   testWidgets('OtpChannelBanner shows SMS icon, split flag & number, Change on single line without overflow', (tester) async {

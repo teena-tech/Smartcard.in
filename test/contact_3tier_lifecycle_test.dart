@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 import 'package:smartcard_flutter/core/services/contact_saver_service.dart';
 
 void main() {

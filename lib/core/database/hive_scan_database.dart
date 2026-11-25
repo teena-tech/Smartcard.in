@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../../models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
 /// Persistent local storage using Hive for Scan tab records and Smart Card records.
 /// Guarantees data persistence across APK updates, app restarts, process termination,

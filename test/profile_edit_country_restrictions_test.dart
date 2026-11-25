@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcard_flutter/core/utils/international_phone_helper.dart';
-import 'package:smartcard_flutter/models/user_model.dart';
+import 'package:smartcard_flutter/features/profile_screen/data/models/user_model.dart';
 
 void main() {
   group('Profile Edit Country-Based Phone Restrictions Tests', () {

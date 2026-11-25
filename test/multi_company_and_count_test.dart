@@ -3,13 +3,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:smartcard_flutter/core/database/sqlite_database.dart';
-import 'package:smartcard_flutter/models/card_duplicate_check.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/models/app_contact.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
-import 'package:smartcard_flutter/views/widgets/duplicate_field_swipe_widget.dart';
-import 'package:smartcard_flutter/views/widgets/duplicate_phone_banner.dart';
-import 'package:smartcard_flutter/views/widgets/duplicate_scan_popup_dialog.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/card_duplicate_check.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contact_form_screen/presentation/view/widgets/duplicate_field_swipe_widget.dart';
+import 'package:smartcard_flutter/core/widgets/duplicate_scan_popup_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +16,7 @@ void main() {
   setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n');
+    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n');
     try {
       final dbPath = await getDatabasesPath();
       await databaseFactory.deleteDatabase('$dbPath/smartcards_app.db');
@@ -133,7 +132,7 @@ void main() {
     );
 
     setUp(() async {
-      contactVm = ContactViewModel(autoLoad: false);
+      contactVm = ContactViewModel();
       await SqliteDatabase.init();
       contactVm.allContacts.clear();
       await SqliteDatabase.saveContact(existingCard);
@@ -230,34 +229,6 @@ void main() {
   });
 
   group('UI Components Widget Tests', () {
-    testWidgets('DuplicatePhoneBanner renders 5s notice and allows manual dismiss', (tester) async {
-      bool dismissed = false;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DuplicatePhoneBanner(
-              autoDismissDuration: const Duration(seconds: 10),
-              onDismissed: () => dismissed = true,
-            ),
-          ),
-        ),
-      );
-      // Wait for entrance animation to finish sliding in
-      await tester.pumpAndSettle();
-
-      expect(find.text('This phone number already exists in your contacts'), findsOneWidget);
-      expect(find.textContaining('Swipe left/right below to replace or keep fields'), findsOneWidget);
-
-      // Tap manual close button
-      final closeBtn = find.byIcon(Icons.close_rounded);
-      expect(closeBtn, findsOneWidget);
-      await tester.tap(closeBtn);
-      await tester.pumpAndSettle();
-
-      expect(dismissed, isTrue);
-    });
-
     testWidgets('DuplicateFieldSwipeWidget provides interactive comparison and toggle', (tester) async {
       bool selectedNew = true;
 

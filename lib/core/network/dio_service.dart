@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../services/api_config.dart';
-import 'api_constants.dart';
-import 'api_exceptions.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
+import 'package:smartcard_flutter/core/network/api_constants.dart';
+import 'package:smartcard_flutter/core/network/api_exceptions.dart';
 
 class DioService {
   late final Dio _dio;

@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 
-import '../utils/upload_url_resolver.dart';
-import 'api_config.dart';
+import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
 
 /// Downloads, normalizes, and caches profile photos for vCard 3.0 QR codes
 /// and downloadable/shareable `.vcf` files so Android Google Contacts and
@@ -65,14 +65,14 @@ class VCardPhotoService {
         final base = ApiConfig.baseUrl.replaceFirst(RegExp(r'/+$'), '');
         return '$base/$cleaned';
       } catch (_) {
-        return 'https://thesmartcards.com/$cleaned';
+        return 'https://thesmartcards.in/$cleaned';
       }
     }
 
     try {
       return UploadUrlResolver.resolve(cleaned, type: 'profile');
     } catch (_) {
-      return 'https://thesmartcards.com/$cleaned';
+      return 'https://thesmartcards.in/$cleaned';
     }
   }
 

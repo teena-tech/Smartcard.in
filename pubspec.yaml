@@ -13,13 +13,13 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   path: ^1.9.0
+  path_provider: ^2.1.5
   google_fonts: ^8.0.2
-  provider: ^6.1.2
+  flutter_riverpod: ^2.6.1
   shared_preferences: ^2.5.5
   mobile_scanner: ^7.2.0
   qr_flutter: ^4.1.0
   share_plus: ^13.1.0
-  path_provider: ^2.1.5
   package_info_plus: ^10.2.1
   permission_handler: ^12.0.1
   http: ^1.6.0
@@ -40,7 +40,6 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   connectivity_plus: ^6.0.3
-  flutter_bloc: ^8.1.6
   equatable: ^2.0.5
   cached_network_image: ^3.4.1
   image: ^4.2.0
@@ -67,6 +66,7 @@ dependencies:
   cloud_firestore: ^5.5.0
   firebase_storage: ^12.3.6
   in_app_update: ^4.2.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -85,7 +85,6 @@ flutter:
 
   assets:
     - .env
-    - .env_live
     - assets/images/
     - assets/rive/
     - assets/icon/

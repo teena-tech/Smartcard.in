@@ -1,5 +1,5 @@
-import '../../models/scanned_contact_model.dart';
-import 'app_validators.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/utils/app_validators.dart';
 
 class ContactParser {
   /// Parses raw text extracted from a business card and returns a [ScannedContactModel].

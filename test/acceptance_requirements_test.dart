@@ -1,10 +1,10 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/models/card_duplicate_check.dart';
-import 'package:smartcard_flutter/models/app_contact.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/card_duplicate_check.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
 import 'package:smartcard_flutter/core/database/sqlite_database.dart';
 import 'package:smartcard_flutter/core/database/hive_scan_database.dart';
 
@@ -14,7 +14,7 @@ void main() {
   setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n');
+    dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n');
     try {
       final dbPath = await getDatabasesPath();
       await databaseFactory.deleteDatabase('$dbPath/smartcards_app.db');
@@ -40,7 +40,7 @@ void main() {
     //   - 4 phone numbers inside that contact
     // -------------------------------------------------------------
     test('Test 1: Save one profile with 4 phone numbers -> 1 Contact screen profile, 4 phones', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       final profileWith4Phones = ScannedContactModel(
         id: 'profile_multi_phone_1',
@@ -82,7 +82,7 @@ void main() {
     //   - No profile overwritten
     // -------------------------------------------------------------
     test('Test 2: Save 5 different company profiles using same phone number -> 5 separate profiles', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
       const sharedNumber = '9876543210';
 
       final companies = ['ABC Company', 'XYZ Company', 'PQR Company', 'LMN Company', 'DEF Company'];
@@ -122,7 +122,7 @@ void main() {
     //   - No identical duplicate profile
     // -------------------------------------------------------------
     test('Test 3: Save exact same card twice -> Duplicate detection flags exactDuplicate', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       final card1 = ScannedContactModel(
         id: 'card_dup_test_1',
@@ -168,7 +168,7 @@ void main() {
     //   - Both profiles visible
     // -------------------------------------------------------------
     test('Test 4: Same phone number + different company -> Not duplicate, allows separate saving', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
       const sharedPhone = '9876543210';
 
       final oldProfile = ScannedContactModel(
@@ -218,7 +218,7 @@ void main() {
     //   - Other 4 profiles remain
     // -------------------------------------------------------------
     test('Test 5: Delete one profile among 5 companies with same phone -> Only that profile deleted', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
       const phone = '9876543210';
 
       final List<ScannedContactModel> profiles = [
@@ -255,7 +255,7 @@ void main() {
     //   - Other phone numbers remain
     // -------------------------------------------------------------
     test('Test 6: Delete one phone number from device contact -> Profile kept with remaining phone', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       final originalProfile = ScannedContactModel(
         id: 'profile_device_sync_1',
@@ -314,7 +314,7 @@ void main() {
       await HiveScanDatabase.saveAllScannedRecords([p1, p2, p3]);
 
       // 2. Initialize a fresh ContactViewModel (simulating app or screen reopen)
-      final newVm = ContactViewModel(autoLoad: false);
+      final newVm = ContactViewModel();
 
       // Count is available immediately synchronously without waiting for network
       expect(newVm.scannedContactsCount, equals(3), reason: 'Scanned count must be immediately read from Hive');
@@ -329,7 +329,7 @@ void main() {
     //   - No duplicates created during restoration
     // -------------------------------------------------------------
     test('Test 8: Restore profiles with stable profileId -> No duplicates created', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       final cloudRecords = [
         ScannedContactModel(id: 'cloud_p1', name: 'Restore 1', company: 'Comp A', designation: 'D1', phone: '9876543210', email: '', website: '', address: '', socialLinks: const [], createdAt: DateTime.now()),

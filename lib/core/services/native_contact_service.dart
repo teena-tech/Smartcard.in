@@ -3,17 +3,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
-import '../../models/app_contact.dart';
-import '../../models/scanned_contact_model.dart';
-import '../../viewmodels/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
 class NativeContactService {
+  static void Function(ScannedContactModel)? onContactSavedGlobal;
+
   /// Opens the native device phone contact edit/insert screen.
   static Future<ScannedContactModel?> openNativeContactEdit(
     BuildContext context,
-    ScannedContactModel contact,
-  ) async {
+    ScannedContactModel contact, {
+    void Function(ScannedContactModel)? onContactSaved,
+  }) async {
     if (kIsWeb) return null;
     try {
       var status = await Permission.contacts.status;
@@ -104,9 +105,8 @@ class NativeContactService {
             profileImage: photoPath ?? contact.profileImage,
           );
 
-          if (context.mounted) {
-            context.read<ContactViewModel>().addScannedContact(updatedModel);
-          }
+          onContactSaved?.call(updatedModel);
+          onContactSavedGlobal?.call(updatedModel);
           return updatedModel;
         }
       }

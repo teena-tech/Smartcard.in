@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/views/widgets/company_conflict_warning_dialog.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/widgets/company_conflict_warning_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

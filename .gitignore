@@ -49,8 +49,9 @@ app.*.map.json
 **/*.jks
 **/*.keystore
 
-# Environment files
-.env*
-*.env
-
+# Environment secrets
+.env
+.env_live
+.env.*
+!.env.example
 

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../models/user_model.dart';
+import 'package:smartcard_flutter/features/profile_screen/data/models/user_model.dart';
 
 class ProfileLocalDataSource {
   static const String _userPrefix = 'user_profile_';

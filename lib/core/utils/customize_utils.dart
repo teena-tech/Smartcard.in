@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import '../../../core/utils/upload_url_resolver.dart';
+import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
 
 String _toText(dynamic value) => (value?.toString() ?? '').trim();
 

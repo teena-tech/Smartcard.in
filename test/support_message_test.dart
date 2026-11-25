@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/data/models/message_model.dart';
+import 'package:smartcard_flutter/features/support_chat_screen/data/models/message_model.dart';
 
 void main() {
   group('Support MessageModel Unit Tests', () {

@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -11,13 +11,13 @@ void main() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
     dotenv.loadFromString(
-      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n',
+      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n',
     );
   });
 
   group('Real-time Deletion Sync Across All 3 Tabs Test', () {
     test('syncDeletedDeviceContacts purges deleted contacts from all tabs instantly regardless of source tag', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       final phoneContact = ScannedContactModel(
         id: 'phone_test_9999',
@@ -62,7 +62,7 @@ void main() {
     });
 
     test('3 profiles with same phone number on device: when 2 are deleted, exactly those 2 are deleted in ALL tab', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       final profile1 = ScannedContactModel(
         id: 'phone_dev_101',
@@ -132,7 +132,7 @@ void main() {
     });
 
     test('deleteContact removes card simultaneously from ALL contacts, Smart Card tab, and Scans tab', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       // Add a smart card
       final smartCard = ScannedContactModel(
@@ -143,7 +143,7 @@ void main() {
         designation: 'CTO',
         phone: '9112233445',
         email: 'smart201@smartcards.com',
-        website: 'https://thesmartcards.com',
+        website: 'https://thesmartcards.in',
         address: 'Bangalore',
         socialLinks: const [],
         isMatched: true,

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../constants/app_colors.dart';
-import 'intent_launcher.dart';
-import '../../models/app_contact.dart';
-import '../../models/scanned_contact_model.dart';
-import '../../models/card_model.dart';
-import '../../models/contact_model.dart';
+import 'package:smartcard_flutter/core/constants/app_colors.dart';
+import 'package:smartcard_flutter/core/utils/intent_launcher.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/contact_model.dart';
 
 class ContactActionItem {
   final String value;
@@ -318,7 +318,7 @@ class ContactActionHelper {
       if (contact.cardUrl != null && contact.cardUrl!.isNotEmpty) {
         final cardLink = contact.cardUrl!.startsWith('http')
             ? contact.cardUrl!
-            : 'https://thesmartcards.com/c/${contact.cardUrl!}';
+            : 'https://thesmartcards.in/c/${contact.cardUrl!}';
         addUrl(cardLink, 'SmartCard Profile');
       }
       if (contact.matchedCards != null) {

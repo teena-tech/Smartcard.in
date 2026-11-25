@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import '../../models/scanned_contact_model.dart';
-import '../utils/business_card_validator.dart';
-import '../utils/contact_parser.dart';
-import 'scanner_api_service.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/utils/business_card_validator.dart';
+import 'package:smartcard_flutter/core/utils/contact_parser.dart';
+import 'package:smartcard_flutter/core/services/scanner_api_service.dart';
 
 class QrExtractionService {
   static const Duration _apiTimeout = Duration(seconds: 8);

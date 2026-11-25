@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiConfig {
   static const String _envApiUrl = String.fromEnvironment('API_URL');
   static const String _envSharedUploadsUrl = String.fromEnvironment('SHARED_UPLOADS_URL');
+  static const String _envCardApiKey = String.fromEnvironment('CARD_API_KEY');
   static const String _envUseLocalBackend = String.fromEnvironment('USE_LOCAL_BACKEND');
   static const String _envUsePhysicalDevice = String.fromEnvironment('USE_PHYSICAL_DEVICE_FOR_LOCAL');
   static const String _envLocalPhysicalIp = String.fromEnvironment('LOCAL_PHYSICAL_IP');
@@ -82,8 +83,6 @@ class ApiConfig {
     }
     return cardProfileUrl(workProfileId);
   }
-  // Public accessor for the API base URL used throughout the app.
-
 
   // =========================================================================
   // General API Routes
@@ -187,6 +186,9 @@ class ApiConfig {
   static const String aiParseVisitingCard = '/api/v1/ai/parse-visiting-card';
   static const String aiSuggestDesign = '/api/v1/ai/suggest-design';
 
+  // Telemetry Error Reporting
+  static const String telemetryAppError = '/api/telemetry/app-error';
+
   // -------------------------------------------------------------------------
   // Local backend server URLs
   static String get _localIosAndWebUrl =>
@@ -246,11 +248,10 @@ class ApiConfig {
           'https://thesmartcards.in/shared-uploads',
         );
 
-  // Required only for /api/v1/agents/* routes because server uses CARD_API_KEY.
-  static String get cardApiKey =>
-      _readConfig(
-        const String.fromEnvironment('CARD_API_KEY'),
+  // Card API Key used by server routes
+  static String get cardApiKey => _readConfig(
+        _envCardApiKey,
         'CARD_API_KEY',
-        'BSOEYKz2/TPMwJP0ZV2p0Vzn4MxP6CaXyEClHf9BFecAHJGwSxfTFalLTF5P8mkioTxld8ETM073UlIjeJ/Eww==',
+        'scard_api_36ff99e7c6dff83ba97617654a28610096e951e1bea9e833f60f383f40f71897',
       );
 }

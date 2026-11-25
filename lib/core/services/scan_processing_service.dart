@@ -3,12 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
-import '../../models/scanned_contact_model.dart';
-import '../utils/business_card_validator.dart';
-import '../utils/contact_parser.dart';
-import 'edge_detection_service.dart';
-import 'qr_extraction_service.dart';
-import '../../features/scanner/services/image_processing_service.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/utils/business_card_validator.dart';
+import 'package:smartcard_flutter/core/utils/contact_parser.dart';
+import 'package:smartcard_flutter/core/services/edge_detection_service.dart';
+import 'package:smartcard_flutter/core/services/qr_extraction_service.dart';
+import 'package:smartcard_flutter/features/smart_scanner_screen/data/datasources/image_processing_service.dart';
 
 class ScanProcessingResult {
   final ScannedContactModel contact;

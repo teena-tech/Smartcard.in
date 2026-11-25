@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/providers/contact_provider.dart';
-import 'package:smartcard_flutter/providers/group_provider.dart';
-import 'package:smartcard_flutter/repositories/auth_repository.dart';
-import 'package:smartcard_flutter/repositories/card_repository.dart';
-import 'package:smartcard_flutter/repositories/user_repository.dart';
-import 'package:smartcard_flutter/viewmodels/auth_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/card_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/dashboard_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/profile_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/theme_viewmodel.dart';
-import 'package:smartcard_flutter/views/screens/contact_form_screen.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_notifier.dart';
+import 'package:smartcard_flutter/features/groups_screen/presentation/viewmodel/group_notifier.dart';
+import 'package:smartcard_flutter/features/login_screen/data/repositories/auth_repository.dart';
+import 'package:smartcard_flutter/features/smart_card_list_screen/data/repositories/card_repository.dart';
+import 'package:smartcard_flutter/features/profile_screen/data/repositories/user_repository.dart';
+import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
+import 'package:smartcard_flutter/features/smart_card_list_screen/presentation/viewmodel/card_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/home_screen/presentation/viewmodel/dashboard_viewmodel.dart';
+import 'package:smartcard_flutter/features/profile_screen/presentation/viewmodel/profile_viewmodel.dart';
+import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
+import 'package:smartcard_flutter/features/contact_form_screen/presentation/view/contact_form_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +26,7 @@ void main() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
     dotenv.loadFromString(
-      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n',
+      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n',
     );
   });
 
@@ -37,17 +38,7 @@ void main() {
     ScannedContactModel? existingContact,
   }) {
     SharedPreferences.setMockInitialValues({});
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeViewModel()),
-        ChangeNotifierProvider(create: (_) => ProfileViewModel(UserRepository())),
-        ChangeNotifierProvider(create: (_) => AuthViewModel(AuthRepository())),
-        ChangeNotifierProvider(create: (_) => CardViewModel(cardRepository: CardRepository())),
-        ChangeNotifierProvider(create: (_) => ContactProvider()),
-        ChangeNotifierProvider(create: (_) => GroupProvider()),
-        ChangeNotifierProvider(create: (_) => ContactViewModel()),
-        ChangeNotifierProvider(create: (_) => DashboardViewModel()),
-      ],
+    return ProviderScope(
       child: MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(

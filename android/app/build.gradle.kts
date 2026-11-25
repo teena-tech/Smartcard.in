@@ -10,7 +10,7 @@ plugins {
 }
 
 android {
-    namespace = "com.antz_media_solutions.SmartCards"
+    namespace = "in.thesmartcards.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -25,13 +25,14 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.antz_media_solutions.SmartCards"
+        applicationId = "in.thesmartcards.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
 
         ndk {
             abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
@@ -58,14 +59,22 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (signingConfigs.findByName("release") != null) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+        }
+    }
+
+    gradle.taskGraph.whenReady {
+        val isReleaseTask = allTasks.any {
+            it.name.contains("Release", ignoreCase = true)
+        }
+        if (isReleaseTask && signingConfigs.findByName("release") == null) {
+            throw GradleException(
+                "Missing valid android/key.properties or keystore file for release build. " +
+                    "Refusing to sign a release build with the debug key."
+            )
         }
     }
 
@@ -76,7 +85,7 @@ android {
 
     packaging {
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false
             excludes += listOf(
                 "lib/x86/**",
                 "lib/x86_64/**"

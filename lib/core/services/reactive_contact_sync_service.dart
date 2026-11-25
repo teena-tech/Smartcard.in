@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
-import '../../providers/contact_provider.dart';
-import '../../viewmodels/contact_viewmodel.dart';
-import '../../viewmodels/dashboard_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_notifier.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/home_screen/presentation/viewmodel/dashboard_viewmodel.dart';
 
 /// Real-time Google / Device Contacts Sync & Event Service.
 /// Reactively detects contact additions, edits, and deletions in Google Contacts
@@ -21,7 +21,7 @@ class ReactiveContactSyncService {
   bool _isInitialized = false;
 
   void initialize({
-    required ContactProvider contactProvider,
+    required ContactNotifier contactNotifier,
     required ContactViewModel contactViewModel,
     required DashboardViewModel dashboardViewModel,
   }) {
@@ -33,7 +33,7 @@ class ReactiveContactSyncService {
       _deviceSubscription = fc.FlutterContacts.onDatabaseChange.listen((_) async {
         debugPrint('⚡ [ReactiveSyncService] Device/Google contacts change detected in real-time!');
         await handleDatabaseChange(
-          contactProvider: contactProvider,
+          contactNotifier: contactNotifier,
           contactViewModel: contactViewModel,
           dashboardViewModel: dashboardViewModel,
         );
@@ -48,7 +48,7 @@ class ReactiveContactSyncService {
 
   /// Called when device contacts database fires an update or deletion event
   Future<void> handleDatabaseChange({
-    required ContactProvider contactProvider,
+    required ContactNotifier contactNotifier,
     required ContactViewModel contactViewModel,
     required DashboardViewModel dashboardViewModel,
     bool silent = true,
@@ -62,12 +62,12 @@ class ReactiveContactSyncService {
       do {
         _hasPendingChange = false;
         // 1. Refresh device contacts stream
-        await contactProvider.syncWithDevice(silent: silent);
+        await contactNotifier.syncWithDevice(silent: silent);
 
         // 2. Extract updated device phone numbers and IDs
-        final currentDeviceContacts = contactProvider.contacts;
+        final currentDeviceContacts = contactNotifier.contacts;
         final Set<String> validDeviceIds = currentDeviceContacts.map((c) => c.id).toSet();
-        final Set<String> validDevicePhones = contactProvider.validDevicePhones;
+        final Set<String> validDevicePhones = contactNotifier.validDevicePhones;
 
         // 3. Purge deleted contacts from ContactViewModel and SQLite/Hive database across all tabs
         await contactViewModel.syncDeletedDeviceContacts(

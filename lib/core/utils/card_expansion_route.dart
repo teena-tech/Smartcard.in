@@ -1,4 +1,4 @@
-import 'top_to_bottom_slide_route.dart';
+import 'package:smartcard_flutter/core/utils/top_to_bottom_slide_route.dart';
 
 /// Legacy export/alias ensuring all existing navigation uses the top-to-bottom slide & scale animation.
 class GenieEffectRoute<T> extends TopToBottomSlideRoute<T> {

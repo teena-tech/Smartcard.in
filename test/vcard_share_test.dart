@@ -7,25 +7,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:image/image.dart' as img;
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:smartcard_flutter/core/services/contact_photo_resolver.dart';
 import 'package:smartcard_flutter/core/services/contact_saver_service.dart';
 import 'package:smartcard_flutter/core/services/qr_extraction_service.dart';
 import 'package:smartcard_flutter/core/services/vcard_photo_service.dart';
 import 'package:smartcard_flutter/core/utils/contact_parser.dart';
-import 'package:smartcard_flutter/models/contact_model.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/viewmodels/theme_viewmodel.dart';
-import 'package:smartcard_flutter/views/screens/contact_preview_screen.dart';
-import 'package:smartcard_flutter/views/screens/mycards.dart';
-import 'package:smartcard_flutter/views/widgets/app_profile_avatar.dart';
-import 'package:smartcard_flutter/views/widgets/circular_profile_avatar.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
+import 'package:smartcard_flutter/features/contact_preview_screen/presentation/view/contact_preview_screen.dart';
+import 'package:smartcard_flutter/features/my_cards_screen/presentation/view/mycards.dart';
+import 'package:smartcard_flutter/core/widgets/app_profile_avatar.dart';
+import 'package:smartcard_flutter/core/widgets/circular_profile_avatar.dart';
 
 void main() {
-  setUpAll(() async {
+  setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
-    await dotenv.load(fileName: '.env');
+    dotenv.loadFromString(
+      envString:
+          'USE_LOCAL_BACKEND=false\nAPI_URL=https://thesmartcards.in\nSHARED_UPLOADS_URL=https://thesmartcards.in/shared-uploads\n',
+    );
   });
 
   group('ContactModel vCard 3.0 & Share Tests', () {
@@ -36,7 +39,7 @@ void main() {
         company: 'SmartCard Solutions',
         phone: '+919876543210',
         email: 'rahul@example.com',
-        website: 'https://thesmartcards.com',
+        website: 'https://thesmartcards.in',
         address: '123 Tech Park, Bangalore, India',
       );
 
@@ -50,7 +53,7 @@ void main() {
       expect(vCard, contains('TITLE:Senior Software Architect'));
       expect(vCard, contains('TEL;TYPE=CELL,VOICE:+919876543210'));
       expect(vCard, contains('EMAIL;TYPE=WORK,INTERNET:rahul@example.com'));
-      expect(vCard, contains('URL:https://thesmartcards.com'));
+      expect(vCard, contains('URL:https://thesmartcards.in'));
       expect(vCard, contains(r'ADR;TYPE=WORK:;;123 Tech Park\, Bangalore\, India;;;;'));
       expect(vCard, contains('END:VCARD'));
     });
@@ -88,12 +91,12 @@ void main() {
         jobTitle: 'Founder, Director',
         company: 'Antz Media',
         phone: '9995655999',
-        website: 'https://thesmartcards.com?sc=abc',
+        website: 'https://thesmartcards.in?sc=abc',
         profileImageName: 'shared-uploads/users/profile/1745411455.png',
       );
 
       final vCard = contact.toVCard();
-      expect(vCard, contains('PHOTO;VALUE=URI:https://thesmartcards.com/shared-uploads/users/profile/1745411455.png'));
+      expect(vCard, contains('PHOTO;VALUE=URI:https://thesmartcards.in/shared-uploads/users/profile/1745411455.png'));
 
       final scanned = ContactParser.parseVCard(vCard);
       expect(scanned.name, 'Jeena Remakanth');
@@ -101,7 +104,7 @@ void main() {
       expect(scanned.phone, '9995655999');
       expect(
         scanned.profileImage,
-        'https://thesmartcards.com/shared-uploads/users/profile/1745411455.png',
+        'https://thesmartcards.in/shared-uploads/users/profile/1745411455.png',
       );
     });
 
@@ -120,7 +123,7 @@ void main() {
         'VERSION:3.0\n'
         'FN:Kunju Wjaiiz\n'
         'TEL;TYPE=CELL,VOICE:8086750402\n'
-        'PHOTO;VALUE=URI:https://api.thesmartcards.com/shared-uploads/users/profile/avatar.png\n'
+        'PHOTO;VALUE=URI:https://thesmartcards.in/shared-uploads/users/profile/avatar.png\n'
         'END:VCARD',
       );
 
@@ -146,7 +149,7 @@ void main() {
         'VERSION:3.0\n'
         'FN:Antz Media\n'
         'TEL;TYPE=CELL,VOICE:8086750402\n'
-        'PHOTO;VALUE=URI:https://api.thesmartcards.com/logo.svg\n'
+        'PHOTO;VALUE=URI:https://thesmartcards.in/logo.svg\n'
         'END:VCARD',
       );
 
@@ -157,28 +160,25 @@ void main() {
       expect(bytes, isNull);
     });
 
-    test('formats Contact QR copy text in clean professional format without profile link or image', () {
+    test('formats Contact QR copy text with icons and card URL without profile image link', () {
       final copied = MyCardsScreen.buildContactCopyText(
         name: 'Kunju Wjaiiz',
         designation: 'Mobile App Developer',
-        company: 'AntzMedia',
-        phone: '+91 8086750402',
+        company: 'antzmedia',
+        phone: '+91 80867 50402',
         cardUrl: 'https://smartcards.antzmedia.com/kunju',
       );
 
       expect(
         copied,
-        'Hello, here are my contact details:\n'
+        '👤 Kunju Wjaiiz\n'
+        '💻 Mobile App Developer\n'
+        '🏢 antzmedia\n'
+        '📞 +91 80867 50402\n'
         '\n'
-        'Kunju Wjaiiz\n'
-        'Mobile App Developer | AntzMedia\n'
-        '📞 +91 8086750402\n'
-        '\n'
-        'Looking forward to connecting with you!',
+        '🔗 View Digital Card: https://smartcards.antzmedia.com/kunju',
       );
       expect(copied, isNot(contains('Profile Image')));
-      expect(copied, isNot(contains('View Digital Card')));
-      expect(copied, isNot(contains('https://')));
     });
 
     test('QrExtractionService extracts Contact QR PHOTO URI, cardUrl, and unwrapped email', () async {
@@ -190,8 +190,8 @@ void main() {
           'TITLE:Mobile app developer\n'
           'TEL;TYPE=CELL,VOICE:8086750402\n'
           'EMAIL;TYPE=WORK,INTERNET:["teenuloves123@gmail.com"]\n'
-          'URL:https://thesmartcards.com?sc=VFl3M3h0NmUzbjY1QjNPWnFGWStTdzhpR3JiNWdFako4aVJkYldNUnRQQT0%3D\n'
-          'PHOTO;VALUE=URI:https://thesmartcards.com/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp\n'
+          'URL:https://thesmartcards.in?sc=VFl3M3h0NmUzbjY1QjNPWnFGWStTdzhpR3JiNWdFako4aVJkYldNUnRQQT0%3D\n'
+          'PHOTO;VALUE=URI:https://thesmartcards.in/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp\n'
           'END:VCARD';
 
       final scanned = await QrExtractionService.extract(sampleVCard);
@@ -203,15 +203,15 @@ void main() {
       expect(scanned.email, 'teenuloves123@gmail.com');
       expect(
         scanned.cardUrl,
-        'https://thesmartcards.com?sc=VFl3M3h0NmUzbjY1QjNPWnFGWStTdzhpR3JiNWdFako4aVJkYldNUnRQQT0%3D',
+        'https://thesmartcards.in?sc=VFl3M3h0NmUzbjY1QjNPWnFGWStTdzhpR3JiNWdFako4aVJkYldNUnRQQT0%3D',
       );
       expect(
         scanned.profileImage,
-        'https://thesmartcards.com/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
+        'https://thesmartcards.in/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
       );
       expect(
         scanned.matchedProfileImage,
-        'https://thesmartcards.com/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
+        'https://thesmartcards.in/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
       );
     });
 
@@ -269,17 +269,16 @@ void main() {
         designation: 'Mobile App Developer',
         phone: '8086750402',
         email: 'teenuloves123@gmail.com',
-        website: 'https://thesmartcards.com?sc=abc',
+        website: 'https://thesmartcards.in?sc=abc',
         address: '',
         socialLinks: const [],
         matchedProfileImage: '',
-        profileImage: 'https://thesmartcards.com/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
+        profileImage: 'https://thesmartcards.in/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
         createdAt: DateTime(2026),
       );
 
       await tester.pumpWidget(
-        ChangeNotifierProvider<ThemeViewModel>(
-          create: (_) => ThemeViewModel(),
+        ProviderScope(
           child: MaterialApp(
             home: ContactPreviewScreen(contact: contact),
           ),
@@ -292,7 +291,7 @@ void main() {
       final avatar = tester.widget<CircularProfileAvatar>(avatarFinder);
       expect(
         avatar.imageUrl,
-        'https://thesmartcards.com/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
+        'https://thesmartcards.in/shared-uploads/users/profile/profile_1069_1794377570321_47070.webp',
       );
     });
 
@@ -314,7 +313,7 @@ void main() {
       final netImg = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
       expect(
         netImg.imageUrl,
-        'https://thesmartcards.com/shared-uploads/users/profile/kunju.webp',
+        'https://thesmartcards.in/shared-uploads/users/profile/kunju.webp',
       );
     });
 
@@ -329,7 +328,7 @@ void main() {
         ),
       );
       final scanned = ContactParser.parseVCard(
-        'BEGIN:VCARD\nVERSION:3.0\nFN:Kunju\nTEL:8086750402\nPHOTO;VALUE=URI:https://thesmartcards.com/shared-uploads/users/profile/kunju.png\nEND:VCARD',
+        'BEGIN:VCARD\nVERSION:3.0\nFN:Kunju\nTEL:8086750402\nPHOTO;VALUE=URI:https://thesmartcards.in/shared-uploads/users/profile/kunju.png\nEND:VCARD',
       );
 
       final result = await ContactSaverService.resolvePhotoBytes(
@@ -366,7 +365,7 @@ void main() {
         company: 'antzmedia',
         phone: '["8086750402"]',
         email: '["teenuloves123@gmail.com"]',
-        website: 'https://thesmartcards.com?sc=VFl3M3h0',
+        website: 'https://thesmartcards.in?sc=VFl3M3h0',
         profileImageName: 'shared-uploads/users/profile/kunju.webp',
       );
 

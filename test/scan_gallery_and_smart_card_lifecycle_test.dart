@@ -1,10 +1,10 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 import 'package:smartcard_flutter/core/database/hive_scan_database.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
 import 'package:smartcard_flutter/core/services/otp_autofill_service.dart';
 
 void main() {
@@ -12,7 +12,7 @@ void main() {
 
   setUpAll(() async {
     dotenv.loadFromString(
-      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n',
+      envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n',
     );
     final tempDir = await Directory.systemTemp.createTemp('hive_test');
     Hive.init(tempDir.path);
@@ -85,7 +85,7 @@ void main() {
       expect(hiveRecords.first.isSmartCardUser, isTrue);
 
       // 3. Instantiate ContactViewModel (simulating screen recreation or app resume)
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       // 4. Verify count is immediately correct from Hive without requiring touch/swipe
       expect(vm.smartCardContactsCount, 1);
@@ -129,7 +129,7 @@ void main() {
 
       await HiveScanDatabase.saveAllSmartCardRecords(smartCards);
 
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       expect(vm.smartCardContactsCount, 2);
       expect(vm.smartCardContacts.length, 2);

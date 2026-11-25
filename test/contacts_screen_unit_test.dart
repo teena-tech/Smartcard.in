@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:smartcard_flutter/models/app_contact.dart';
-import 'package:smartcard_flutter/providers/contact_provider.dart';
-import 'package:smartcard_flutter/providers/group_provider.dart';
-import 'package:smartcard_flutter/repositories/auth_repository.dart';
-import 'package:smartcard_flutter/viewmodels/auth_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/dashboard_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/theme_viewmodel.dart';
-import 'package:smartcard_flutter/views/screens/contacts_screen.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_notifier.dart';
+import 'package:smartcard_flutter/features/groups_screen/presentation/viewmodel/group_notifier.dart';
+import 'package:smartcard_flutter/features/login_screen/data/repositories/auth_repository.dart';
+import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/home_screen/presentation/viewmodel/dashboard_viewmodel.dart';
+import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/view/contacts_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,23 +24,15 @@ void main() {
   });
 
   Widget createTestWidget({
-    required ContactProvider contactProvider,
-    required GroupProvider groupProvider,
+    required ContactNotifier contactNotifier,
+    required GroupNotifier groupNotifier,
     required ContactViewModel contactViewModel,
     required DashboardViewModel dashboardViewModel,
     required ThemeViewModel themeViewModel,
     required AuthViewModel authViewModel,
   }) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<ContactProvider>.value(value: contactProvider),
-        ChangeNotifierProvider<GroupProvider>.value(value: groupProvider),
-        ChangeNotifierProvider<ContactViewModel>.value(value: contactViewModel),
-        ChangeNotifierProvider<DashboardViewModel>.value(value: dashboardViewModel),
-        ChangeNotifierProvider<ThemeViewModel>.value(value: themeViewModel),
-        ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
-      ],
-      child: const MaterialApp(
+    return const ProviderScope(
+      child: MaterialApp(
         home: Scaffold(
           body: ContactsScreen(),
         ),
@@ -48,8 +41,8 @@ void main() {
   }
 
   group('ContactsScreen Comprehensive UI & Workflow Unit Tests', () {
-    late ContactProvider contactProvider;
-    late GroupProvider groupProvider;
+    late ContactNotifier contactNotifier;
+    late GroupNotifier groupNotifier;
     late ContactViewModel contactViewModel;
     late DashboardViewModel dashboardViewModel;
     late ThemeViewModel themeViewModel;
@@ -57,16 +50,16 @@ void main() {
 
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
-      dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n');
-      contactProvider = ContactProvider();
-      contactProvider.setContactsForTesting([
+      dotenv.loadFromString(envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n');
+      contactNotifier = ContactNotifier();
+      contactNotifier.setContactsForTesting([
         AppContact(id: '1', displayName: 'Gobi', phones: [ContactPhone(number: '9876543210')]),
       ]);
-      groupProvider = GroupProvider();
+      groupNotifier = GroupNotifier();
       contactViewModel = ContactViewModel();
       dashboardViewModel = DashboardViewModel();
       themeViewModel = ThemeViewModel();
-      authViewModel = AuthViewModel(AuthRepository());
+      authViewModel = AuthViewModel();
     });
 
     testWidgets('1. Header, 4 Scrollable Tabs (Contacts, Smart Card, Scans, Groups), Filter Chips, and Bottom Search Bar render correctly', (tester) async {
@@ -75,8 +68,8 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(createTestWidget(
-        contactProvider: contactProvider,
-        groupProvider: groupProvider,
+        contactNotifier: contactNotifier,
+        groupNotifier: groupNotifier,
         contactViewModel: contactViewModel,
         dashboardViewModel: dashboardViewModel,
         themeViewModel: themeViewModel,
@@ -106,8 +99,8 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(createTestWidget(
-        contactProvider: contactProvider,
-        groupProvider: groupProvider,
+        contactNotifier: contactNotifier,
+        groupNotifier: groupNotifier,
         contactViewModel: contactViewModel,
         dashboardViewModel: dashboardViewModel,
         themeViewModel: themeViewModel,
@@ -150,14 +143,14 @@ void main() {
       expect(find.textContaining('Favorites'), findsOneWidget);
     });
 
-    testWidgets('3. Filter Chip selection updates active filter in ContactProvider', (tester) async {
+    testWidgets('3. Filter Chip selection updates active filter in ContactNotifier', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(createTestWidget(
-        contactProvider: contactProvider,
-        groupProvider: groupProvider,
+        contactNotifier: contactNotifier,
+        groupNotifier: groupNotifier,
         contactViewModel: contactViewModel,
         dashboardViewModel: dashboardViewModel,
         themeViewModel: themeViewModel,
@@ -166,17 +159,17 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       // Initially All is selected
-      expect(contactProvider.currentFilter, equals(ContactFilter.all));
+      expect(contactNotifier.currentFilter, equals(ContactFilter.all));
 
       // Tap Favorites Chip
       await tester.tap(find.textContaining('Favorites'), warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 300));
-      expect(contactProvider.currentFilter, equals(ContactFilter.favorites));
+      expect(contactNotifier.currentFilter, equals(ContactFilter.favorites));
 
       // Tap Favorites Chip again to reset filter
       await tester.tap(find.textContaining('Favorites'), warnIfMissed: false);
       await tester.pump(const Duration(milliseconds: 300));
-      expect(contactProvider.currentFilter, equals(ContactFilter.all));
+      expect(contactNotifier.currentFilter, equals(ContactFilter.all));
     });
 
     testWidgets('4. Bottom search text field updates search query', (tester) async {
@@ -185,8 +178,8 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       await tester.pumpWidget(createTestWidget(
-        contactProvider: contactProvider,
-        groupProvider: groupProvider,
+        contactNotifier: contactNotifier,
+        groupNotifier: groupNotifier,
         contactViewModel: contactViewModel,
         dashboardViewModel: dashboardViewModel,
         themeViewModel: themeViewModel,
@@ -200,7 +193,7 @@ void main() {
       await tester.enterText(searchField, 'Gobi');
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(contactProvider.searchQuery, equals('Gobi'));
+      expect(contactNotifier.searchQuery, equals('Gobi'));
     });
 
     testWidgets('5. Performance: Cached contacts render immediately without blocking spinner during background sync', (tester) async {
@@ -209,13 +202,13 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       // Simulate background syncing state where contacts exist
-      contactProvider.setContactsForTesting([
+      contactNotifier.setContactsForTesting([
         AppContact(id: 'cached_1', displayName: 'Alice Brown', phones: [ContactPhone(number: '1112223333')]),
       ]);
 
       await tester.pumpWidget(createTestWidget(
-        contactProvider: contactProvider,
-        groupProvider: groupProvider,
+        contactNotifier: contactNotifier,
+        groupNotifier: groupNotifier,
         contactViewModel: contactViewModel,
         dashboardViewModel: dashboardViewModel,
         themeViewModel: themeViewModel,
@@ -235,11 +228,11 @@ void main() {
       addTearDown(() => tester.view.resetPhysicalSize());
 
       // Empty contacts
-      contactProvider.setContactsForTesting([]);
+      contactNotifier.setContactsForTesting([]);
 
       await tester.pumpWidget(createTestWidget(
-        contactProvider: contactProvider,
-        groupProvider: groupProvider,
+        contactNotifier: contactNotifier,
+        groupNotifier: groupNotifier,
         contactViewModel: contactViewModel,
         dashboardViewModel: dashboardViewModel,
         themeViewModel: themeViewModel,
@@ -251,19 +244,19 @@ void main() {
       expect(find.byType(ContactsScreen), findsOneWidget);
     });
 
-    test('7. O(1) lookups and memoized groupings in ContactProvider', () {
+    test('7. O(1) lookups and memoized groupings in ContactNotifier', () {
       final c1 = AppContact(id: 'c_1', displayName: 'Zara', phones: [ContactPhone(number: '+1 555-0100')]);
-      contactProvider.setContactsForTesting([c1]);
+      contactNotifier.setContactsForTesting([c1]);
 
       // Verify O(1) indexed lookup by ID
-      expect(contactProvider.findContactById('c_1'), equals(c1));
+      expect(contactNotifier.findContactById('c_1'), equals(c1));
 
       // Verify O(1) indexed lookup by 7-digit phone number
-      expect(contactProvider.findContactByPhoneOrEmail('555-0100', ''), equals(c1));
+      expect(contactNotifier.findContactByPhoneOrEmail('555-0100', ''), equals(c1));
 
       // Verify grouped contacts cache returns memoized reference
-      final groupRef1 = contactProvider.groupedContacts;
-      final groupRef2 = contactProvider.groupedContacts;
+      final groupRef1 = contactNotifier.groupedContacts;
+      final groupRef2 = contactNotifier.groupedContacts;
       expect(identical(groupRef1, groupRef2), isTrue);
     });
   });

@@ -1,4 +1,4 @@
-import 'app_validators.dart';
+import 'package:smartcard_flutter/core/utils/app_validators.dart';
 
 class BusinessCardValidator {
   /// Validates if the recognized OCR text matches a business card pattern.

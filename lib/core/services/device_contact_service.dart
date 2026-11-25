@@ -2,8 +2,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:permission_handler/permission_handler.dart';
-import '../../models/app_contact.dart';
-import 'contact_saver_service.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/core/services/contact_saver_service.dart';
 
 class DeviceContactService {
   /// Stream to listen for real-time contact database changes from the Android OS

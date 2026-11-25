@@ -1,4 +1,4 @@
-import '../services/api_config.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
 
 class ApiConstants {
   static String _stripApiPrefix(String path) {

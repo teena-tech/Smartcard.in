@@ -3,20 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:smartcard_flutter/models/app_contact.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/providers/contact_provider.dart';
-import 'package:smartcard_flutter/providers/group_provider.dart';
-import 'package:smartcard_flutter/repositories/auth_repository.dart';
-import 'package:smartcard_flutter/viewmodels/auth_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/dashboard_viewmodel.dart';
-import 'package:smartcard_flutter/viewmodels/theme_viewmodel.dart';
-import 'package:smartcard_flutter/views/screens/contacts_screen.dart';
-import 'package:smartcard_flutter/views/screens/group_detail_screen.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_notifier.dart';
+import 'package:smartcard_flutter/features/groups_screen/presentation/viewmodel/group_notifier.dart';
+import 'package:smartcard_flutter/features/login_screen/data/repositories/auth_repository.dart';
+import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/home_screen/presentation/viewmodel/dashboard_viewmodel.dart';
+import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/view/contacts_screen.dart';
+import 'package:smartcard_flutter/features/group_detail_screen/presentation/view/group_detail_screen.dart';
 
 class _MockHttpOverrides extends HttpOverrides {
 }
@@ -31,8 +32,8 @@ void main() {
   });
 
   group('Full Contact Pages & Workflow Unit Tests', () {
-    late ContactProvider contactProvider;
-    late GroupProvider groupProvider;
+    late ContactNotifier contactNotifier;
+    late GroupNotifier groupNotifier;
     late ContactViewModel contactViewModel;
     late DashboardViewModel dashboardViewModel;
     late ThemeViewModel themeViewModel;
@@ -41,10 +42,10 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       dotenv.loadFromString(
-        envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.com\nAPI_BASE_URL=https://thesmartcards.com/api\n',
+        envString: 'USE_LOCAL_BACKEND=false\nBASE_URL=https://thesmartcards.in\nAPI_BASE_URL=https://thesmartcards.in/api\n',
       );
-      contactProvider = ContactProvider();
-      contactProvider.setContactsForTesting([
+      contactNotifier = ContactNotifier();
+      contactNotifier.setContactsForTesting([
         AppContact(
           id: 'c101',
           displayName: 'A M K Selvan jio',
@@ -56,23 +57,15 @@ void main() {
           emails: [ContactEmail(address: 'selvan@jio.com', label: 'Work')],
         ),
       ]);
-      groupProvider = GroupProvider();
-      contactViewModel = ContactViewModel(autoLoad: false);
+      groupNotifier = GroupNotifier();
+      contactViewModel = ContactViewModel();
       dashboardViewModel = DashboardViewModel();
       themeViewModel = ThemeViewModel();
-      authViewModel = AuthViewModel(AuthRepository());
+      authViewModel = AuthViewModel();
     });
 
     Widget wrapWithProviders(Widget widget) {
-      return MultiProvider(
-        providers: [
-          ChangeNotifierProvider<ContactProvider>.value(value: contactProvider),
-          ChangeNotifierProvider<GroupProvider>.value(value: groupProvider),
-          ChangeNotifierProvider<ContactViewModel>.value(value: contactViewModel),
-          ChangeNotifierProvider<DashboardViewModel>.value(value: dashboardViewModel),
-          ChangeNotifierProvider<ThemeViewModel>.value(value: themeViewModel),
-          ChangeNotifierProvider<AuthViewModel>.value(value: authViewModel),
-        ],
+      return ProviderScope(
         child: MaterialApp(
           home: widget,
         ),
@@ -176,7 +169,7 @@ void main() {
       expect(deviceAddr.postalCode, isNull);
     });
 
-    test('8. 2-Way Edit Sync: updating a contact syncs changes to both ContactProvider and ContactViewModel', () async {
+    test('8. 2-Way Edit Sync: updating a contact syncs changes to both ContactNotifier and ContactViewModel', () async {
       final appC = AppContact(
         id: 'sync_edit_1',
         displayName: 'John Smart',
@@ -201,7 +194,7 @@ void main() {
         createdAt: DateTime.now(),
       );
 
-      contactProvider.setContactsForTesting([appC]);
+      contactNotifier.setContactsForTesting([appC]);
       await contactViewModel.addScannedContact(scannedC);
 
       // Perform edit
@@ -209,13 +202,13 @@ void main() {
       await contactViewModel.addScannedContact(updatedScanned);
 
       final updatedAppC = appC.copyWith(displayName: 'John Smart Updated', company: 'Smart Cards Tech');
-      contactProvider.setContactsForTesting([updatedAppC]);
+      contactNotifier.setContactsForTesting([updatedAppC]);
 
       expect(contactViewModel.allContacts.firstWhere((c) => c.id == 'sync_edit_1').name, equals('John Smart Updated'));
-      expect(contactProvider.contacts.firstWhere((c) => c.id == 'sync_edit_1').displayName, equals('John Smart Updated'));
+      expect(contactNotifier.contacts.firstWhere((c) => c.id == 'sync_edit_1').displayName, equals('John Smart Updated'));
     });
 
-    test('9. 2-Way Delete Sync: deleting a contact removes it from both ContactProvider and ContactViewModel', () async {
+    test('9. 2-Way Delete Sync: deleting a contact removes it from both ContactNotifier and ContactViewModel', () async {
       final appC = AppContact(
         id: 'sync_del_1',
         displayName: 'Mark Delete',
@@ -235,15 +228,15 @@ void main() {
         createdAt: DateTime.now(),
       );
 
-      contactProvider.setContactsForTesting([appC]);
+      contactNotifier.setContactsForTesting([appC]);
       await contactViewModel.addScannedContact(scannedC);
 
       // Perform delete on both sides
       await contactViewModel.deleteContact(scannedC.id, target: scannedC);
-      await contactProvider.deleteContact(appC);
+      await contactNotifier.deleteContact(appC);
 
       expect(contactViewModel.allContacts.any((c) => c.id == 'sync_del_1'), isFalse);
-      expect(contactProvider.contacts.any((c) => c.id == 'sync_del_1'), isFalse);
+      expect(contactNotifier.contacts.any((c) => c.id == 'sync_del_1'), isFalse);
     });
   });
 }

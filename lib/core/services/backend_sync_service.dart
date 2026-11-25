@@ -3,10 +3,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'dio_client.dart';
-import '../database/sqlite_database.dart';
-import '../../models/scanned_contact_model.dart';
-import 'api_config.dart';
+import 'package:smartcard_flutter/core/services/dio_client.dart';
+import 'package:smartcard_flutter/core/database/sqlite_database.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
 
 class BackendSyncService {
   static final BackendSyncService _instance = BackendSyncService._internal();

@@ -1,18 +1,21 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
 void main() {
-  setUpAll(() async {
+  setUpAll(() {
     TestWidgetsFlutterBinding.ensureInitialized();
-    await dotenv.load(fileName: '.env');
+    dotenv.loadFromString(
+      envString:
+          'USE_LOCAL_BACKEND=false\nAPI_URL=https://thesmartcards.in\nSHARED_UPLOADS_URL=https://thesmartcards.in/shared-uploads\n',
+    );
   });
 
   group('UploadUrlResolver Unit Tests', () {
     test('resolves http and https URLs unchanged', () {
       const httpUrl = 'http://example.com/photo.jpg';
-      const httpsUrl = 'https://api.thesmartcards.com/uploads/photo.png';
+      const httpsUrl = 'https://thesmartcards.in/uploads/photo.png';
 
       expect(UploadUrlResolver.resolve(httpUrl, type: 'profile'), equals(httpUrl));
       expect(UploadUrlResolver.resolve(httpsUrl, type: 'profile'), equals(httpsUrl));
