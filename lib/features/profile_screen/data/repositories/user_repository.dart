@@ -38,14 +38,19 @@ class UserRepository {
     try {
       final queryParams = <String, dynamic>{};
       final payload = Map<String, dynamic>.from(updateData);
-      final wpId = workProfileId ?? (payload['work_profile_id'] is int ? payload['work_profile_id'] as int : null);
+      payload.remove('address2');
+      payload.remove('youtube_links');
+
+      final isAddressOnly = payload.containsKey('address') || payload.containsKey('pincode');
+      final wpId = isAddressOnly
+          ? null
+          : (workProfileId ?? (payload['work_profile_id'] is int ? payload['work_profile_id'] as int : null));
       if (wpId != null && wpId > 0) {
         queryParams['work_profile_id'] = wpId.toString();
         payload['work_profile_id'] = wpId;
+      } else {
+        payload.remove('work_profile_id');
       }
-
-      // Safeguard: Never send 'address2' to avoid PostgreSQL view update failures
-      payload.remove('address2');
 
       Response response;
       try {
@@ -64,9 +69,20 @@ class UserRepository {
           );
         } else {
           final errStr = putErr.response?.data?.toString() ?? putErr.message ?? '';
-          if (errStr.contains('address2') || errStr.contains('user_work_profile')) {
-            await updateCardProfileDetails(userId, payload, workProfileId: wpId);
-            return await getUserProfile(userId);
+          if (errStr.contains('address2') || errStr.contains('user_work_profile') || errStr.contains('youtube_links')) {
+            final fallbackPayload = Map<String, dynamic>.from(payload)
+              ..remove('work_profile_id')
+              ..remove('address2')
+              ..remove('youtube_links');
+            response = await _dioClient.dio.put(
+              ApiConfig.userProfile(userId),
+              data: fallbackPayload,
+            );
+            if (response.statusCode == 200 || response.statusCode == 201) {
+              final data = response.data;
+              final userData = data['user'] ?? data['data'] ?? data;
+              return UserModel.fromJson(userData);
+            }
           }
           rethrow;
         }

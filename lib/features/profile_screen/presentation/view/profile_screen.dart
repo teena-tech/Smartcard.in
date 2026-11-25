@@ -2208,6 +2208,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
     final pin  = TextEditingController(text: _pincodeCtrl.text);
     final dist = TextEditingController(text: _districtCtrl.text);
     final st   = TextEditingController(text: _stateCtrl.text);
+    final loc  = TextEditingController();
 
     bool saving   = false;
     String? errMsg;
@@ -2227,17 +2228,30 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             final data = response['data'];
             if (data != null) {
               final officesList = data['offices'] as List? ?? [];
-              offices = List<Map<String, dynamic>>.from(officesList);
+              final Set<String> seen = {};
+              final List<String> uniqueCities = [];
+              for (final o in officesList) {
+                final c = (o['city'] ?? '').toString().trim();
+                if (c.isNotEmpty && !seen.contains(c.toLowerCase())) {
+                  seen.add(c.toLowerCase());
+                  uniqueCities.add(c);
+                }
+              }
+              if (uniqueCities.isEmpty && data['city'] != null) {
+                final c = data['city'].toString().trim();
+                if (c.isNotEmpty) uniqueCities.add(c);
+              }
+              offices = uniqueCities.map((c) => {'city': c}).toList();
               if (offices.isNotEmpty) {
                 final addrLower = addr.text.toLowerCase();
                 final matchIdx = offices.indexWhere((o) =>
-                    o['city'] != null &&
                     addrLower.contains(o['city'].toString().toLowerCase()));
                 if (matchIdx >= 0) {
                   selectedOffice = offices[matchIdx]['city']?.toString();
                 } else {
                   selectedOffice = offices[0]['city']?.toString();
                 }
+                loc.text = selectedOffice ?? '';
               }
               rebuildDialog?.call();
             }
@@ -2295,16 +2309,30 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                   final data = response['data'];
                                   if (data != null) {
                                     final officesList = data['offices'] as List? ?? [];
+                                    final Set<String> seen = {};
+                                    final List<String> uniqueCities = [];
+                                    for (final o in officesList) {
+                                      final c = (o['city'] ?? '').toString().trim();
+                                      if (c.isNotEmpty && !seen.contains(c.toLowerCase())) {
+                                        seen.add(c.toLowerCase());
+                                        uniqueCities.add(c);
+                                      }
+                                    }
+                                    if (uniqueCities.isEmpty && data['city'] != null) {
+                                      final c = data['city'].toString().trim();
+                                      if (c.isNotEmpty) uniqueCities.add(c);
+                                    }
                                     setS(() {
-                                      offices = List<Map<String, dynamic>>.from(officesList);
+                                      offices = uniqueCities.map((c) => {'city': c}).toList();
                                       if (data['district'] != null) {
-                                        dist.text = data['district'];
+                                        dist.text = data['district'].toString().trim();
                                       }
                                       if (data['state'] != null) {
-                                        st.text = data['state'];
+                                        st.text = data['state'].toString().trim();
                                       }
                                       if (offices.isNotEmpty) {
                                         selectedOffice = offices[0]['city']?.toString();
+                                        loc.text = selectedOffice ?? '';
                                       }
                                     });
                                   } else {
@@ -2342,28 +2370,30 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                             style: const TextStyle(color: Colors.redAccent, fontSize: 12),
                           ),
                         ),
-                      if (offices.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Location / PO Location',
-                                style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: Colors.grey[700],
-                                    fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 6),
+                      const SizedBox(height: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Location / PO Location',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          if (offices.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: Colors.grey[100],
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: Colors.grey[300]!),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
                                   isExpanded: true,
-                                  value: selectedOffice,
+                                  value: selectedOffice != null && offices.any((o) => o['city'] == selectedOffice)
+                                      ? selectedOffice
+                                      : (offices.isNotEmpty ? offices[0]['city']?.toString() : null),
                                   items: offices
                                       .map((o) => DropdownMenuItem<String>(
                                             value: o['city']?.toString(),
@@ -2376,15 +2406,41 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                   onChanged: (val) {
                                     setS(() {
                                       selectedOffice = val;
+                                      loc.text = val ?? '';
                                     });
                                   },
                                 ),
                               ),
+                            )
+                          else
+                            TextFormField(
+                              controller: loc,
+                              textCapitalization: TextCapitalization.words,
+                              style: GoogleFonts.inter(fontSize: 14),
+                              decoration: InputDecoration(
+                                hintText: 'Enter Location / Town',
+                                hintStyle: GoogleFonts.inter(fontSize: 13, color: Colors.grey[400]),
+                                prefixIcon: const Icon(Icons.location_city_outlined, size: 20, color: Colors.grey),
+                                filled: true,
+                                fillColor: Colors.white,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(color: Colors.grey[300]!),
+                                ),
+                                focusedBorder: const OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                                  borderSide: BorderSide(color: AppColors.primaryRed),
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                      ],
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                       _DField('District', dist,
                           icon: Icons.map_outlined,
                           textCapitalization: TextCapitalization.words),
@@ -2397,11 +2453,19 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                         child: saving
                             ? const _LoadingBtn()
                             : ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryRed,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 0,
+                                ),
                                 icon: const Icon(
                                     Icons.save_outlined,
                                     size: 18),
                                 label: Text('Save Address',
                                     style: GoogleFonts.inter(
+                                        fontSize: 15,
                                         fontWeight:
                                             FontWeight.bold)),
                                 onPressed: () async {
@@ -2413,30 +2477,26 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                     errMsg = null;
                                   });
 
+                                  final locVal = (selectedOffice ?? loc.text).trim();
                                   String finalAddress = addr.text.trim();
-                                  if (selectedOffice != null && selectedOffice!.isNotEmpty) {
-                                    if (!finalAddress.toLowerCase().contains(selectedOffice!.toLowerCase())) {
+                                  if (locVal.isNotEmpty) {
+                                    if (!finalAddress.toLowerCase().contains(locVal.toLowerCase())) {
                                       if (finalAddress.isNotEmpty) {
-                                        finalAddress = "$finalAddress, $selectedOffice";
+                                        finalAddress = "$finalAddress, $locVal";
                                       } else {
-                                        finalAddress = selectedOffice!;
+                                        finalAddress = locVal;
                                       }
                                     }
                                   }
 
-                                  final cardVm = ref.read(cardViewModelProvider.notifier);
-                                  final workProfileId = cardVm.currentCard?.workProfileId;
                                   final payload = <String, dynamic>{
                                     'address':  finalAddress,
                                     'pincode':  pin.text.trim(),
                                     'district': dist.text.trim(),
                                     'state':    st.text.trim(),
                                   };
-                                  if (workProfileId != null && workProfileId > 0) {
-                                    payload['work_profile_id'] = workProfileId;
-                                  }
 
-                                  final ok = await addrVm.updateProfile(uid, payload, workProfileId: workProfileId);
+                                  final ok = await addrVm.updateProfile(uid, payload);
                                   if (!ctx.mounted) return;
                                   setS(() => saving = false);
                                   if (ok) {
@@ -2458,7 +2518,6 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                         'Save failed. Try again.');
                                    }
                                 },
-                                style: _redBtnStyle(),
                               ),
                       ),
                     ],
