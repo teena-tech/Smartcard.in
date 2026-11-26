@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -5,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:rive/rive.dart' hide File;
 import 'package:firebase_core/firebase_core.dart';
 
 import 'package:smartcard_flutter/core/constants/app_theme.dart';
@@ -52,17 +52,15 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
 
-  // Parallel asynchronous initializations for maximum cold-start loading speed
+  // Non-blocking Firebase initialization so SplashScreen renders immediately on Frame 1
+  unawaited(Firebase.initializeApp().then((_) {
+    debugPrint('🔥 Firebase initialized');
+  }).catchError((e) {
+    debugPrint('⚠️ Firebase init: $e');
+  }));
+
+  // Parallel local initializations for maximum cold-start speed
   await Future.wait([
-    Firebase.initializeApp().then((_) {
-      debugPrint('🔥 Firebase initialized');
-    }).catchError((e) {
-      debugPrint('⚠️ Firebase init: $e');
-    }),
-    RiveNative.init().catchError((e) {
-      debugPrint('RiveNative init: $e');
-      return false;
-    }),
     dotenv.load(fileName: ".env").catchError((e) {
       debugPrint('⚠️ Dotenv init: $e');
     }),
@@ -90,13 +88,6 @@ void main() async {
 
 void _preloadLottieAssets() {
   Future.microtask(() async {
-    try {
-      final data = await rootBundle.load('assets/lottie/loading_loop.json');
-      globalLottieComposition = await LottieComposition.fromByteData(data);
-    } catch (e) {
-      debugPrint('⚠️ Error preloading loading_loop.json: $e');
-    }
-
     try {
       final data = await rootBundle.load('assets/lottie/Animation - 1733557597592.json');
       globalDeleteLottieComposition = await LottieComposition.fromByteData(data);

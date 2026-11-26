@@ -1,7 +1,8 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
-import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 import 'package:smartcard_flutter/core/utils/business_card_validator.dart';
@@ -24,13 +25,35 @@ class ScanProcessingResult {
 
 class ScanProcessingService {
   final TextRecognizer _textRecognizer = TextRecognizer();
-  final BarcodeScanner _barcodeScanner = BarcodeScanner(
-    formats: [BarcodeFormat.qrCode, BarcodeFormat.dataMatrix],
+  final MobileScannerController _barcodeScanner = MobileScannerController(
+    autoStart: false,
+    formats: const [BarcodeFormat.qrCode, BarcodeFormat.dataMatrix],
   );
 
   Future<void> dispose() async {
     await _textRecognizer.close();
-    await _barcodeScanner.close();
+    if (_barcodeScanner.value.isRunning) {
+      await _barcodeScanner.dispose();
+    }
+  }
+
+  Rect? _barcodeBoundingBox(Barcode barcode) {
+    if (barcode.corners.isNotEmpty) {
+      double minX = barcode.corners.first.dx;
+      double minY = barcode.corners.first.dy;
+      double maxX = minX;
+      double maxY = minY;
+      for (final p in barcode.corners.skip(1)) {
+        minX = math.min(minX, p.dx);
+        minY = math.min(minY, p.dy);
+        maxX = math.max(maxX, p.dx);
+        maxY = math.max(maxY, p.dy);
+      }
+      if (maxX > minX && maxY > minY) {
+        return Rect.fromLTRB(minX, minY, maxX, maxY);
+      }
+    }
+    return null;
   }
 
   Future<ScanProcessingResult> processImage({
@@ -42,11 +65,13 @@ class ScanProcessingService {
     double? frameWidth,
     double? frameHeight,
   }) async {
-    final inputImage = InputImage.fromFilePath(imagePath);
-
-    List<dynamic> barcodes = [];
+    List<Barcode> barcodes = const [];
     try {
-      barcodes = await _barcodeScanner.processImage(inputImage);
+      final capture = await _barcodeScanner.analyzeImage(
+        imagePath,
+        formats: const [BarcodeFormat.qrCode, BarcodeFormat.dataMatrix],
+      );
+      barcodes = capture?.barcodes ?? const [];
     } catch (e) {
       debugPrint('⚠️ Barcode scanning plugin unavailable/error: $e');
     }
@@ -59,7 +84,7 @@ class ScanProcessingService {
           imagePath,
           manualAdjust: manualEdgeAdjust,
           fromGallery: fromGallery,
-          textBoundingBox: barcodes.first.boundingBox,
+          textBoundingBox: _barcodeBoundingBox(barcodes.first),
           frameWidth: frameWidth,
           frameHeight: frameHeight,
           screenWidth: screenWidth,
@@ -73,6 +98,7 @@ class ScanProcessingService {
       }
     }
 
+    final inputImage = InputImage.fromFilePath(imagePath);
     final recognizedText = await _textRecognizer.processImage(inputImage);
     final rawText = recognizedText.text.trim();
 

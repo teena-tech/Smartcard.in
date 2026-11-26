@@ -2,8 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:rive/rive.dart' hide File;
-import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/home_screen/presentation/view/home_screen.dart';
 import 'package:smartcard_flutter/features/landing_screen/presentation/view/landing_screen.dart';
@@ -29,11 +28,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final authViewModel = ref.read(authViewModelProvider.notifier);
     final landingViewModel = ref.read(landingViewModelProvider.notifier);
 
-    // Bootstrap auth status and preload welcome slides concurrently during splash animation
+    // Bootstrap auth status and preload welcome slides concurrently during splash reveal
     await Future.wait([
       authViewModel.checkAuthStatus(),
       landingViewModel.fetchSlides(),
-      Future<void>.delayed(const Duration(milliseconds: 1000)),
+      Future<void>.delayed(const Duration(milliseconds: 750)),
     ]);
 
     if (!mounted) return;
@@ -65,25 +64,27 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             colors: [colors.backgroundStart, colors.backgroundEnd],
           ),
         ),
-        child: Stack(
-          children: [
-            // Full-screen Rive animation background
-            Positioned.fill(
-              child: RiveWidgetBuilder(
-                fileLoader: FileLoader.fromAsset(
-                  "assets/rive/splash_screen_animation_2.riv",
-                  riveFactory: Factory.rive,
-                ),
-                builder: (context, state) => switch (state) {
-                  RiveLoaded(controller: final controller) => RiveWidget(
-                      controller: controller,
-                      fit: Fit.cover,
-                    ),
-                  _ => const Center(child: LottieLoader(size: 90)),
-                },
-              ),
-            ),
-          ],
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/images/smartlogo.png',
+                height: 110,
+                fit: BoxFit.contain,
+              )
+                  .animate()
+                  .fadeIn(duration: 450.ms, curve: Curves.easeOut)
+                  .scale(
+                    begin: const Offset(0.9, 0.9),
+                    end: const Offset(1.0, 1.0),
+                    duration: 500.ms,
+                    curve: Curves.easeOutBack,
+                  ),
+              const SizedBox(height: 28),
+              const LottieLoader(size: 56),
+            ],
+          ),
         ),
       ),
     );

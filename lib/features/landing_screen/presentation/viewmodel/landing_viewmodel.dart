@@ -9,12 +9,12 @@ const List<Map<String, dynamic>> _defaultWelcomeSlides = [
   {
     'title': 'Smart Cards',
     'subtitle': 'The modern way to share your contact information and build professional connections.',
-    'image_path': 'assets/images/welcome pageSC WelcomeSC Welcome.png',
+    'image_path': 'assets/images/welcome_page_sc.webp',
   },
   {
     'title': 'Digital Connections',
     'subtitle': 'Build and customize your professional profile and digital business card instantly.',
-    'image_path': 'assets/images/welcome_page_sc.png',
+    'image_path': 'assets/images/welcome_page_sc.webp',
   },
 ];
 

@@ -81,10 +81,11 @@ android {
 
     packaging {
         jniLibs {
-            useLegacyPackaging = false
+            useLegacyPackaging = true
             excludes += listOf(
                 "lib/x86/**",
-                "lib/x86_64/**"
+                "lib/x86_64/**",
+                "**/libsqlite3.so"
             )
         }
         resources {
