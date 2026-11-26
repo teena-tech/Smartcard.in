@@ -25,11 +25,13 @@ class ApiConfig {
   }
 
   static String get _liveApiBaseUrl =>
-      _readConfig(_envApiUrl, 'API_URL', 'https://thesmartcards.in');
+      _readConfig(_envApiUrl, 'API_URL', 'https://thesmartcards.in/api');
 
   /// Base web origin for public smart card URLs.
-  static String get publicWebBaseUrl =>
-      _liveApiBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+  static String get publicWebBaseUrl {
+    final base = _liveApiBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+    return base.endsWith('/api') ? base.substring(0, base.length - 4) : base;
+  }
 
   /// Canonical public profile URL for a work profile ID.
   static String cardProfileUrl(String workProfileId) =>
@@ -218,7 +220,8 @@ class ApiConfig {
 
   static String get baseUrl {
     if (!useLocalBackend) {
-      return _liveApiBaseUrl;
+      final base = _liveApiBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+      return base.endsWith('/api') ? base : '$base/api';
     }
 
     if (kIsWeb) {
@@ -245,7 +248,7 @@ class ApiConfig {
       : _readConfig(
           _envSharedUploadsUrl,
           'SHARED_UPLOADS_URL',
-          'https://thesmartcards.in/shared-uploads',
+          '$publicWebBaseUrl/shared-uploads',
         );
 
   // Card API Key used by server routes

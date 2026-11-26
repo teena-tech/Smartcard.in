@@ -93,9 +93,9 @@ class _LandingScreenState extends ConsumerState<LandingScreen> {
       );
     }
 
-    // Relative URL Example: /uploads/slide1.jpg
+    // Relative URL Example: /shared-uploads/welcome_slides/1791277304_759.png
     if (path.startsWith('/')) {
-      final imageUrl = '${ApiConfig.baseUrl}$path';
+      final imageUrl = '${ApiConfig.publicWebBaseUrl}$path';
 
       return CachedNetworkImage(
         imageUrl: imageUrl,

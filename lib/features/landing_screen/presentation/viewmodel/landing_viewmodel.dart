@@ -1,7 +1,22 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartcard_flutter/core/services/dio_client.dart';
 import 'package:smartcard_flutter/core/services/api_config.dart';
+
+const List<Map<String, dynamic>> _defaultWelcomeSlides = [
+  {
+    'title': 'Smart Cards',
+    'subtitle': 'The modern way to share your contact information and build professional connections.',
+    'image_path': 'assets/images/welcome pageSC WelcomeSC Welcome.png',
+  },
+  {
+    'title': 'Digital Connections',
+    'subtitle': 'Build and customize your professional profile and digital business card instantly.',
+    'image_path': 'assets/images/welcome_page_sc.png',
+  },
+];
 
 @immutable
 class LandingState {
@@ -9,8 +24,8 @@ class LandingState {
   final bool isLoading;
 
   const LandingState({
-    this.slides = const [],
-    this.isLoading = true,
+    this.slides = _defaultWelcomeSlides,
+    this.isLoading = false,
   });
 
   LandingState copyWith({
@@ -27,16 +42,32 @@ class LandingState {
 class LandingViewModel extends Notifier<LandingState> {
   @override
   LandingState build() {
-    Future.microtask(() => fetchSlides());
+    _loadCachedSlidesAndFetch();
     return const LandingState();
   }
 
   List<Map<String, dynamic>> get slides => state.slides;
   bool get isLoading => state.isLoading;
 
-  Future<void> fetchSlides() async {
-    state = state.copyWith(isLoading: true);
+  Future<void> _loadCachedSlidesAndFetch() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cachedJson = prefs.getString('cached_welcome_slides');
+      if (cachedJson != null && cachedJson.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(cachedJson);
+        if (decoded.isNotEmpty) {
+          state = state.copyWith(
+            slides: decoded.map((e) => Map<String, dynamic>.from(e)).toList(),
+            isLoading: false,
+          );
+        }
+      }
+    } catch (_) {}
 
+    await fetchSlides();
+  }
+
+  Future<void> fetchSlides() async {
     try {
       final dio = DioClient().dio;
       final response = await dio.get(ApiConfig.welcomeSlides);
@@ -52,8 +83,22 @@ class LandingViewModel extends Notifier<LandingState> {
         }
 
         if (list.isNotEmpty) {
+          final mappedSlides = list.map((e) {
+            final map = Map<String, dynamic>.from(e);
+            final rawPath = (map['image_path'] ?? '').toString();
+            if (rawPath.startsWith('/') && !rawPath.startsWith('http')) {
+              map['image_path'] = '${ApiConfig.publicWebBaseUrl}$rawPath';
+            }
+            return map;
+          }).toList();
+
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('cached_welcome_slides', jsonEncode(mappedSlides));
+          } catch (_) {}
+
           state = state.copyWith(
-            slides: list.map((e) => Map<String, dynamic>.from(e)).toList(),
+            slides: mappedSlides,
             isLoading: false,
           );
           return;
@@ -63,21 +108,12 @@ class LandingViewModel extends Notifier<LandingState> {
       debugPrint('Welcome Slides API Error: $e');
     }
 
-    state = state.copyWith(
-      slides: [
-        {
-          'title': 'Smart Cards',
-          'subtitle': 'The modern way to share your contact information and build professional connections.',
-          'image_path': 'assets/images/welcome pageSC WelcomeSC Welcome.png',
-        },
-        {
-          'title': 'Digital Connections',
-          'subtitle': 'Build and customize your professional profile and digital business card instantly.',
-          'image_path': 'assets/images/background-image.jpg',
-        },
-      ],
-      isLoading: false,
-    );
+    if (state.slides.isEmpty) {
+      state = state.copyWith(
+        slides: _defaultWelcomeSlides,
+        isLoading: false,
+      );
+    }
   }
 }
 

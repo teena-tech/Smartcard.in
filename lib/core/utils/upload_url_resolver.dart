@@ -38,7 +38,7 @@ class UploadUrlResolver {
         } else if (_isSharedUploadsPath(normalized)) {
           resolved = _buildSharedUploadsUrl(normalized);
         } else if (normalized.startsWith('uploads/')) {
-          resolved = '${_trimTrailing(ApiConfig.baseUrl)}/$normalized';
+          resolved = '${_trimTrailing(ApiConfig.publicWebBaseUrl)}/$normalized';
         } else {
           resolved = raw;
         }
@@ -54,7 +54,7 @@ class UploadUrlResolver {
       } else if (_isSharedUploadsPath(normalized)) {
         resolved = _buildSharedUploadsUrl(normalized);
       } else if (normalized.startsWith('uploads/')) {
-        resolved = '${_trimTrailing(ApiConfig.baseUrl)}/$normalized';
+        resolved = '${_trimTrailing(ApiConfig.publicWebBaseUrl)}/$normalized';
       } else if (normalized.contains('/')) {
         resolved = _buildSharedUploadsUrl(normalized);
       } else if (type == 'logo') {

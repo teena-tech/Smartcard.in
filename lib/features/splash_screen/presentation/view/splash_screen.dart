@@ -27,10 +27,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _bootstrap() async {
     final authViewModel = ref.read(authViewModelProvider.notifier);
-    await authViewModel.checkAuthStatus();
+    final landingViewModel = ref.read(landingViewModelProvider.notifier);
 
-    // Allow splash Rive animation to play smoothly
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    // Bootstrap auth status and preload welcome slides concurrently during splash animation
+    await Future.wait([
+      authViewModel.checkAuthStatus(),
+      landingViewModel.fetchSlides(),
+      Future<void>.delayed(const Duration(milliseconds: 1000)),
+    ]);
+
     if (!mounted) return;
 
     if (authViewModel.isAuthenticated) {
