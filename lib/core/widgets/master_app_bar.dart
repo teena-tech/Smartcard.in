@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
@@ -22,45 +23,47 @@ enum MasterHeaderStyle {
 }
 
 class MasterAppBarPainter extends CustomPainter {
-  final double curveDepth;
+  final double sideBottomOffset;
+  final double centerBottomOffset;
   final Gradient gradient;
 
   const MasterAppBarPainter({
-    this.curveDepth = 18.0,
+    this.sideBottomOffset = 10.0,
+    this.centerBottomOffset = 54.0,
     required this.gradient,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = Path();
-    path.lineTo(0, size.height);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height + curveDepth,
-      size.width,
-      size.height,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
+    final sideY = sideBottomOffset.clamp(0.0, size.height);
+    final midY = centerBottomOffset.clamp(sideY, size.height);
+    final controlY = sideY + (midY - sideY) * 2.0;
 
-    // Soft drop shadow
+    final path = Path()
+      ..lineTo(0, sideY)
+      ..quadraticBezierTo(size.width / 2, controlY, size.width, sideY)
+      ..lineTo(size.width, 0)
+      ..close();
+
+    // Soft drop shadow below the curved header
     canvas.drawShadow(
       path,
-      Colors.black.withValues(alpha: 0.28),
-      4.0,
+      Colors.black.withValues(alpha: 0.22),
+      5.0,
       false,
     );
 
-    // Gradient fill
     final paint = Paint()
-      ..shader = gradient.createShader(Offset.zero & Size(size.width, size.height + curveDepth))
+      ..shader = gradient.createShader(Offset.zero & Size(size.width, midY))
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant MasterAppBarPainter oldDelegate) =>
-      oldDelegate.curveDepth != curveDepth || oldDelegate.gradient != gradient;
+      oldDelegate.sideBottomOffset != sideBottomOffset ||
+      oldDelegate.centerBottomOffset != centerBottomOffset ||
+      oldDelegate.gradient != gradient;
 }
 
 class CurvedHeaderClipper extends CustomClipper<Path> {
@@ -153,90 +156,175 @@ class MasterAppBar extends ConsumerWidget implements PreferredSizeWidget {
       }
     }
 
-    final headerTextColor = Colors.white;
+    const headerTextColor = Colors.white;
     final canPop = showBackButton ?? Navigator.canPop(context);
     final isTransparent = style == MasterHeaderStyle.transparent;
 
-    final effectiveProfileTap = onProfileTap ?? () => ProfileMenuBottomSheet.show(context);
+    final effectiveProfileTap =
+        onProfileTap ?? () => ProfileMenuBottomSheet.show(context);
     final shouldShowThemeToggle = showThemeToggle ?? false;
+    final hasExtraActions = extraActions != null && extraActions!.isNotEmpty;
+    final hasControls =
+        canPop || leading != null || shouldShowThemeToggle || hasExtraActions;
 
-    return AppBar(
-      backgroundColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      centerTitle: true,
-      toolbarHeight: kToolbarHeight,
-      flexibleSpace: isTransparent
-          ? null
-          : const CustomPaint(
-              painter: MasterAppBarPainter(
-                curveDepth: curveHeight,
-                gradient: LinearGradient(
-                  colors: [AppColors.primaryRed, AppColors.secondaryRed],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+    final topPadding = MediaQuery.of(context).padding.top;
+    final totalHeight = topPadding + preferredSize.height;
+    final sideBottomY = hasControls ? topPadding + 44.0 : topPadding + 6.0;
+    final centerBottomY =
+        hasControls ? totalHeight - 2.0 : totalHeight - 8.0;
+
+    final Widget? leftWidget = leading ??
+        (shouldShowThemeToggle
+            ? const Padding(
+                padding: EdgeInsets.only(left: 12.0),
+                child: Center(child: ThemeToggleSwitch()),
+              )
+            : (canPop
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back, color: headerTextColor),
+                    onPressed: onBackTap ?? () => Navigator.pop(context),
+                  )
+                : null));
+
+    final Widget titleWidget = title ??
+        (titleText != null
+            ? Text(
+                titleText!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: headerTextColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              )
+            : const SmartCardsLogo());
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: SizedBox(
+        height: totalHeight,
+        width: double.infinity,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            if (!isTransparent)
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: MasterAppBarPainter(
+                    sideBottomOffset: sideBottomY,
+                    centerBottomOffset: centerBottomY,
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFC00000),
+                        AppColors.primaryRed,
+                        Color(0xFF990000),
+                      ],
+                      stops: [0.0, 0.55, 1.0],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
                 ),
               ),
-              child: SizedBox.expand(),
+
+            // Title centered nicely inside the red arc
+            Positioned(
+              left: hasControls ? 56.0 : 72.0,
+              right: hasControls && hasExtraActions ? 104.0 : 72.0,
+              top: topPadding + (hasControls ? 4.0 : 6.0),
+              height: hasControls ? 42.0 : 40.0,
+              child: Center(child: titleWidget),
             ),
-      leadingWidth: leading != null ? null : (shouldShowThemeToggle ? 86 : null),
-      leading: leading ??
-          (shouldShowThemeToggle
-              ? const Padding(
-                  padding: EdgeInsets.only(left: 12.0),
-                  child: Center(child: ThemeToggleSwitch()),
-                )
-              : (canPop
-                  ? IconButton(
-                      icon: Icon(Icons.arrow_back, color: headerTextColor),
-                      onPressed: onBackTap ?? () => Navigator.pop(context),
-                    )
-                  : null)),
-      title: title ??
-          (titleText != null
-              ? Text(
-                  titleText!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    color: headerTextColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.8,
-                  ),
-                )
-              : const SmartCardsLogo()),
-      actions: [
-        ...?extraActions,
-        if (showProfile)
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: isProfilePage
-                ? _buildProfileIconWithText(effectiveProfileTap, user, cardImage)
-                : _buildSimpleProfileIcon(effectiveProfileTap, user, cardImage),
-          ),
-      ],
+
+            // Left back button or toggle (when present)
+            if (leftWidget != null)
+              Positioned(
+                left: 4.0,
+                top: topPadding + 2.0,
+                height: 44.0,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: leftWidget,
+                ),
+              ),
+
+            // Right actions + curved-edge floating profile avatar
+            Positioned(
+              right: 14.0,
+              top: topPadding + (hasControls ? 4.0 : 5.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (hasExtraActions) ...extraActions!,
+                  if (showProfile)
+                    isProfilePage
+                        ? _buildProfileIconWithText(
+                            effectiveProfileTap,
+                            user,
+                            cardImage,
+                          )
+                        : _buildSimpleProfileIcon(
+                            effectiveProfileTap,
+                            user,
+                            cardImage,
+                            size: hasControls ? 34.0 : 42.0,
+                            borderWidth: hasControls ? 2.0 : 2.5,
+                          ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildSimpleProfileIcon(VoidCallback? onTap, UserModel? user, String? cardImage) {
-    final imagePath = (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: RotatingProfileAvatarRing(
-        size: 36,
-        borderWidth: 2.5,
-        child: CircularProfileAvatar(
-          radius: 18,
-          size: 36,
-          animateRing: false,
-          imageUrl: imagePath != null && imagePath.isNotEmpty
-              ? UploadUrlResolver.resolve(imagePath, type: 'profile')
-              : null,
-          fallbackText: user?.displayName.isNotEmpty == true ? user!.displayName[0].toUpperCase() : 'U',
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.primaryRed,
+  Widget _buildSimpleProfileIcon(
+    VoidCallback? onTap,
+    UserModel? user,
+    String? cardImage, {
+    double size = 42.0,
+    double borderWidth = 2.5,
+  }) {
+    final imagePath =
+        (cardImage != null && cardImage.isNotEmpty) ? cardImage : user?.profileImage;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.14),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: RotatingProfileAvatarRing(
+            size: size,
+            borderWidth: borderWidth,
+            child: CircularProfileAvatar(
+              radius: size / 2,
+              size: size,
+              animateRing: false,
+              imageUrl: imagePath != null && imagePath.isNotEmpty
+                  ? UploadUrlResolver.resolve(imagePath, type: 'profile')
+                  : null,
+              fallbackText: user?.displayName.isNotEmpty == true
+                  ? user!.displayName[0].toUpperCase()
+                  : 'U',
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.primaryRed,
+            ),
+          ),
         ),
       ),
     );
@@ -275,5 +363,5 @@ class MasterAppBar extends ConsumerWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + curveHeight);
+  Size get preferredSize => const Size.fromHeight(62.0);
 }
