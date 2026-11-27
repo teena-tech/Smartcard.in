@@ -779,9 +779,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                   label: '🏷️ ${g.name} ($memberCount)',
                   isSelected: isSelected,
                   onTap: () {
+                    final defaultTabFilter = _selectedTabIndex == 1
+                        ? 'Matched'
+                        : (_selectedTabIndex == 2 ? 'Scanned' : 'All');
                     if (isSelected) {
                       contactNotifier.setFilter(ContactFilter.all);
+                      contactViewModel.setActiveFilter(defaultTabFilter);
                     } else if (g.id != null) {
+                      contactViewModel.setActiveFilter(defaultTabFilter);
                       contactNotifier.setGroupFilter(g.id!, g.name);
                     }
                   },
@@ -1158,13 +1163,15 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                         c.imagePath!.trim().toLowerCase() != 'null');
               }).toList());
 
-    final bool isCacheEmptyWithData = isSmartCard
-        ? (_memoizedSmartListItems.isEmpty && baseList.isNotEmpty)
-        : (_memoizedScansListItems.isEmpty && baseList.isNotEmpty);
+    final bool isCacheEmptyWithData = filter == ContactFilter.all &&
+        q.isEmpty &&
+        (isSmartCard
+            ? (_memoizedSmartListItems.isEmpty && baseList.isNotEmpty)
+            : (_memoizedScansListItems.isEmpty && baseList.isNotEmpty));
 
     final bool needsRecompute = isCacheEmptyWithData || (isSmartCard
         ? (vm.dataVersion != _lastSmartDataVersion ||
-            _memoizedSmartListItems.isEmpty ||
+            (_memoizedSmartListItems.isEmpty && filter == ContactFilter.all && q.isEmpty && baseList.isNotEmpty) ||
             vm.smartCardContacts.length != _lastSmartCardCount ||
             vm.allContacts.length != _lastSmartAllContactsLength ||
             !identical(vm.allContacts, _lastSmartContactsRef) ||
@@ -1173,7 +1180,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
             groupId != _lastSmartGroupId ||
             phoneCount != _lastSmartPhoneContactsCount)
         : (vm.dataVersion != _lastScansDataVersion ||
-            _memoizedScansListItems.isEmpty ||
+            (_memoizedScansListItems.isEmpty && filter == ContactFilter.all && q.isEmpty && baseList.isNotEmpty) ||
             vm.scannedContacts.length != _lastScansCardCount ||
             vm.allContacts.length != _lastScansAllContactsLength ||
             !identical(vm.allContacts, _lastScansContactsRef) ||
@@ -1266,7 +1273,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
       availableLetters = isSmartCard ? _memoizedSmartLetters : _memoizedScansLetters;
 
       // Safety guard: if cached list became empty but baseList has items, build immediately!
-      if (scannedListItems.isEmpty && baseList.isNotEmpty && q.isEmpty) {
+      if (scannedListItems.isEmpty && baseList.isNotEmpty && q.isEmpty && filter == ContactFilter.all) {
         final groupedScanned = _groupScannedContacts(baseList);
         availableLetters = groupedScanned.keys.toList();
         scannedListItems = [];
