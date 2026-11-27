@@ -2241,7 +2241,18 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                 final c = data['city'].toString().trim();
                 if (c.isNotEmpty) uniqueCities.add(c);
               }
-              offices = uniqueCities.map((c) => {'city': c}).toList();
+              offices = uniqueCities.map((c) {
+                final match = officesList.cast<dynamic>().firstWhere(
+                      (o) => (o['city'] ?? '').toString().trim().toLowerCase() == c.toLowerCase(),
+                      orElse: () => null,
+                    );
+                return <String, dynamic>{
+                  'city': c,
+                  if (match != null && match['city_id'] != null) 'city_id': match['city_id'],
+                  if ((match != null && match['state_id'] != null) || data['state_id'] != null)
+                    'state_id': match?['state_id'] ?? data['state_id'],
+                };
+              }).toList();
               if (offices.isNotEmpty) {
                 final addrLower = addr.text.toLowerCase();
                 final matchIdx = offices.indexWhere((o) =>
@@ -2323,7 +2334,18 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                       if (c.isNotEmpty) uniqueCities.add(c);
                                     }
                                     setS(() {
-                                      offices = uniqueCities.map((c) => {'city': c}).toList();
+                                      offices = uniqueCities.map((c) {
+                                        final match = officesList.cast<dynamic>().firstWhere(
+                                              (o) => (o['city'] ?? '').toString().trim().toLowerCase() == c.toLowerCase(),
+                                              orElse: () => null,
+                                            );
+                                        return <String, dynamic>{
+                                          'city': c,
+                                          if (match != null && match['city_id'] != null) 'city_id': match['city_id'],
+                                          if ((match != null && match['state_id'] != null) || data['state_id'] != null)
+                                            'state_id': match?['state_id'] ?? data['state_id'],
+                                        };
+                                      }).toList();
                                       if (data['district'] != null) {
                                         dist.text = data['district'].toString().trim();
                                       }
@@ -2478,22 +2500,19 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                   });
 
                                   final locVal = (selectedOffice ?? loc.text).trim();
-                                  String finalAddress = addr.text.trim();
-                                  if (locVal.isNotEmpty) {
-                                    if (!finalAddress.toLowerCase().contains(locVal.toLowerCase())) {
-                                      if (finalAddress.isNotEmpty) {
-                                        finalAddress = "$finalAddress, $locVal";
-                                      } else {
-                                        finalAddress = locVal;
-                                      }
-                                    }
-                                  }
+                                  final finalAddress = addr.text.trim();
+                                  final matchedOffice = offices.cast<Map<String, dynamic>?>().firstWhere(
+                                    (o) => o != null && o['city']?.toString().trim().toLowerCase() == locVal.toLowerCase(),
+                                    orElse: () => null,
+                                  );
 
                                   final payload = <String, dynamic>{
                                     'address':  finalAddress,
                                     'pincode':  pin.text.trim(),
                                     'district': dist.text.trim(),
                                     'state':    st.text.trim(),
+                                    if (matchedOffice?['city_id'] != null) 'city_id': matchedOffice!['city_id'],
+                                    if (matchedOffice?['state_id'] != null) 'state_id': matchedOffice!['state_id'],
                                   };
 
                                   final ok = await addrVm.updateProfile(uid, payload);
@@ -2532,6 +2551,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
       Future.delayed(const Duration(milliseconds: 500), () {
         addr.dispose(); pin.dispose();
         dist.dispose(); st.dispose();
+        loc.dispose();
       });
     });
   }

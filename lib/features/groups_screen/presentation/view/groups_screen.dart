@@ -374,17 +374,10 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showCreateGroupDialog(context),
-          icon: const Icon(Icons.add_rounded),
-          label: Text(
-            'Create Group',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-          ),
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-        ),
-        body: groupNotifier.isLoading
+        body: Column(
+          children: [
+            Expanded(
+              child: groupNotifier.isLoading
             ? const Center(child: CircularProgressIndicator())
             : groupNotifier.groups.isEmpty
                 ? EmptyStateWidget(
@@ -531,6 +524,50 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                       },
                     ),
                   ),
+            ),
+            if (!groupNotifier.isLoading)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Center(
+                  child: Material(
+                    color: Colors.white,
+                    elevation: 2,
+                    shadowColor: Colors.black.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      onTap: () => _showCreateGroupDialog(context),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: 20,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Add Group',
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
         bottomNavigationBar: const GlobalBottomNav(),
       ),
     );

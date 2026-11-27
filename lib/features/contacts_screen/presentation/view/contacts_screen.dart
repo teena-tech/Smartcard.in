@@ -22,7 +22,6 @@ import 'package:smartcard_flutter/core/widgets/empty_state_widget.dart';
 import 'package:smartcard_flutter/core/services/reactive_contact_sync_service.dart';
 import 'package:smartcard_flutter/features/contact_form_screen/presentation/view/contact_form_screen.dart';
 import 'package:smartcard_flutter/features/groups_screen/presentation/view/groups_screen.dart';
-import 'package:smartcard_flutter/features/group_detail_screen/presentation/view/group_detail_screen.dart';
 import 'package:smartcard_flutter/core/widgets/lottie_loader.dart';
 
 abstract class ContactListItem {}
@@ -54,7 +53,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
   bool get wantKeepAlive => true;
 
   final ScrollController _phoneScrollController = ScrollController();
-  final ScrollController _groupsScrollController = ScrollController();
   final ScrollController _smartCardScrollController = ScrollController();
   final ScrollController _scansScrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -102,7 +100,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
   bool _hasCheckedPermissionOnActive = false;
   StreamSubscription<SyncEvent>? _syncEventSub;
 
-  // Selected tab: 0 = Phone Contacts, 1 = Groups, 2 = Smart Card, 3 = Scans
+  // Selected tab: 0 = Phone Contacts, 1 = Smart Card, 2 = Scans
   int _selectedTabIndex = 0;
 
   ScrollController get _activeScrollController {
@@ -110,10 +108,8 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
       case 0:
         return _phoneScrollController;
       case 1:
-        return _groupsScrollController;
-      case 2:
         return _smartCardScrollController;
-      case 3:
+      case 2:
         return _scansScrollController;
       default:
         return _phoneScrollController;
@@ -124,9 +120,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
     switch (_selectedTabIndex) {
       case 0:
         return _phoneLetterOffsets;
-      case 2:
+      case 1:
         return _smartLetterOffsets;
-      case 3:
+      case 2:
         return _scansLetterOffsets;
       default:
         return _phoneLetterOffsets;
@@ -138,7 +134,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _phoneScrollController.addListener(_onScroll);
-    _groupsScrollController.addListener(_onScroll);
     _smartCardScrollController.addListener(_onScroll);
     _scansScrollController.addListener(_onScroll);
 
@@ -339,11 +334,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _phoneScrollController.removeListener(_onScroll);
-    _groupsScrollController.removeListener(_onScroll);
     _smartCardScrollController.removeListener(_onScroll);
     _scansScrollController.removeListener(_onScroll);
     _phoneScrollController.dispose();
-    _groupsScrollController.dispose();
     _smartCardScrollController.dispose();
     _scansScrollController.dispose();
     _bubbleDismissTimer?.cancel();
@@ -539,7 +532,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                             showAlphabetBar,
                             theme,
                           ),
-                          _buildGroupsTabView(context, groupNotifier, contactNotifier),
                           _buildSmartOrScannedCardsView(
                             context,
                             contactViewModel,
@@ -564,10 +556,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                       ),
                     ),
                   ),
-
-                  // Bottom Group Bar for Groups Tab
-                  if (_selectedTabIndex == 1)
-                    _buildBottomGroupBar(context, groupNotifier),
                 ],
               ),
             ),
@@ -621,10 +609,10 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
             child: _buildTabChip(
               title: 'Smart Card',
               count: smartCardCount,
-              isSelected: _selectedTabIndex == 2,
+              isSelected: _selectedTabIndex == 1,
               icon: Icons.verified_rounded,
               onTap: () {
-                setState(() => _selectedTabIndex = 2);
+                setState(() => _selectedTabIndex = 1);
                 contactViewModel.setActiveFilter('Matched');
                 _syncDevicePhonesAndMatch(force: contactViewModel.smartCardContactsCount == 0);
               },
@@ -635,10 +623,10 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
             child: _buildTabChip(
               title: 'Scans',
               count: scannedCount,
-              isSelected: _selectedTabIndex == 3,
+              isSelected: _selectedTabIndex == 2,
               icon: Icons.credit_card_rounded,
               onTap: () {
-                setState(() => _selectedTabIndex = 3);
+                setState(() => _selectedTabIndex = 2);
                 contactViewModel.setActiveFilter('Scanned');
               },
             ),
@@ -736,7 +724,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
 
     final int favoritesCount = _selectedTabIndex == 0
         ? contactNotifier.favoritesCount
-        : (_selectedTabIndex == 2
+        : (_selectedTabIndex == 1
             ? contactViewModel.allContacts.where((c) => (c.isMatched || (c.matchedCards != null && c.matchedCards!.isNotEmpty)) && c.isFavorite).length
             : contactViewModel.allContacts.where((c) => c.isFavorite).length);
 
@@ -753,9 +741,9 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
             onTap: () {
               if (isFavoritesSelected) {
                 contactNotifier.setFilter(ContactFilter.all);
-                if (_selectedTabIndex == 2) {
+                if (_selectedTabIndex == 1) {
                   contactViewModel.setActiveFilter('Matched');
-                } else if (_selectedTabIndex == 3) {
+                } else if (_selectedTabIndex == 2) {
                   contactViewModel.setActiveFilter('Scanned');
                 } else {
                   contactViewModel.setActiveFilter('All');
@@ -769,9 +757,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
           const SizedBox(width: 8),
           _buildFilterChip(
             label: '👥 Groups (${groupNotifier.groups.length})',
-            isSelected: contactNotifier.currentFilter == ContactFilter.group && contactNotifier.selectedGroupId == null,
-            onTap: () {
-              setState(() => _selectedTabIndex = 1);
+            isSelected: false,
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const GroupsScreen()),
+              );
+              if (mounted) {
+                groupNotifier.loadGroups();
+              }
             },
           ),
           if (groupNotifier.groups.isNotEmpty) ...[
@@ -823,11 +816,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
         hint = 'Search ${count > 0 ? "$count " : ""}contacts...';
       }
       currentQuery = contactNotifier.searchQuery;
-    } else if (_selectedTabIndex == 2) {
+    } else if (_selectedTabIndex == 1) {
       final count = contactViewModel.smartCardContactsCount;
       hint = 'Search ${count > 0 ? "$count " : ""}digital smart cards...';
       currentQuery = contactViewModel.searchQuery;
-    } else if (_selectedTabIndex == 3) {
+    } else if (_selectedTabIndex == 2) {
       final count = contactViewModel.scannedContactsCount;
       hint = 'Search ${count > 0 ? "$count " : ""}scanned cards...';
       currentQuery = contactViewModel.searchQuery;
@@ -888,54 +881,52 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
               ),
             ),
           ),
-          if (_selectedTabIndex != 1) ...[
-            const SizedBox(width: 8),
-            Material(
+          const SizedBox(width: 8),
+          Material(
+            borderRadius: BorderRadius.circular(14),
+            elevation: 1,
+            shadowColor: AppColors.primary.withValues(alpha: 0.3),
+            child: InkWell(
+              onTap: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ContactFormScreen(),
+                  ),
+                );
+                if (result != null && mounted) {
+                  _refreshDataAll(silent: true);
+                }
+              },
               borderRadius: BorderRadius.circular(14),
-              elevation: 1,
-              shadowColor: AppColors.primary.withValues(alpha: 0.3),
-              child: InkWell(
-                onTap: () async {
-                  final result = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const ContactFormScreen(),
+              child: Container(
+                height: 42,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.person_add_rounded,
+                      color: Colors.white,
+                      size: 19,
                     ),
-                  );
-                  if (result != null && mounted) {
-                    _refreshDataAll(silent: true);
-                  }
-                },
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  height: 42,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.person_add_rounded,
+                    const SizedBox(width: 5),
+                    Text(
+                      'Add',
+                      style: GoogleFonts.inter(
                         color: Colors.white,
-                        size: 19,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Add',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -1215,7 +1206,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
           final devC = contactNotifier.findContactByPhoneOrEmail(c.phone, c.email) ?? contactNotifier.findContactById(c.id);
           return c.isFavorite || (devC?.isFavorite ?? false);
         }).toList();
-      } else if (filter == ContactFilter.group && groupId != null && (_selectedTabIndex == 0 || _selectedTabIndex == 1)) {
+      } else if (filter == ContactFilter.group && groupId != null) {
         list = list.where((c) {
           final devC = contactNotifier.findContactByPhoneOrEmail(c.phone, c.email) ?? contactNotifier.findContactById(c.id);
           return devC != null && devC.groupIds.contains(groupId);
@@ -1367,7 +1358,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                         padding: EdgeInsets.only(right: showAlphabetBar ? 26.0 : 8.0),
                         child: ContactListTile(
                           contact: contact,
-                          enableHero: isSmartCard ? _selectedTabIndex == 2 : _selectedTabIndex == 3,
+                          enableHero: isSmartCard ? _selectedTabIndex == 1 : _selectedTabIndex == 2,
                           onFavoriteToggle: () => vm.toggleFavorite(contact.id),
                         ),
                       );
@@ -1423,182 +1414,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildGroupsTabView(
-    BuildContext context,
-    GroupNotifier groupNotifier,
-    ContactNotifier contactNotifier,
-  ) {
-    if (groupNotifier.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFD97706)),
-      );
-    }
-
-    final groups = groupNotifier.groups;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    Widget body;
-    if (groups.isEmpty) {
-      body = Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.folder_shared_rounded, size: 56, color: Colors.grey[400]),
-              const SizedBox(height: 12),
-              Text(
-                'No Contact Groups Yet',
-                style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Organize your contacts into VIP, Family, Work or custom groups.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 13, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const GroupsScreen()),
-                  );
-                },
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Create Group'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFD97706),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    } else {
-      body = ListView.builder(
-      controller: _groupsScrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: groups.length,
-      itemBuilder: (context, index) {
-        final group = groups[index];
-        final memberCount = groupNotifier.getMemberCount(group.id ?? '', contactNotifier.contacts);
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          elevation: 1,
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: const Color(0xFFD97706).withValues(alpha: 0.15),
-              child: const Icon(Icons.folder_rounded, color: Color(0xFFD97706)),
-            ),
-            title: Text(
-              group.name,
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-            subtitle: Text(
-              '$memberCount contact${memberCount == 1 ? '' : 's'}',
-              style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
-            ),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => GroupDetailScreen(group: group),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-    }
-
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: isDark ? const Color(0xFF1E1E3F) : const Color(0xFFF3F4F6),
-          child: Row(
-            children: [
-              InkWell(
-                onTap: () => setState(() => _selectedTabIndex = 0),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.arrow_back_rounded, size: 18, color: AppColors.primaryRed),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Back to Contacts',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryRed,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${groups.length} Groups',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white60 : Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(child: body),
-      ],
-    );
-  }
-
-  Widget _buildBottomGroupBar(
-    BuildContext context,
-    GroupNotifier groupNotifier,
-  ) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(
-          top: BorderSide(
-            color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
-          ),
-        ),
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const GroupsScreen()),
-            );
-          },
-          icon: const Icon(Icons.add_rounded, size: 20),
-          label: Text('Manage & Create Groups', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD97706),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-        ),
-      ),
     );
   }
 

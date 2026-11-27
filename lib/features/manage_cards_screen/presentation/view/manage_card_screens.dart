@@ -449,8 +449,13 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
     ref.watch(cardViewModelProvider);
     final viewModel = ref.read(cardViewModelProvider.notifier);
 
-    // Listen for error/success messages
+    // Listen for error/success messages only when this screen is actually visible
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final isVisible =
+          !widget.isTab || ref.read(dashboardViewModelProvider).currentIndex == 10;
+      if (!isVisible) return;
+
       if (viewModel.errorMessage != null &&
           viewModel.errorMessage!.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -459,7 +464,8 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
             backgroundColor: Colors.redAccent,
           ),
         );
-        viewModel.clearMessages();}
+        viewModel.clearMessages();
+      }
       if (viewModel.successMessage.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -467,7 +473,9 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        viewModel.clearMessages();}});
+        viewModel.clearMessages();
+      }
+    });
 
     if (viewModel.isLoading) {
       return const Center(
