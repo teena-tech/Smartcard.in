@@ -13,6 +13,18 @@ import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/manage_card_edit_all_screen/presentation/view/widgets/rich_text_editor_widget.dart';
 import 'package:smartcard_flutter/features/manage_cards_screen/presentation/view/widgets/manage_cards_video_widget.dart';
 import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/video_item.dart';
+class _SocialLinkItem {
+  String type;
+  String name;
+  String url;
+
+  _SocialLinkItem({
+    required this.type,
+    required this.name,
+    required this.url,
+  });
+}
+
 class SectionEditSheet extends ConsumerStatefulWidget {
   final String sectionId;
   final Future<String?> Function(String, bool) cropImageCallback;
@@ -36,6 +48,8 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
   late Map<String, dynamic> _controllers;
   List<TextEditingController> _videoControllers = [];
   List<TextEditingController> _videoTitleControllers = [];
+  final TextEditingController _socialLinkInputCtrl = TextEditingController();
+  final List<_SocialLinkItem> _socialLinks = [];
 
   // Pincode lookup variables
   List<dynamic> _offices = [];
@@ -54,6 +68,12 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
     if (details != null) {
       _initControllers(details);
     }
+  }
+
+  @override
+  void dispose() {
+    _socialLinkInputCtrl.dispose();
+    super.dispose();
   }
 
   void _initControllers(CardProfileDetails details) {
@@ -111,17 +131,47 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
     _controllers['phones'] = phones.map((p) => TextEditingController(text: p)).toList();
     _controllers['whatsapps'] = whatsapps.map((w) => TextEditingController(text: w)).toList();
 
-    // Socials
-    _controllers['fbLink'] = TextEditingController(text: details.fbLink);
-    _controllers['instaLink'] = TextEditingController(text: details.instaLink);
-    _controllers['linkedin'] = TextEditingController(text: details.linkedin);
-    _controllers['xLink'] = TextEditingController(text: details.xLink);
-
-    final webs = details.website.isEmpty ? [{'name': '', 'url': ''}] : details.website;
-    _controllers['websites'] = webs.map((w) => {
-      'name': TextEditingController(text: w['name'] ?? ''),
-      'url': TextEditingController(text: w['url'] ?? ''),
-    }).toList();
+    // Socials & Websites
+    _socialLinks.clear();
+    if (details.instaLink.trim().isNotEmpty) {
+      _socialLinks.add(_SocialLinkItem(
+        type: 'instagram',
+        name: 'Instagram',
+        url: details.instaLink.trim(),
+      ));
+    }
+    if (details.fbLink.trim().isNotEmpty) {
+      _socialLinks.add(_SocialLinkItem(
+        type: 'facebook',
+        name: 'Facebook',
+        url: details.fbLink.trim(),
+      ));
+    }
+    if (details.linkedin.trim().isNotEmpty) {
+      _socialLinks.add(_SocialLinkItem(
+        type: 'linkedin',
+        name: 'LinkedIn',
+        url: details.linkedin.trim(),
+      ));
+    }
+    if (details.xLink.trim().isNotEmpty) {
+      _socialLinks.add(_SocialLinkItem(
+        type: 'x',
+        name: 'X (Twitter)',
+        url: details.xLink.trim(),
+      ));
+    }
+    for (final w in details.website) {
+      final rawUrl = (w['url'] ?? '').trim();
+      if (rawUrl.isEmpty) continue;
+      final detected = _detectSocialPlatform(rawUrl);
+      final customName = (w['name'] ?? '').trim();
+      _socialLinks.add(_SocialLinkItem(
+        type: detected.type,
+        name: customName.isNotEmpty ? customName : detected.name,
+        url: rawUrl,
+      ));
+    }
 
     // About & Videos
     _controllers['about'] = TextEditingController(text: details.aboutCompany);
@@ -234,7 +284,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
       case 'section-company': return 'Professional Details';
       case 'section-address': return 'Professional Address';
       case 'section-company-contact': return 'Contact Details';
-      case 'section-social': return 'Social Media';
+      case 'section-social': return 'Social Media & Websites';
       case 'section-about': return 'About';
       case 'section-youtube': return 'My Videos';
       case 'section-gallery': return 'Gallery';
@@ -557,34 +607,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
 
 
       case 'section-social':
-        final webs = _controllers['websites'] as List;
-        if (webs.isEmpty) {
-          webs.add({'name': TextEditingController(), 'url': TextEditingController()});
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildTextFormField(_controllers['fbLink'], 'Facebook URL', colors, keyboardType: TextInputType.url),
-            _buildTextFormField(_controllers['instaLink'], 'Instagram URL', colors, keyboardType: TextInputType.url),
-            _buildTextFormField(_controllers['linkedin'], 'LinkedIn URL', colors, keyboardType: TextInputType.url),
-            _buildTextFormField(_controllers['xLink'], 'X (Twitter) URL', colors, keyboardType: TextInputType.url),
-            ...webs.asMap().entries.map((e) {
-              final url = e.value['url'] as TextEditingController;
-              final label = e.key == 0 ? 'Website URL' : 'Website URL ${e.key + 1}';
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(child: _buildTextFormField(url, label, colors, keyboardType: TextInputType.url)),
-                  if (webs.length > 1)
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
-                      onPressed: () => setState(() => webs.removeAt(e.key)),
-                    ),
-                ],
-              );
-            }),
-          ],
-        );
+        return _buildSocialMediaSection();
 
       case 'section-about':
         return RichTextEditorWidget(controller: _controllers['about']);
@@ -952,17 +975,36 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
           .where((w) => w.isNotEmpty)
           .toList();
     } else if (widget.sectionId == 'section-social') {
-      details.fbLink = _controllers['fbLink'].text.trim();
-      details.instaLink = _controllers['instaLink'].text.trim();
-      details.linkedin = _controllers['linkedin'].text.trim();
-      details.xLink = _controllers['xLink'].text.trim();
-      details.website = (_controllers['websites'] as List)
-          .map((w) => {
-                'name': (w['name'] as TextEditingController).text.trim(),
-                'url': (w['url'] as TextEditingController).text.trim(),
-              })
-          .where((w) => w['url']!.isNotEmpty)
-          .toList();
+      if (_socialLinkInputCtrl.text.trim().isNotEmpty) {
+        _addSocialLinkFromInput(notify: false);
+      }
+      String fb = '';
+      String insta = '';
+      String li = '';
+      String tw = '';
+      final extraWebsites = <Map<String, String>>[];
+
+      for (final item in _socialLinks) {
+        final cleanUrl = item.url.trim();
+        if (cleanUrl.isEmpty) continue;
+        if (item.type == 'facebook' && fb.isEmpty) {
+          fb = cleanUrl;
+        } else if (item.type == 'instagram' && insta.isEmpty) {
+          insta = cleanUrl;
+        } else if (item.type == 'linkedin' && li.isEmpty) {
+          li = cleanUrl;
+        } else if (item.type == 'x' && tw.isEmpty) {
+          tw = cleanUrl;
+        } else {
+          extraWebsites.add({'name': item.name, 'url': cleanUrl});
+        }
+      }
+
+      details.fbLink = fb;
+      details.instaLink = insta;
+      details.linkedin = li;
+      details.xLink = tw;
+      details.website = extraWebsites;
     } else if (widget.sectionId == 'section-about') {
       details.aboutCompany = _controllers['about'].text.trim();
     } else if (widget.sectionId == 'section-youtube') {
@@ -1083,6 +1125,415 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
+      ),
+    );
+  }
+
+  ({String type, String name}) _detectSocialPlatform(String rawUrl) {
+    final lower = rawUrl.trim().toLowerCase();
+    if (lower.contains('instagram.com') || lower.contains('instagr.am')) {
+      return (type: 'instagram', name: 'Instagram');
+    }
+    if (lower.contains('facebook.com') || lower.contains('fb.com') || lower.contains('fb.watch')) {
+      return (type: 'facebook', name: 'Facebook');
+    }
+    if (lower.contains('linkedin.com') || lower.contains('lnkd.in')) {
+      return (type: 'linkedin', name: 'LinkedIn');
+    }
+    if (lower.contains('twitter.com') || lower.contains('x.com')) {
+      return (type: 'x', name: 'X (Twitter)');
+    }
+    return (type: 'website', name: 'Website');
+  }
+
+  void _addSocialLinkFromInput({bool notify = true}) {
+    final raw = _socialLinkInputCtrl.text.trim();
+    if (raw.isEmpty) return;
+
+    final detected = _detectSocialPlatform(raw);
+    void apply() {
+      _socialLinks.add(_SocialLinkItem(
+        type: detected.type,
+        name: detected.name,
+        url: raw,
+      ));
+      _socialLinkInputCtrl.clear();
+    }
+
+    if (notify) {
+      setState(apply);
+      FocusScope.of(context).unfocus();
+    } else {
+      apply();
+    }
+  }
+
+  Future<void> _editSocialLinkDialog(int index) async {
+    final item = _socialLinks[index];
+    final editCtrl = TextEditingController(text: item.url);
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(
+          'Edit ${item.name} Link',
+          style: AppFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        content: TextField(
+          controller: editCtrl,
+          autofocus: true,
+          keyboardType: TextInputType.url,
+          style: AppFonts.poppins(fontSize: 14, color: const Color(0xFF1A1A1A)),
+          decoration: InputDecoration(
+            hintText: 'Paste URL',
+            hintStyle: AppFonts.poppins(fontSize: 13, color: Colors.grey.shade400),
+            prefixIcon: const Icon(Icons.link_rounded, size: 19, color: AppColors.primaryRed),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primaryRed, width: 1.5),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () {
+              final updated = editCtrl.text.trim();
+              if (updated.isNotEmpty) {
+                final detected = _detectSocialPlatform(updated);
+                setState(() {
+                  item.url = updated;
+                  item.type = detected.type;
+                  item.name = detected.name;
+                });
+              }
+              Navigator.pop(ctx);
+            },
+            child: Text('Update', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    ).whenComplete(() {
+      Future.delayed(const Duration(milliseconds: 300), editCtrl.dispose);
+    });
+  }
+
+  Widget _buildSocialMediaSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Add New Link (Paste URL):',
+          style: AppFonts.poppins(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _socialLinkInputCtrl,
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _addSocialLinkFromInput(),
+                style: AppFonts.poppins(
+                  fontSize: 13.5,
+                  color: const Color(0xFF1A1A1A),
+                ),
+                decoration: InputDecoration(
+                  hintText: 'E.g., instagram.com/username, twitter.com/user, or website.com',
+                  hintMaxLines: 2,
+                  hintStyle: AppFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    height: 1.35,
+                  ),
+                  prefixIconConstraints: const BoxConstraints(
+                    minWidth: 34,
+                    maxWidth: 38,
+                    minHeight: 24,
+                  ),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 10, right: 6),
+                    child: Icon(
+                      Icons.link_rounded,
+                      size: 20,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.only(
+                    left: 0,
+                    right: 10,
+                    top: 12,
+                    bottom: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.black, width: 1.4),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            SizedBox(
+              height: 54,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: _addSocialLinkFromInput,
+                child: Text(
+                  'Add',
+                  style: AppFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Your Links',
+          style: AppFonts.poppins(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF374151),
+          ),
+        ),
+        const SizedBox(height: 10),
+        if (_socialLinks.isEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Text(
+              'No links added yet. Paste a link above and tap Add.',
+              textAlign: TextAlign.center,
+              style: AppFonts.poppins(
+                fontSize: 12.5,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          )
+        else
+          ..._socialLinks.asMap().entries.map(
+                (entry) => _buildSocialLinkCard(entry.key, entry.value),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildSocialPlatformIcon(String type) {
+    switch (type) {
+      case 'instagram':
+        return Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(11),
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFF58529),
+                Color(0xFFDD2A7B),
+                Color(0xFF8134AF),
+                Color(0xFF515BD4),
+              ],
+              begin: Alignment.bottomLeft,
+              end: Alignment.topRight,
+            ),
+          ),
+          child: const Center(
+            child: FaIcon(FontAwesomeIcons.instagram, color: Colors.white, size: 22),
+          ),
+        );
+      case 'facebook':
+        return Container(
+          width: 40,
+          height: 40,
+          decoration: const BoxDecoration(
+            color: Color(0xFF1877F2),
+            shape: BoxShape.circle,
+          ),
+          child: const Center(
+            child: FaIcon(FontAwesomeIcons.facebookF, color: Colors.white, size: 20),
+          ),
+        );
+      case 'linkedin':
+        return Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A66C2),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: const Center(
+            child: FaIcon(FontAwesomeIcons.linkedinIn, color: Colors.white, size: 20),
+          ),
+        );
+      case 'x':
+        return Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: const Color(0xFF14171A),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: const Center(
+            child: FaIcon(FontAwesomeIcons.xTwitter, color: Colors.white, size: 19),
+          ),
+        );
+      default:
+        return SizedBox(
+          width: 40,
+          height: 40,
+          child: Center(
+            child: Icon(Icons.language_rounded, color: Colors.grey.shade600, size: 34),
+          ),
+        );
+    }
+  }
+
+  Widget _buildSocialLinkCard(int index, _SocialLinkItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _buildSocialPlatformIcon(item.type),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  item.url,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () => _editSocialLinkDialog(index),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.edit, size: 17, color: Colors.grey.shade600),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Edit',
+                    style: AppFonts.poppins(
+                      fontSize: 10.5,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          InkWell(
+            onTap: () => setState(() => _socialLinks.removeAt(index)),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.delete_outline_rounded,
+                    size: 17,
+                    color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Delete',
+                    style: AppFonts.poppins(
+                      fontSize: 10.5,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
