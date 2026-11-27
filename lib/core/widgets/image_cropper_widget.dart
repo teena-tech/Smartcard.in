@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
 class ImageCropperHelper {
@@ -326,7 +326,7 @@ class _ImagePickerAndCropperWidgetState
         children: [
           Text(
             widget.title,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colors?.text ?? Colors.black,
@@ -401,7 +401,7 @@ class _ImagePickerAndCropperWidgetState
             const SizedBox(height: 8),
             Text(
               'Dimensions: ${widget.cropType == 'background' ? '1920x1080 or custom' : '512x512'} (Square)',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 12,
                 color: colors?.muted ?? Colors.grey,
               ),

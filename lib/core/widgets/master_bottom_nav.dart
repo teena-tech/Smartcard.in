@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/app_haptics.dart';
 import 'package:smartcard_flutter/features/home_screen/presentation/viewmodel/dashboard_viewmodel.dart';
@@ -243,7 +243,7 @@ class _BottomNavItemWidgetState extends State<_BottomNavItemWidget>
                   const SizedBox(height: 3),
                   Text(
                     widget.item.label,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 11.5,
                       fontWeight: widget.isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: widget.isSelected

@@ -3,7 +3,7 @@ import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/intent_launcher.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
@@ -52,7 +52,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             const SizedBox(width: 12),
             Text(
               'Create New Group',
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600),
+              style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
             ),
           ],
         ),
@@ -64,7 +64,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             children: [
               Text(
                 'Group Name',
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[700]),
+                style: AppFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey[700]),
               ),
               const SizedBox(height: 8),
               TextFormField(
@@ -93,7 +93,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey[600])),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -121,7 +121,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('Create', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text('Create', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -138,7 +138,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Rename Group',
-          style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w600),
+          style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         content: Form(
           key: formKey,
@@ -166,7 +166,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey[600])),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -193,7 +193,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('Save', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text('Save', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -211,7 +211,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
             const SizedBox(width: 10),
             Text(
               'Delete Group?',
-              style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -221,7 +221,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
           children: [
             Text(
               'Are you sure you want to delete "${group.name}"?',
-              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+              style: AppFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 12),
             Container(
@@ -238,7 +238,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                   Expanded(
                     child: Text(
                       'Contacts will NOT be deleted from your phone.',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.blueGrey[800], fontWeight: FontWeight.w500),
+                      style: AppFonts.poppins(fontSize: 12, color: Colors.blueGrey[800], fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -249,7 +249,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey[600])),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -274,7 +274,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('Delete Group', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text('Delete Group', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -439,7 +439,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                                       children: [
                                         Text(
                                           group.name,
-                                          style: GoogleFonts.outfit(
+                                          style: AppFonts.poppins(
                                             fontSize: 17,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -447,7 +447,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                                         const SizedBox(height: 3),
                                         Text(
                                           '$memberCount contacts',
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 13,
                                             color: Colors.grey[600],
                                           ),
@@ -463,7 +463,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                                     ),
                                     child: Text(
                                       '$memberCount',
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
                                         color: groupColor,
@@ -553,7 +553,7 @@ class _GroupsScreenState extends ConsumerState<GroupsScreen> {
                             const SizedBox(width: 8),
                             Text(
                               'Add Group',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.primary,

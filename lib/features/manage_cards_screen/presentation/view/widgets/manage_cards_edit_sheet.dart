@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:smartcard_flutter/core/utils/international_phone_helper.dart';
@@ -296,7 +296,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                       children: [
                         Text(
                           _getSectionTitle(),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF1A1A1A),
@@ -307,7 +307,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                           widget.sectionId == 'section-company-contact'
                               ? 'Add your email, phone, and WhatsApp for quick connections'
                               : 'Provide your information below to keep your card updated.',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w400,
@@ -358,7 +358,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             DropdownButtonFormField<String>(
               initialValue: _controllers['gender'],
               dropdownColor: Colors.white,
-              style: GoogleFonts.inter(color: colors.text, fontSize: 14),
+              style: AppFonts.poppins(color: colors.text, fontSize: 14),
               decoration: _getInputDecoration('', colors),
               items: const [
                 DropdownMenuItem(value: 'Male', child: Text('Male')),
@@ -403,7 +403,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
               DropdownButtonFormField<String>(
                 initialValue: _selectedOfficeIndex,
                 dropdownColor: Colors.white,
-                style: GoogleFonts.inter(color: colors.text, fontSize: 14),
+                style: AppFonts.poppins(color: colors.text, fontSize: 14),
                 decoration: _getInputDecoration('Location', colors),
                 items: _offices.asMap().entries.map((e) {
                   return DropdownMenuItem(value: e.key.toString(), child: Text(e.value['city'] ?? ''));
@@ -443,10 +443,10 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                       child: TextFormField(
                         controller: ctrl,
                         keyboardType: TextInputType.emailAddress,
-                        style: GoogleFonts.inter(color: const Color(0xFF1A1A1A), fontSize: 15),
+                        style: AppFonts.poppins(color: const Color(0xFF1A1A1A), fontSize: 15),
                         decoration: InputDecoration(
                           hintText: 'Email address',
-                          hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 13.5),
+                          hintStyle: AppFonts.poppins(color: Colors.grey.shade400, fontSize: 13.5),
                           filled: true,
                           fillColor: Colors.white,
                           contentPadding: const EdgeInsets.only(left: 0, right: 10, top: 15, bottom: 15),
@@ -471,7 +471,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryRed, size: 18),
-                label: Text('Add another email', style: GoogleFonts.inter(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
+                label: Text('Add another email', style: AppFonts.poppins(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: () => setState(() => emails.add(TextEditingController())),
               ),
             ),
@@ -508,7 +508,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryRed, size: 18),
-                label: Text('Add another phone number', style: GoogleFonts.inter(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
+                label: Text('Add another phone number', style: AppFonts.poppins(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: () => setState(() => phones.add(TextEditingController())),
               ),
             ),
@@ -548,7 +548,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
               alignment: Alignment.centerLeft,
               child: TextButton.icon(
                 icon: const Icon(Icons.add_circle_outline, color: AppColors.primaryRed, size: 18),
-                label: Text('Add another WhatsApp number', style: GoogleFonts.inter(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
+                label: Text('Add another WhatsApp number', style: AppFonts.poppins(color: AppColors.primaryRed, fontWeight: FontWeight.bold, fontSize: 13)),
                 onPressed: () => setState(() => whatsapps.add(TextEditingController())),
               ),
             ),
@@ -607,7 +607,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                   Expanded(
                     child: Text(
                       'Paste video links from YouTube, Instagram Reels, Facebook, TikTok, Vimeo, or direct video URLs.',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 12,
                         color: Colors.blueGrey.shade800,
                         height: 1.3,
@@ -645,7 +645,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                       children: [
                         Text(
                           'Video ${index + 1}',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Colors.grey.shade700,
@@ -672,7 +672,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                                   const SizedBox(width: 2),
                                   Text(
                                     'Remove',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       color: Colors.redAccent,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
@@ -689,10 +689,10 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                       controller: controller,
                       keyboardType: TextInputType.url,
                       onChanged: (_) => setState(() {}),
-                      style: GoogleFonts.inter(fontSize: 13.5),
+                      style: AppFonts.poppins(fontSize: 13.5),
                       decoration: InputDecoration(
                         hintText: 'https://youtube.com/watch?v=... or reel link',
-                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 12.5),
+                        hintStyle: AppFonts.poppins(color: Colors.grey.shade400, fontSize: 12.5),
                         filled: true,
                         fillColor: Colors.grey.shade50,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -712,10 +712,10 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                       controller: index < _videoTitleControllers.length
                           ? _videoTitleControllers[index]
                           : TextEditingController(),
-                      style: GoogleFonts.inter(fontSize: 13.5),
+                      style: AppFonts.poppins(fontSize: 13.5),
                       decoration: InputDecoration(
                         hintText: 'Video Title (e.g. Flutter Tutorial, My Portfolio)',
-                        hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 12.5),
+                        hintStyle: AppFonts.poppins(color: Colors.grey.shade400, fontSize: 12.5),
                         filled: true,
                         fillColor: Colors.grey.shade50,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -754,7 +754,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
               icon: const Icon(Icons.add, size: 18),
               label: Text(
                 'Add Another Video',
-                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+                style: AppFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
               ),
             ),
           ],
@@ -785,7 +785,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             if (existingPhotos.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 24.0),
-                child: Center(child: Text('No gallery images uploaded yet.', style: GoogleFonts.inter(color: Colors.grey))),
+                child: Center(child: Text('No gallery images uploaded yet.', style: AppFonts.poppins(color: Colors.grey))),
               )
             else
               GridView.builder(
@@ -875,7 +875,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                 )
               : Text(
                   'Save Changes',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -1003,7 +1003,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
   InputDecoration _getInputDecoration(String hintText, AppColors colors) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
+      hintStyle: AppFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(
@@ -1041,7 +1041,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
           _buildInputLabel(label, colors),
           TextFormField(
             controller: controller,
-            style: GoogleFonts.inter(color: const Color(0xFF1A1A1A), fontSize: 15),
+            style: AppFonts.poppins(color: const Color(0xFF1A1A1A), fontSize: 15),
             keyboardType: keyboardType,
             textCapitalization: textCapitalization,
             maxLines: maxLines,
@@ -1078,7 +1078,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
       padding: const EdgeInsets.only(bottom: 8.0, left: 2.0),
       child: Text(
         text,
-        style: GoogleFonts.inter(
+        style: AppFonts.poppins(
           color: const Color(0xFF4A4E5C),
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -1132,7 +1132,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                   const SizedBox(width: 3),
                   Text(
                     countryCode,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: isWhatsApp ? const Color(0xFF2E7D32) : const Color(0xFF1A1A1A),
@@ -1154,14 +1154,14 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             child: TextFormField(
               controller: controller,
               keyboardType: TextInputType.phone,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: isWhatsApp ? const Color(0xFF2E7D32) : const Color(0xFF1A1A1A),
                 fontSize: 14.5,
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 13),
+                hintStyle: AppFonts.poppins(color: Colors.grey.shade400, fontSize: 13),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.only(left: 0, right: 8, top: 14, bottom: 14),
@@ -1210,7 +1210,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             padding: const EdgeInsets.only(bottom: 8.0, left: 2.0),
             child: Text(
               'WhatsApp Number',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: const Color(0xFF4A4E5C),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1225,14 +1225,14 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             validator: (v) => v!.trim().isNotEmpty && v.trim().length != 10
                 ? 'Must be 10 digits'
                 : null,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: const Color(0xFF1A1A1A),
               fontSize: 15,
             ),
             decoration: InputDecoration(
               hintText: 'Enter 10-digit number',
               hintStyle:
-                  GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
+                  AppFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
               counterText: '',
               filled: true,
               fillColor: Colors.white,
@@ -1285,7 +1285,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             padding: const EdgeInsets.only(bottom: 8.0, left: 2.0),
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: const Color(0xFF4A4E5C),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1298,14 +1298,14 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             keyboardType: keyboardType,
             maxLength: maxLength,
             validator: validator,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: const Color(0xFF1A1A1A),
               fontSize: 15,
             ),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle:
-                  GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
+                  AppFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
               counterText: '',
               filled: true,
               fillColor: Colors.white,

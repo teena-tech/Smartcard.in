@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:smartcard_flutter/core/utils/international_phone_helper.dart';
 import 'package:smartcard_flutter/features/profile_screen/presentation/view/widgets/country_code_dropdown_dialog.dart';
@@ -148,7 +148,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                     widget.showModeSelector
                         ? 'Now this service is only available for Indian users (+91). Please change to WhatsApp mode to login.'
                         : 'Now this service is only available for Indian users (+91).',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
@@ -181,7 +181,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                       children: [
                         Text(
                           'Change to WhatsApp',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF22C55E),
@@ -252,7 +252,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                   const SizedBox(width: 4),
                   Text(
                     country.code,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF111827),
@@ -288,7 +288,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
               ],
               onChanged: (val) => widget.onChanged?.call(val),
               cursorColor: const Color(0xFF111827),
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF111827),
@@ -296,7 +296,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
               ),
               decoration: InputDecoration(
                 hintText: hintText,
-                hintStyle: GoogleFonts.inter(
+                hintStyle: AppFonts.poppins(
                   fontSize: 11.5,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF9CA3AF),
@@ -363,7 +363,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                     : (widget.phoneLabel ?? 'Phone Number'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: isWhatsApp ? greenText : const Color(0xFF1F2937),
@@ -377,7 +377,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                 children: [
                   Text(
                     'SMS OTP',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 11.5,
                       fontWeight: isWhatsApp ? FontWeight.w500 : FontWeight.w600,
                       color: isWhatsApp
@@ -482,7 +482,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                       : null,
                   child: Text(
                     'Use a different WhatsApp number for OTP',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF1B5E20),
@@ -550,7 +550,7 @@ class _InternationalPhoneInputState extends State<InternationalPhoneInput> {
                   isWhatsApp
                       ? 'WhatsApp OTP mode active. OTP will arrive via WhatsApp only.'
                       : 'SMS OTP mode active. OTP will arrive via SMS only.',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: isWhatsApp
                         ? const Color(0xFF1F2937)
                         : crimsonLabel,

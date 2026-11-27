@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/intent_launcher.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
@@ -121,7 +121,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                         Expanded(
                           child: Text(
                             'Add to "${widget.group.name}"',
-                            style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -133,7 +133,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           ),
                           child: Text(
                             '${selectedContactIds.length} selected',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 13,
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
@@ -177,7 +177,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                               eligibleContacts.isEmpty
                                   ? 'All phone contacts are already in this group!'
                                   : 'No matching contacts found',
-                              style: GoogleFonts.inter(color: Colors.grey[600]),
+                              style: AppFonts.poppins(color: Colors.grey[600]),
                             ),
                           )
                         : NotificationListener<ScrollNotification>(
@@ -200,17 +200,17 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                                   activeColor: AppColors.primary,
                                   title: Text(
                                     contact.displayName,
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+                                    style: AppFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
                                   ),
                                   subtitle: contact.primaryPhone.isNotEmpty
-                                      ? Text(contact.primaryPhone, style: GoogleFonts.inter(fontSize: 13))
+                                      ? Text(contact.primaryPhone, style: AppFonts.poppins(fontSize: 13))
                                       : null,
                                   secondary: CircleAvatar(
                                     radius: 18,
                                     backgroundColor: AppColors.primary.withValues(alpha: 0.15),
                                     child: Text(
                                       contact.initials,
-                                      style: GoogleFonts.outfit(
+                                      style: AppFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.primary,
@@ -269,7 +269,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                           ),
                           child: Text(
                             'Add Selected (${selectedContactIds.length})',
-                            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold),
+                            style: AppFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -294,7 +294,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           'Remove from Group?',
-          style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+          style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -302,7 +302,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
           children: [
             Text(
               'Remove "${contact.displayName}" from "${widget.group.name}"?',
-              style: GoogleFonts.inter(fontSize: 14),
+              style: AppFonts.poppins(fontSize: 14),
             ),
             const SizedBox(height: 12),
             Container(
@@ -318,7 +318,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
                   Expanded(
                     child: Text(
                       'This contact will NOT be deleted from your phone.',
-                      style: GoogleFonts.inter(fontSize: 12, color: Colors.blue[900]),
+                      style: AppFonts.poppins(fontSize: 12, color: Colors.blue[900]),
                     ),
                   ),
                 ],
@@ -329,7 +329,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey[600])),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey[600])),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -395,7 +395,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
             children: [
               Text(
                 widget.group.name,
-                style: GoogleFonts.outfit(
+                style: AppFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                   color: Colors.white,
@@ -403,7 +403,7 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen> {
               ),
               Text(
                 '${members.length} members',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.85),
                 ),

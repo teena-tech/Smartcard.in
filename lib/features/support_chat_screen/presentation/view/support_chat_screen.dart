@@ -1,3 +1,4 @@
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
@@ -211,7 +212,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
             children: [
               const Icon(Icons.reply, size: 18, color: Colors.black87),
               const SizedBox(width: 10),
-              Text('Reply', style: GoogleFonts.inter(fontSize: 14)),
+              Text('Reply', style: AppFonts.poppins(fontSize: 14)),
             ],
           ),
         ),
@@ -221,7 +222,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
             children: [
               const Icon(Icons.copy, size: 18, color: Colors.black87),
               const SizedBox(width: 10),
-              Text('Copy', style: GoogleFonts.inter(fontSize: 14)),
+              Text('Copy', style: AppFonts.poppins(fontSize: 14)),
             ],
           ),
         ),
@@ -231,7 +232,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
             children: [
               const Icon(Icons.info_outline, size: 18, color: Colors.black87),
               const SizedBox(width: 10),
-              Text('Info', style: GoogleFonts.inter(fontSize: 14)),
+              Text('Info', style: AppFonts.poppins(fontSize: 14)),
             ],
           ),
         ),
@@ -260,7 +261,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Message Info', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text('Message Info', style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,15 +272,15 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(content, style: GoogleFonts.inter(fontSize: 13, color: Colors.black87)),
+              child: Text(content, style: AppFonts.poppins(fontSize: 13, color: Colors.black87)),
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 const Icon(Icons.check, size: 18, color: Colors.grey),
                 const SizedBox(width: 8),
-                Text('Sent: ', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
-                Text(timeStr.isNotEmpty ? timeStr : 'Delivered', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade700)),
+                Text('Sent: ', style: AppFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(timeStr.isNotEmpty ? timeStr : 'Delivered', style: AppFonts.poppins(fontSize: 13, color: Colors.grey.shade700)),
               ],
             ),
             const SizedBox(height: 8),
@@ -287,8 +288,8 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
               children: [
                 Icon(Icons.done_all, size: 18, color: msg.isRead ? const Color(0xFF4FC3F7) : Colors.grey),
                 const SizedBox(width: 8),
-                Text('Read: ', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold)),
-                Text(msg.isRead ? 'Read by agent' : 'Not read yet', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade700)),
+                Text('Read: ', style: AppFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(msg.isRead ? 'Read by agent' : 'Not read yet', style: AppFonts.poppins(fontSize: 13, color: Colors.grey.shade700)),
               ],
             ),
           ],
@@ -296,7 +297,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+            child: Text('Close', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -371,7 +372,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                             const SizedBox(height: 16),
                             Text(
                               isNoAgent ? 'No Support Agent Assigned' : 'Unable to load messages',
-                              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
+                              style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
@@ -379,7 +380,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                               isNoAgent
                                   ? 'Please select or request an agent from your district to start chatting.'
                                   : errText,
-                              style: GoogleFonts.inter(fontSize: 14, color: colors.muted),
+                              style: AppFonts.poppins(fontSize: 14, color: colors.muted),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
@@ -401,7 +402,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                               icon: Icon(isNoAgent ? Icons.person_add_outlined : Icons.refresh, size: 18),
                               label: Text(
                                 isNoAgent ? 'Select Support Agent' : 'Retry',
-                                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                                style: AppFonts.poppins(fontWeight: FontWeight.bold),
                               ),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryRed,
@@ -508,7 +509,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
               ),
               child: Text(
                 label,
-                style: GoogleFonts.inter(color: colors.muted, fontSize: 11),
+                style: AppFonts.poppins(color: colors.muted, fontSize: 11),
               ),
             ),
           ),
@@ -635,7 +636,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                                   children: [
                                     Text(
                                       'You',
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.poppins(
                                         color: isMe ? const Color(0xFF991B1B) : Colors.black87,
                                         fontWeight: FontWeight.bold,
                                         fontSize: 11,
@@ -646,7 +647,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                                       replyContent,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.poppins(
                                         color: isMe ? const Color(0xFF7F1D1D) : Colors.black54,
                                         fontSize: 12,
                                       ),
@@ -658,7 +659,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                             // Message text
                             Text(
                               displayMsgText,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 color: isMe ? Colors.black87 : (isDark ? Colors.white : Colors.black87),
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w500,
@@ -679,7 +680,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                         if (timeStr.isNotEmpty)
                           Text(
                             timeStr,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: isMe ? Colors.black54 : colors.muted,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w500,
@@ -755,7 +756,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                       children: [
                         Text(
                           replySender,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: AppColors.primaryRed,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
@@ -766,7 +767,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                           replyText,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: colors.muted,
                             fontSize: 13,
                           ),
@@ -804,7 +805,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                 focusNode: _focusNode,
                 maxLines: null,
                 textInputAction: TextInputAction.newline,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: (ref.read(themeViewModelProvider.notifier).themeMode != AppThemeMode.light)
                       ? Colors.white
                       : Colors.black,
@@ -812,7 +813,7 @@ class _SupportChatScreenState extends ConsumerState<SupportChatScreen> {
                 ),
                 decoration: InputDecoration(
                   hintText: "Type a message...",
-                  hintStyle: GoogleFonts.inter(color: colors.muted, fontSize: 15),
+                  hintStyle: AppFonts.poppins(color: colors.muted, fontSize: 15),
                   border: InputBorder.none,
                   isDense: true,
                 ),

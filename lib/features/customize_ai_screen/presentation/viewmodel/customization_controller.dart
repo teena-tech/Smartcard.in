@@ -43,7 +43,7 @@ class CustomCardProfile {
 
     this.nameColor = Colors.white,
     this.designationColor = Colors.white70,
-    this.fontFamily = 'Inter',
+    this.fontFamily = 'Poppins',
     this.fontWeight = FontWeight.w800,
     this.fontSize = 16.0,
     this.letterSpacing = 0.0,
@@ -123,7 +123,7 @@ class CustomCardProfile {
       designationColor: json['designationColor'] != null
           ? Color(json['designationColor'])
           : Colors.white70,
-      fontFamily: json['fontFamily'] ?? 'Inter',
+      fontFamily: json['fontFamily'] ?? 'Poppins',
       fontWeight: json['fontWeightIndex'] != null
           ? FontWeight.values[json['fontWeightIndex']]
           : FontWeight.w800,

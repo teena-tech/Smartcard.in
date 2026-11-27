@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -148,7 +148,7 @@ class ContactDetailScreen extends ConsumerStatefulWidget {
                     child: Text(
                       contactName,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.outfit(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -235,7 +235,7 @@ class ContactDetailScreen extends ConsumerStatefulWidget {
       alignment: Alignment.center,
       child: Text(
         initial.isNotEmpty ? initial[0].toUpperCase() : '?',
-        style: GoogleFonts.outfit(
+        style: AppFonts.poppins(
           color: const Color(0xFFE53935),
           fontSize: 72,
           fontWeight: FontWeight.bold,
@@ -459,7 +459,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
     return Center(
       child: Text(
         displayContact.name.isNotEmpty ? displayContact.name[0].toUpperCase() : 'S',
-        style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: colors.accent, fontSize: 16),
+        style: AppFonts.poppins(fontWeight: FontWeight.bold, color: colors.accent, fontSize: 16),
       ),
     );
   }
@@ -496,7 +496,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
               Expanded(
                 child: Text(
                   'SmartCards',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: colors.text,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -512,7 +512,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                 ),
                 child: Text(
                   totalCount > 1 ? '$totalCount Cards Held' : '1 Card Held',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: colors.accent,
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
@@ -647,7 +647,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                             if (companyName.isNotEmpty)
                               Text(
                                 companyName,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: colors.text,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -658,7 +658,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                             if (designationName.isNotEmpty)
                               Text(
                                 designationName,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: colors.accent,
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
@@ -669,7 +669,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                             if (companyName.isEmpty && designationName.isEmpty)
                               Text(
                                 'Smart Card #${idx + 1}',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: colors.text,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -688,7 +688,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                         icon: const Icon(Icons.open_in_browser, size: 18),
                         label: Text(
                           'View Card',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -766,11 +766,11 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                   children: [
                     Text(
                       'Manage Contact Groups',
-                      style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       '${currentSelectedGroupIds.length} groups',
-                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
+                      style: AppFonts.poppins(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -781,7 +781,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                     ? Center(
                         child: Text(
                           'No contact groups created yet.',
-                          style: GoogleFonts.inter(color: Colors.grey[600]),
+                          style: AppFonts.poppins(color: Colors.grey[600]),
                         ),
                       )
                     : ListView.builder(
@@ -793,8 +793,8 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                           return CheckboxListTile(
                             value: isAssigned,
                             activeColor: AppColors.primary,
-                            title: Text(group.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                            subtitle: Text('${group.contactCount ?? 0} members', style: GoogleFonts.inter(fontSize: 12)),
+                            title: Text(group.name, style: AppFonts.poppins(fontWeight: FontWeight.w600)),
+                            subtitle: Text('${group.contactCount ?? 0} members', style: AppFonts.poppins(fontSize: 12)),
                             secondary: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
@@ -850,7 +850,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: Text('Done', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      child: Text('Done', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ),
@@ -932,7 +932,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           formattedNumber,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                             letterSpacing: 0.3,
@@ -966,7 +966,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                           ),
                           child: Text(
                             label,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: mutedColor,
@@ -984,7 +984,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                             ),
                             child: Text(
                               'Primary',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryRed,
@@ -1062,7 +1062,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
               const SizedBox(width: 10),
               Text(
                 'Phone Numbers',
-                style: GoogleFonts.outfit(
+                style: AppFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primaryRed,
@@ -1076,7 +1076,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
           if (hasExplicitPrimary) ...[
             Text(
               'Primary:',
-              style: GoogleFonts.outfit(
+              style: AppFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: AppColors.primaryRed,
@@ -1091,7 +1091,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
               const SizedBox(height: 10),
               Text(
                 'Alternative Numbers:',
-                style: GoogleFonts.outfit(
+                style: AppFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
                   color: mutedColor,
@@ -1529,7 +1529,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                 textAlign: TextAlign.center,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.outfit(
+                                style: AppFonts.poppins(
                                   fontSize: 27,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
@@ -1547,7 +1547,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white.withValues(alpha: 0.95),
@@ -1568,7 +1568,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                   textAlign: TextAlign.center,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.white.withValues(alpha: 0.88),
@@ -1581,7 +1581,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                             // In your contacts / SmartCard User badge text
                             Text(
                               isSmartCardUser ? 'SmartCard User' : 'In your contacts',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w400,
                                 color: Colors.white.withValues(alpha: 0.72),
@@ -1676,7 +1676,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                               const SizedBox(width: 8),
                                               Text(
                                                 'OFFICIAL CORPORATE LEAD',
-                                                style: GoogleFonts.outfit(
+                                                style: AppFonts.poppins(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
                                                   letterSpacing: 1.1,
@@ -1731,7 +1731,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                       const SizedBox(height: 12),
                                       Text(
                                         displayContact.company.isNotEmpty ? displayContact.company : 'Company Corporate',
-                                        style: GoogleFonts.outfit(
+                                        style: AppFonts.poppins(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
@@ -1740,7 +1740,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                       if (displayContact.designation.isNotEmpty)
                                         Text(
                                           displayContact.designation,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 12.5,
                                             color: Colors.white70,
                                           ),
@@ -1753,7 +1753,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                             const SizedBox(width: 4),
                                             Text(
                                               'Department: ${displayContact.corporateDepartment!}',
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 11.5,
                                                 color: const Color(0xFFBAE6FD),
                                               ),
@@ -1771,7 +1771,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                             Expanded(
                                               child: Text(
                                                 displayContact.address,
-                                                style: GoogleFonts.inter(
+                                                style: AppFonts.poppins(
                                                   fontSize: 11.5,
                                                   color: Colors.white70,
                                                 ),
@@ -1790,7 +1790,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                               const SizedBox(width: 4),
                                               Text(
                                                 displayContact.website,
-                                                style: GoogleFonts.inter(
+                                                style: AppFonts.poppins(
                                                   fontSize: 11.5,
                                                   color: const Color(0xFF38BDF8),
                                                   decoration: TextDecoration.underline,
@@ -1813,7 +1813,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                               ),
                                               child: Text(
                                                 '#$t',
-                                                style: GoogleFonts.inter(fontSize: 10, color: Colors.white),
+                                                style: AppFonts.poppins(fontSize: 10, color: Colors.white),
                                               ),
                                             );
                                           }).toList(),
@@ -1853,7 +1853,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                     const SizedBox(width: 6),
                                     Text(
                                       'VISITING CARD',
-                                      style: GoogleFonts.outfit(
+                                      style: AppFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 0.8,
@@ -1863,7 +1863,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                                     const Spacer(),
                                     Text(
                                       'Tap to zoom',
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.poppins(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                         color: Colors.grey[600],
@@ -1936,7 +1936,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                               const SizedBox(width: 4),
                               Text(
                                 'Add to Group',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.primaryRed,
@@ -2170,7 +2170,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
               ),
               title: Text(
                 isCard ? 'Visiting Card' : (displayContact.name.isNotEmpty ? displayContact.name : 'Profile Photo'),
-                style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                style: AppFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
               ),
               centerTitle: true,
             ),
@@ -2413,7 +2413,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: GoogleFonts.outfit(
+        style: AppFonts.poppins(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: height * 0.42,
@@ -2482,7 +2482,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                   children: [
                     Text(
                       label,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: colors.muted,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -2491,7 +2491,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
                     const SizedBox(height: 4),
                     Text(
                       value,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: colors.text,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -2565,7 +2565,7 @@ class _ContactDetailScreenState extends ConsumerState<ContactDetailScreen> {
       child: Center(
         child: Text(
           initial.toUpperCase(),
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             color: const Color(0xFFE53935),
             fontSize: 38,
             fontWeight: FontWeight.bold,

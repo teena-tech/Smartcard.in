@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
@@ -49,7 +49,7 @@ class InfoCard extends ConsumerWidget {
             children: [
               Text(
                 title.toUpperCase(),
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: colors.isDark ? Colors.white : const Color(0xFF1E293B),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -81,7 +81,7 @@ class InfoCard extends ConsumerWidget {
                         const SizedBox(width: 4),
                         Text(
                           'Edit',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: AppColors.primaryRed,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
@@ -138,7 +138,7 @@ class InfoCard extends ConsumerWidget {
                         children: [
                           Text(
                             row.label,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 10,
                               color: colors.muted,
                               fontWeight: FontWeight.w500,
@@ -147,7 +147,7 @@ class InfoCard extends ConsumerWidget {
                           const SizedBox(height: 2),
                           Text(
                             row.value,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 13.5,
                               color: colors.text,
                               height: 1.5,

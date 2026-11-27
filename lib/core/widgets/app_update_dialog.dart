@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/services/app_update_service.dart';
 import 'package:smartcard_flutter/core/utils/app_haptics.dart';
@@ -90,7 +90,7 @@ class AppUpdateDialog extends StatelessWidget {
             Text(
               isMandatory ? 'Update Required' : 'New Update Available',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black87,
@@ -104,7 +104,7 @@ class AppUpdateDialog extends StatelessWidget {
                   ? 'A mandatory app update is required to continue using the application. Please update to get the latest features and security improvements.'
                   : 'A new version of the app is available. Please update to get the latest features and improvements.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 14,
                 color: isDark ? Colors.white70 : Colors.black54,
                 height: 1.45,
@@ -121,7 +121,7 @@ class AppUpdateDialog extends StatelessWidget {
                 ),
                 child: Text(
                   'Latest Version: ${updateInfo.latestVersion}',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white70 : Colors.black87,
@@ -151,7 +151,7 @@ class AppUpdateDialog extends StatelessWidget {
                 },
                 child: Text(
                   'Update Now',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.3,
@@ -178,7 +178,7 @@ class AppUpdateDialog extends StatelessWidget {
                   },
                   child: Text(
                     'Later',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isDark ? Colors.white54 : Colors.black45,

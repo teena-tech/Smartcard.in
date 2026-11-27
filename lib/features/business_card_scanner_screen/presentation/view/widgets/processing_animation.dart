@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 class ProcessingAnimationWidget extends StatefulWidget {
   final String? imagePath;
@@ -104,7 +104,7 @@ class _ProcessingAnimationWidgetState extends State<ProcessingAnimationWidget> {
 
               Text(
                 'Reading contact details...',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -173,7 +173,7 @@ class _ChecklistStep extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: isCompleted || isCurrent ? Colors.white : Colors.white38,
                 fontSize: 14,
                 fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,

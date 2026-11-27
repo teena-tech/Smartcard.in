@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
@@ -382,7 +382,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
         children: [
           Text(
             title.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: textColor.withValues(alpha: 0.15),
               fontSize: 11,
               fontWeight: FontWeight.bold,
@@ -425,7 +425,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: GoogleFonts.inter(color: textColor, fontSize: 13),
+                style: AppFonts.poppins(color: textColor, fontSize: 13),
                 children: [
                   TextSpan(
                     text: '$label: ',
@@ -532,7 +532,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                 ),
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -549,7 +549,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                   ),
                   title: Text(
                     'Take Photo',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    style: AppFonts.poppins(fontWeight: FontWeight.w500),
                   ),
                   onTap: () async {
                     final file = await _pickImageFromSource(ImageSource.camera);
@@ -567,7 +567,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                   ),
                   title: Text(
                     'Choose from Gallery',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                    style: AppFonts.poppins(fontWeight: FontWeight.w500),
                   ),
                   onTap: () async {
                     final file = await _pickImageFromSource(ImageSource.gallery);
@@ -778,7 +778,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
         final colors = ref.read(themeViewModelProvider.notifier).colors;
         return AlertDialog(
           backgroundColor: colors.card,
-          title: Text(title, style: GoogleFonts.inter(color: colors.text)),
+          title: Text(title, style: AppFonts.poppins(color: colors.text)),
           content: SingleChildScrollView(
             child: ColorPicker(
               pickerColor: tempColor,
@@ -982,7 +982,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
             children: [
               Row(
                 children: [
-                  Text('Background Image', style: GoogleFonts.inter(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Background Image', style: AppFonts.poppins(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(width: 12),
                   Switch(
                     value: _backgroundImageEnabled,
@@ -1081,7 +1081,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Colors', style: GoogleFonts.inter(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Colors', style: AppFonts.poppins(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
               _buildSheetHeaderActions(textColor),
             ],
           ),
@@ -1092,7 +1092,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
               Expanded(
                 child: Column(
                   children: [
-                    Text('Bg Color', style: GoogleFonts.inter(color: textColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('Bg Color', style: AppFonts.poppins(color: textColor, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -1151,7 +1151,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
               Expanded(
                 child: Column(
                   children: [
-                    Text('Text Color', style: GoogleFonts.inter(color: textColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text('Text Color', style: AppFonts.poppins(color: textColor, fontSize: 12, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -1217,14 +1217,14 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Overlay', style: GoogleFonts.inter(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Overlay', style: AppFonts.poppins(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
               _buildSheetHeaderActions(textColor),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              Text('Overlay Color', style: GoogleFonts.inter(color: textColor, fontSize: 14, fontWeight: FontWeight.w500)),
+              Text('Overlay Color', style: AppFonts.poppins(color: textColor, fontSize: 14, fontWeight: FontWeight.w500)),
               const Spacer(),
               GestureDetector(
                 onTap: () {
@@ -1270,7 +1270,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
           ),
           const SizedBox(height: 16),
           if (_overlayEnabled) ...[
-            Text('Opacity: ${_opacity.toStringAsFixed(2)}', style: GoogleFonts.inter(color: textColor)),
+            Text('Opacity: ${_opacity.toStringAsFixed(2)}', style: AppFonts.poppins(color: textColor)),
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 activeTrackColor: AppColors.primaryRed,
@@ -1304,7 +1304,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Logo & Filter', style: GoogleFonts.inter(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Logo & Filter', style: AppFonts.poppins(color: textColor, fontSize: 18, fontWeight: FontWeight.bold)),
               _buildSheetHeaderActions(textColor),
             ],
           ),
@@ -1327,7 +1327,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
           ),
           const SizedBox(height: 24),
           if (_logoPalette.isNotEmpty) ...[
-            Text('Extracted Colors', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.bold)),
+            Text('Extracted Colors', style: AppFonts.poppins(color: textColor, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -1384,7 +1384,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            Text('Apply Color To:', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.bold)),
+            Text('Apply Color To:', style: AppFonts.poppins(color: textColor, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -1589,7 +1589,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                                                           child: Center(
                                                             child: Text(
                                                               _previewInitials,
-                                                              style: GoogleFonts.inter(
+                                                              style: AppFonts.poppins(
                                                                 fontSize: 28,
                                                                 fontWeight: FontWeight.bold,
                                                                 color: Colors.grey[600],
@@ -1618,7 +1618,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                                             Text(
                                               _previewName,
                                               textAlign: TextAlign.center,
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 color: previewTextColor,
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.bold,
@@ -1629,7 +1629,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                                               Text(
                                                 _previewDesignation,
                                                 textAlign: TextAlign.center,
-                                                style: GoogleFonts.inter(
+                                                style: AppFonts.poppins(
                                                   color: previewTextColor.withValues(alpha: 0.15),
                                                   fontSize: 12,
                                                 ),
@@ -1656,7 +1656,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                                             ),
                                             child: Text(
                                               details.companyName.trim(),
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 color: previewTextColor,
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
@@ -1730,7 +1730,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                                           [
                                             Text(
                                               details.aboutCompany.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim(),
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 color: previewTextColor,
                                                 fontSize: 12,
                                               ),
@@ -1785,7 +1785,7 @@ class _CustomizeAiScreenState extends ConsumerState<CustomizeAiScreen> {
                                         const SizedBox(width: 4),
                                         Text(
                                           'Preview',
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             color: Colors.white,
                                             fontSize: 11,
                                             fontWeight: FontWeight.w600,

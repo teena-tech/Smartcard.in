@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/widgets/lottie_loader.dart';
 
 class PrimaryButton extends StatelessWidget {
@@ -61,7 +61,7 @@ class PrimaryButton extends StatelessWidget {
                   )
                 : Text(
                     text.toUpperCase(),
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: Colors.white,
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,

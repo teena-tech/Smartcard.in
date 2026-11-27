@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
@@ -334,7 +334,7 @@ class _CustomizeThemeScreenState extends ConsumerState<CustomizeThemeScreen> wit
           SnackBar(
             content: Text(
               'Theme Applied Successfully!',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              style: AppFonts.poppins(fontWeight: FontWeight.bold),
             ),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
@@ -350,7 +350,7 @@ class _CustomizeThemeScreenState extends ConsumerState<CustomizeThemeScreen> wit
           SnackBar(
             content: Text(
               'Failed to save theme: ${e.toString().replaceAll("Exception: ", "")}',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              style: AppFonts.poppins(fontWeight: FontWeight.bold),
             ),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
@@ -573,7 +573,7 @@ class _CustomizeThemeScreenState extends ConsumerState<CustomizeThemeScreen> wit
                                         ),
                                         child: Text(
                                           '${_currentIndex + 1} / ${_themes.length}',
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             color: Colors.white,
                                             fontSize: 11,
                                             fontWeight: FontWeight.bold,
@@ -596,7 +596,7 @@ class _CustomizeThemeScreenState extends ConsumerState<CustomizeThemeScreen> wit
                                               const SizedBox(width: 4),
                                               Text(
                                                 'Preview',
-                                                style: GoogleFonts.inter(
+                                                style: AppFonts.poppins(
                                                   color: Colors.white,
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.w600,

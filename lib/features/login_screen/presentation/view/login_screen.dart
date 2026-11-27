@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/login_screen/presentation/view/widgets/login_form.dart';
@@ -45,7 +45,7 @@ class LoginScreen extends ConsumerWidget {
                 // Headers
                 Text(
                   'USER ACCESS',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: AppColors.primaryRedHover,
                     fontSize: 12,
                     fontWeight: FontWeight.w800,

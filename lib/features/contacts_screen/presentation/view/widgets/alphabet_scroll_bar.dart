@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
 class AlphabetScrollBar extends StatefulWidget {
@@ -120,7 +120,7 @@ class _AlphabetScrollBarState extends State<AlphabetScrollBar> {
                       alignment: Alignment.center,
                       child: Text(
                         letter,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 9.5,
                           fontWeight: isSelected
                               ? FontWeight.bold

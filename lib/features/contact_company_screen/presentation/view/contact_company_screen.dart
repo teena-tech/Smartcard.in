@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/support_chat_screen/presentation/viewmodel/support_viewmodel.dart';
 import 'package:smartcard_flutter/features/profile_screen/data/repositories/user_repository.dart';
@@ -113,7 +113,7 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
                 const SizedBox(height: 32),
                 Text(
                   'MY REQUESTS (${_reports.length})',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: colors.muted,
@@ -151,12 +151,12 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('New Request', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: colors.text)),
+          Text('New Request', style: AppFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.text)),
           const SizedBox(height: 8),
           Divider(color: colors.border),
           const SizedBox(height: 16),
           
-          Text('Request Type', style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+          Text('Request Type', style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -172,7 +172,7 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
                 dropdownColor: colors.card,
                 items: _reportTypes.map((type) => DropdownMenuItem(
                   value: type['value'],
-                  child: Text(type['label']!, style: GoogleFonts.inter(fontSize: 14, color: colors.text)),
+                  child: Text(type['label']!, style: AppFonts.poppins(fontSize: 14, color: colors.text)),
                 )).toList(),
                 onChanged: (val) => setState(() => _selectedType = val!),
               ),
@@ -181,15 +181,15 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
           
           const SizedBox(height: 20),
           
-          Text('Request Text', style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+          Text('Request Text', style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
           const SizedBox(height: 8),
           TextField(
             controller: _textController,
             maxLines: 4,
-            style: GoogleFonts.inter(fontSize: 14, color: colors.text),
+            style: AppFonts.poppins(fontSize: 14, color: colors.text),
             decoration: InputDecoration(
               hintText: 'Enter your request...',
-              hintStyle: GoogleFonts.inter(fontSize: 14, color: colors.muted.withValues(alpha: 0.15)),
+              hintStyle: AppFonts.poppins(fontSize: 14, color: colors.muted.withValues(alpha: 0.15)),
               filled: true,
               fillColor: colors.panel,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: colors.border)),
@@ -265,7 +265,7 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
                     height: 20,
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                   )
-                : Text('Submit Request', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold)),
+                : Text('Submit Request', style: AppFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -280,7 +280,7 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
           padding: const EdgeInsets.all(32.0),
           child: Text(
             'No support requests found.',
-            style: GoogleFonts.inter(color: colors.muted, fontSize: 14),
+            style: AppFonts.poppins(color: colors.muted, fontSize: 14),
           ),
         ),
       );
@@ -330,16 +330,16 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(typeLabel, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: colors.muted, letterSpacing: 0.5)),
+                      Text(typeLabel, style: AppFonts.poppins(fontSize: 11, fontWeight: FontWeight.w800, color: colors.muted, letterSpacing: 0.5)),
                       if (dateStr.isNotEmpty)
-                        Text(dateStr, style: GoogleFonts.inter(fontSize: 11, color: colors.muted)),
+                        Text(dateStr, style: AppFonts.poppins(fontSize: 11, color: colors.muted)),
                     ],
                   ),
                   _buildStatusBadge(statusRaw, colors),
                 ],
               ),
               const SizedBox(height: 12),
-              Text(textStr, style: GoogleFonts.inter(fontSize: 14, color: colors.text)),
+              Text(textStr, style: AppFonts.poppins(fontSize: 14, color: colors.text)),
               if (replyStr.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -352,9 +352,9 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Admin Reply', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: colors.muted)),
+                      Text('Admin Reply', style: AppFonts.poppins(fontSize: 11, fontWeight: FontWeight.bold, color: colors.muted)),
                       const SizedBox(height: 4),
-                      Text(replyStr, style: GoogleFonts.inter(fontSize: 13, color: colors.text)),
+                      Text(replyStr, style: AppFonts.poppins(fontSize: 13, color: colors.text)),
                     ],
                   ),
                 ),
@@ -376,7 +376,7 @@ class _ContactCompanyScreenState extends ConsumerState<ContactCompanyScreen> {
       ),
       child: Text(
         status,
-        style: GoogleFonts.inter(
+        style: AppFonts.poppins(
           fontSize: 10, 
           fontWeight: FontWeight.bold, 
           color: isReplied ? Colors.blue : Colors.orange

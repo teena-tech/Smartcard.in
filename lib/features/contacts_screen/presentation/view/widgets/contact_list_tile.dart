@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/avatar_helper.dart';
 import 'package:smartcard_flutter/core/utils/contact_action_helper.dart';
@@ -43,18 +43,18 @@ class ContactListTile extends ConsumerWidget {
             const SizedBox(width: 10),
             Text(
               'Delete Contact?',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+              style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
         content: Text(
           'Delete "$displayName" from your contacts?',
-          style: GoogleFonts.inter(fontSize: 14),
+          style: AppFonts.poppins(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey[600])),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey[600])),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -226,7 +226,7 @@ class ContactListTile extends ConsumerWidget {
                     children: [
                       Text(
                         'Add to Group',
-                        style: GoogleFonts.outfit(
+                        style: AppFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : Colors.black87,
@@ -234,7 +234,7 @@ class ContactListTile extends ConsumerWidget {
                       ),
                       Text(
                         '${currentSelectedGroupIds.length} selected',
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
+                        style: AppFonts.poppins(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -245,7 +245,7 @@ class ContactListTile extends ConsumerWidget {
                       ? Center(
                           child: Text(
                             'No groups available',
-                            style: GoogleFonts.inter(color: isDark ? Colors.white54 : Colors.grey[600]),
+                            style: AppFonts.poppins(color: isDark ? Colors.white54 : Colors.grey[600]),
                           ),
                         )
                       : ListView.builder(
@@ -259,14 +259,14 @@ class ContactListTile extends ConsumerWidget {
                               activeColor: AppColors.primary,
                               title: Text(
                                 group.name,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontWeight: FontWeight.w600,
                                   color: isDark ? Colors.white : Colors.black87,
                                 ),
                               ),
                               subtitle: Text(
                                 '${group.contactCount ?? 0} members',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 12,
                                   color: isDark ? Colors.white54 : Colors.grey[600],
                                 ),
@@ -325,7 +325,7 @@ class ContactListTile extends ConsumerWidget {
                             );
                           }
                         },
-                        child: Text('Done', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+                        child: Text('Done', style: AppFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
                       ),
                     ),
                   ),
@@ -401,7 +401,7 @@ class ContactListTile extends ConsumerWidget {
             const SizedBox(width: 10),
             Text(
               hasPhone ? 'Calling $primaryNumber...' : 'No Phone Number',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -550,7 +550,7 @@ class ContactListTile extends ConsumerWidget {
                               displayName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.outfit(
+                              style: AppFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -571,7 +571,7 @@ class ContactListTile extends ConsumerWidget {
                         primaryNumber.isNotEmpty ? primaryNumber : 'No phone number',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 13.5,
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w400,
@@ -592,7 +592,7 @@ class ContactListTile extends ConsumerWidget {
                                 contact.allCompanies.join(' • '),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 12,
                                   color: AppColors.primaryRed,
                                   fontWeight: FontWeight.w500,
@@ -607,7 +607,7 @@ class ContactListTile extends ConsumerWidget {
                           company,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12,
                             color: Colors.grey[700],
                             fontWeight: FontWeight.w400,
@@ -681,7 +681,7 @@ class ContactListTile extends ConsumerWidget {
                                   contact.corporateDepartment!,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 10.5,
                                     color: Colors.grey[600],
                                     fontWeight: FontWeight.w500,

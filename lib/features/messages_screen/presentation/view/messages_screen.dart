@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/messages_screen/presentation/viewmodel/message_viewmodel.dart';
@@ -131,13 +131,13 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                             const SizedBox(height: 16),
                             Text(
                               'Could not load messages',
-                              style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
+                              style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               viewModel.error!,
-                              style: GoogleFonts.inter(fontSize: 13, color: colors.muted),
+                              style: AppFonts.poppins(fontSize: 13, color: colors.muted),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 24),
@@ -150,7 +150,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                               ),
                               onPressed: () => viewModel.loadMessages(),
                               icon: const Icon(Icons.refresh_rounded),
-                              label: Text('Try Again', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                              label: Text('Try Again', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -165,7 +165,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                               const SizedBox(height: 16),
                               Text(
                                 'No messages yet',
-                                style: GoogleFonts.inter(fontSize: 16, color: colors.muted),
+                                style: AppFonts.poppins(fontSize: 16, color: colors.muted),
                               ),
                             ],
                           ),
@@ -189,7 +189,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                             children: [
                                               Text(
                                                 'Total: ${viewModel.totalMessages}',
-                                                style: GoogleFonts.inter(fontSize: 14, color: colors.text),
+                                                style: AppFonts.poppins(fontSize: 14, color: colors.text),
                                               ),
                                               const SizedBox(width: 16),
                                               if (viewModel.unreadCount > 0) ...[
@@ -201,7 +201,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                                   ),
                                                   child: Text(
                                                     '${viewModel.unreadCount} unread',
-                                                    style: GoogleFonts.inter(
+                                                    style: AppFonts.poppins(
                                                       fontSize: 12,
                                                       color: Colors.white,
                                                       fontWeight: FontWeight.bold,
@@ -218,7 +218,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                               const SizedBox(width: 4),
                                               Text(
                                                 'Live',
-                                                style: GoogleFonts.inter(
+                                                style: AppFonts.poppins(
                                                   fontSize: 11,
                                                   color: Colors.green,
                                                   fontWeight: FontWeight.w600,
@@ -264,7 +264,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                             const SizedBox(width: 8),
                                             Text(
                                               'UNREAD  ($unreadCount)',
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.bold,
                                                 color: AppColors.primaryRed,
@@ -298,7 +298,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                             const SizedBox(width: 8),
                                             Text(
                                               'READ  ($readCount)',
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.bold,
                                                 color: colors.muted,
@@ -370,7 +370,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                           _bannerText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
@@ -381,7 +381,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                 _bannerSub,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: Colors.white60,
                                   fontSize: 11,
                                 ),
@@ -494,7 +494,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                   children: [
                     Text(
                       'MESSAGE',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                         color: colors.muted,
@@ -504,7 +504,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                     const SizedBox(height: 4),
                     Text(
                       title,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: colors.text,
@@ -518,7 +518,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                 children: [
                   Text(
                     isUpdated ? 'Updated $formattedDate' : formattedDate,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 12,
                       color: isUpdated ? Colors.orange.shade600 : colors.muted,
                       fontWeight: isUpdated ? FontWeight.w600 : FontWeight.normal,
@@ -553,7 +553,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                             const SizedBox(width: 4),
                             Text(
                               'Mark as Read',
-                              style: GoogleFonts.inter(fontSize: 10, color: colors.text, fontWeight: FontWeight.w600),
+                              style: AppFonts.poppins(fontSize: 10, color: colors.text, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -650,7 +650,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                         child: Center(
                           child: Text(
                             buttonText,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -666,7 +666,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                       color: colors.border.withValues(alpha: 0.15),
                       child: Text(
                         title,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: colors.text,
@@ -705,7 +705,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                     const SizedBox(width: 8),
                     Text(
                       buttonText,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -721,20 +721,20 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
           if (messageSource == 'report') ...[
             Text(
               summaryText,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                   fontSize: 14, color: colors.text, fontWeight: FontWeight.w600, height: 1.4),
             ),
             if (detailsText.isNotEmpty && detailsText.toLowerCase() != 'no details') ...[
               const SizedBox(height: 12),
               Text(
                 detailsText,
-                style: GoogleFonts.inter(fontSize: 14, color: colors.text, height: 1.4),
+                style: AppFonts.poppins(fontSize: 14, color: colors.text, height: 1.4),
               ),
             ],
           ] else ...[
             Text(
               summaryText,
-              style: GoogleFonts.inter(fontSize: 14, color: colors.text, height: 1.5),
+              style: AppFonts.poppins(fontSize: 14, color: colors.text, height: 1.5),
             ),
           ],
           const SizedBox(height: 16),
@@ -787,7 +787,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                             const SizedBox(width: 4),
                             Text(
                               '${msg['stats'] != null ? msg['stats']['like_count'] ?? 0 : 0}',
-                              style: GoogleFonts.inter(fontSize: 12, color: colors.text),
+                              style: AppFonts.poppins(fontSize: 12, color: colors.text),
                             ),
                           ],
                         ),
@@ -835,7 +835,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                             const SizedBox(width: 4),
                             Text(
                               '${msg['stats'] != null ? msg['stats']['dislike_count'] ?? 0 : 0}',
-                              style: GoogleFonts.inter(fontSize: 12, color: colors.text),
+                              style: AppFonts.poppins(fontSize: 12, color: colors.text),
                             ),
                           ],
                         ),

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:smartcard_flutter/features/contact_detail_screen/presentation/view/contact_detail_screen.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
@@ -37,7 +37,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
             const SizedBox(width: 10),
             Text(
               'Delete Contact?',
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18),
+              style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
@@ -47,19 +47,19 @@ class DeviceContactDetailScreen extends ConsumerWidget {
           children: [
             Text(
               'Are you sure you want to delete "${contact.displayName}"?',
-              style: GoogleFonts.inter(fontSize: 15),
+              style: AppFonts.poppins(fontSize: 15),
             ),
             const SizedBox(height: 10),
             Text(
               'This will permanently remove the contact from your phone\'s Contacts Provider.',
-              style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+              style: AppFonts.poppins(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey[600])),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey[600])),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -106,7 +106,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                 }
               }
             },
-            child: Text('Delete', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text('Delete', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -175,11 +175,11 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       'Manage Contact Groups',
-                      style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     Text(
                       '${currentSelectedGroupIds.length} groups',
-                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
+                      style: AppFonts.poppins(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -190,7 +190,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                     ? Center(
                         child: Text(
                           'No contact groups created yet.',
-                          style: GoogleFonts.inter(color: Colors.grey[600]),
+                          style: AppFonts.poppins(color: Colors.grey[600]),
                         ),
                       )
                     : ListView.builder(
@@ -202,8 +202,8 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                           return CheckboxListTile(
                             value: isAssigned,
                             activeColor: AppColors.primary,
-                            title: Text(group.name, style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                            subtitle: Text('${group.contactCount ?? 0} members', style: GoogleFonts.inter(fontSize: 12)),
+                            title: Text(group.name, style: AppFonts.poppins(fontWeight: FontWeight.w600)),
+                            subtitle: Text('${group.contactCount ?? 0} members', style: AppFonts.poppins(fontSize: 12)),
                             secondary: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
@@ -257,7 +257,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    child: Text('Save Group Assignments', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                    child: Text('Save Group Assignments', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
@@ -426,7 +426,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                               child: contact.photo == null
                                   ? Text(
                                       contact.initials,
-                                      style: GoogleFonts.outfit(
+                                      style: AppFonts.poppins(
                                         fontSize: 32,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white,
@@ -445,7 +445,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.outfit(
+                          style: AppFonts.poppins(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -459,7 +459,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                             contact.jobTitle != null && contact.jobTitle!.isNotEmpty
                                 ? '${contact.jobTitle} • ${contact.company}'
                                 : contact.company!,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 13,
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
@@ -516,7 +516,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                                       const SizedBox(width: 6),
                                       Text(
                                         gName,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w600,
                                           color: AppColors.primary,
@@ -553,7 +553,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                                   const SizedBox(width: 4),
                                   Text(
                                     'Add to Group',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.primary,
@@ -597,7 +597,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                             padding: const EdgeInsets.only(bottom: 6.0),
                             child: Text(
                               'Primary:',
-                              style: GoogleFonts.outfit(
+                              style: AppFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.primaryRed,
@@ -618,7 +618,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                               padding: const EdgeInsets.only(bottom: 6.0),
                               child: Text(
                                 'Alternative Numbers:',
-                                style: GoogleFonts.outfit(
+                                style: AppFonts.poppins(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.grey[600],
@@ -661,11 +661,11 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                             ),
                             title: Text(
                               email.address,
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+                              style: AppFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
                             ),
                             subtitle: Text(
                               email.label,
-                              style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                              style: AppFonts.poppins(fontSize: 12, color: Colors.grey[600]),
                             ),
                             trailing: IconButton(
                               icon: const Icon(Icons.send_rounded, color: AppColors.emailOrange, size: 20),
@@ -702,7 +702,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                             ),
                             title: Text(
                               website.url,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15,
                                 color: AppColors.primary,
@@ -711,7 +711,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                             ),
                             subtitle: Text(
                               website.label,
-                              style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                              style: AppFonts.poppins(fontSize: 12, color: Colors.grey[600]),
                             ),
                             trailing: IconButton(
                               icon: const Icon(Icons.open_in_browser_rounded, color: AppColors.primary, size: 20),
@@ -767,11 +767,11 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                                 ),
                                 title: Text(
                                   addr.address,
-                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+                                  style: AppFonts.poppins(fontWeight: FontWeight.w600, fontSize: 15),
                                 ),
                                 subtitle: Text(
                                   addr.label,
-                                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                                  style: AppFonts.poppins(fontSize: 12, color: Colors.grey[600]),
                                 ),
                                 trailing: IconButton(
                                   icon: const Icon(Icons.directions_rounded, color: AppColors.success, size: 20),
@@ -800,7 +800,7 @@ class DeviceContactDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(vertical: 6),
                           child: Text(
                             contact.notes!,
-                            style: GoogleFonts.inter(fontSize: 14, height: 1.4),
+                            style: AppFonts.poppins(fontSize: 14, height: 1.4),
                           ),
                         ),
                       ],
@@ -873,7 +873,7 @@ bottomNavigationBar: const GlobalBottomNav(),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.outfit(
+                style: AppFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).primaryColor,
@@ -927,7 +927,7 @@ bottomNavigationBar: const GlobalBottomNav(),
                       Expanded(
                         child: Text(
                           ContactActionHelper.formatDisplayPhone(phone.number),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
                             letterSpacing: 0.3,
@@ -956,7 +956,7 @@ bottomNavigationBar: const GlobalBottomNav(),
                           ),
                           child: Text(
                             phone.label,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: Colors.grey[500],

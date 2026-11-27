@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 class ScannerStatusWidget extends StatelessWidget {
   final String message;
@@ -52,7 +52,7 @@ class ScannerStatusWidget extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 message,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -97,7 +97,7 @@ class ScannerStatusWidget extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   'Capture Manually',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.underline,

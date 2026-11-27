@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart'
@@ -179,7 +179,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                 sectionId == 'section-profile-image'
                     ? 'Change Profile Photo'
                     : 'Change Company Logo',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -199,7 +199,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                 ),
                 title: Text(
                   'Take Photo',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  style: AppFonts.poppins(fontWeight: FontWeight.w500),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -219,7 +219,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                 ),
                 title: Text(
                   'Choose from Gallery',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+                  style: AppFonts.poppins(fontWeight: FontWeight.w500),
                 ),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -236,7 +236,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                 ),
                 title: Text(
                   sectionId == 'section-profile-image' ? 'Remove Photo' : 'Remove Logo',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontWeight: FontWeight.w500,
                     color: Colors.red.shade600,
                   ),
@@ -550,7 +550,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                           const SizedBox(height: 16),
                           Text(
                             'Failed to load card details',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: colors.text,
@@ -564,7 +564,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                             child: Text(
                               'Please check your connection and ensure the backend server is running.',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 13,
                                 color: colors.muted,
                               ),
@@ -600,7 +600,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                             icon: const Icon(Icons.refresh, size: 18),
                             label: Text(
                               'Retry',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -636,7 +636,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                                           Expanded(
                                             child: Text(
                                               'Organization Card (Read-Only)\nAll details and branding are governed by your Organization Administrator.',
-                                              style: GoogleFonts.inter(fontSize: 11.5, color: Colors.white, height: 1.35),
+                                              style: AppFonts.poppins(fontSize: 11.5, color: Colors.white, height: 1.35),
                                             ),
                                           ),
                                         ],
@@ -707,7 +707,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                                                 child: Center(
                                                   child: Text(
                                                     fallbackLetter,
-                                                    style: GoogleFonts.inter(
+                                                    style: AppFonts.poppins(
                                                       fontSize: 26,
                                                       fontWeight: FontWeight.w500,
                                                       color: const Color(0xFF1E293B),
@@ -778,7 +778,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                                         details.companyName.isNotEmpty
                                             ? details.companyName
                                             : 'Add Company Details',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: const Color(0xFF1E293B),
@@ -1045,7 +1045,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                                        details.aboutCompany.isNotEmpty
                                            ? details.aboutCompany.replaceAll('\n', '<br>')
                                            : '<span style="color:#999">No about info added yet.</span>',
-                                       textStyle: GoogleFonts.inter(
+                                       textStyle: AppFonts.poppins(
                                          fontSize: 13,
                                          color: colors.text,
                                          height: 1.4,
@@ -1166,7 +1166,7 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
             Expanded(
               child: Text(
                 name,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF334155),

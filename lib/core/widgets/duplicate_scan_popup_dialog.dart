@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:smartcard_flutter/core/services/contact_photo_resolver.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
@@ -274,7 +274,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                       ),
                       child: Text(
                         '${_secondsRemaining}s',
-                        style: GoogleFonts.jetBrainsMono(
+                        style: AppFonts.poppins(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF38BDF8),
@@ -317,7 +317,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                         children: [
                           Text(
                             'Existing Contact Found',
-                            style: GoogleFonts.outfit(
+                            style: AppFonts.poppins(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
@@ -327,7 +327,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                           const SizedBox(height: 3),
                           Text(
                             'Contact already exists with this phone number',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: Colors.white60,
@@ -383,7 +383,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                               children: [
                                 Text(
                                   'Name',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white54,
@@ -392,7 +392,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                                 const SizedBox(height: 2),
                                 Text(
                                   displayName,
-                                  style: GoogleFonts.outfit(
+                                  style: AppFonts.poppins(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
@@ -426,7 +426,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                               children: [
                                 Text(
                                   'Phone Number',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white54,
@@ -435,7 +435,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                                 const SizedBox(height: 2),
                                 Text(
                                   displayPhone,
-                                  style: GoogleFonts.jetBrainsMono(
+                                  style: AppFonts.poppins(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF38BDF8),
@@ -470,7 +470,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                                 children: [
                                   Text(
                                     'Company',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white54,
@@ -479,7 +479,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                                   const SizedBox(height: 2),
                                   Text(
                                     displayCompany,
-                                    style: GoogleFonts.outfit(
+                                    style: AppFonts.poppins(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.white,
@@ -519,7 +519,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                         icon: const Icon(Icons.qr_code_scanner_rounded, size: 16, color: Color(0xFF38BDF8)),
                         label: Text(
                           'Continue Scan',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -546,7 +546,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                         icon: const Icon(Icons.close_rounded, size: 16, color: Colors.white70),
                         label: Text(
                           'Exit',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: Colors.white70,
@@ -635,7 +635,7 @@ class _DuplicateScanPopupDialogState extends State<DuplicateScanPopupDialog>
                         children: [
                           Text(
                             'SWIPE TO UPDATE / EDIT',
-                            style: GoogleFonts.outfit(
+                            style: AppFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1.2,

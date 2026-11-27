@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
@@ -63,7 +63,7 @@ Widget buildSummaryCard({
             children: [
               Text(
                 title.toUpperCase(),
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: isEditable ? const Color(0xFF1E293B) : const Color(0xFF0369A1),
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -109,7 +109,7 @@ Widget buildSummaryCard({
                           const SizedBox(width: 4),
                           Text(
                             customButtonText ?? (hasContent ? 'Edit' : 'Add'),
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: customButtonTextCol ?? AppColors.primaryRed,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
@@ -138,7 +138,7 @@ Widget buildSummaryCard({
                       const SizedBox(width: 4),
                       Text(
                         'Locked',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: const Color(0xFF0369A1),
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
@@ -157,7 +157,7 @@ Widget buildSummaryCard({
               isEditable
                   ? 'No $title added yet. Tap the button to add.'
                   : 'No $title specified by organization.',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: colors.muted,
                 fontSize: 13,
                 fontStyle: FontStyle.italic,
@@ -178,11 +178,11 @@ Widget buildMetaRow(String label, String value, AppColors colors) {
       padding: const EdgeInsets.only(bottom: 6.0),
       child: RichText(
         text: TextSpan(
-          style: GoogleFonts.inter(fontSize: 13, color: colors.text),
+          style: AppFonts.poppins(fontSize: 13, color: colors.text),
           children: [
             TextSpan(
               text: '$label: ',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: colors.muted,
                 fontWeight: FontWeight.w500,
               ),
@@ -241,12 +241,12 @@ Widget buildFieldRow({
             children: [
               Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFFAAAAAA), fontWeight: FontWeight.w500),
+                style: AppFonts.poppins(fontSize: 10, color: const Color(0xFFAAAAAA), fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 13.5,
                   color: const Color(0xFF1A1A1A),
                   height: 1.5,

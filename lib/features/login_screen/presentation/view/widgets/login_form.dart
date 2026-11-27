@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:smartcard_flutter/main.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
@@ -229,7 +229,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           backgroundColor: Colors.white,
           title: Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: Colors.red[700],
@@ -237,7 +237,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           ),
           content: Text(
             message,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
@@ -251,7 +251,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               },
               style: TextButton.styleFrom(
                 foregroundColor: AppColors.primaryRed,
-                textStyle: GoogleFonts.inter(
+                textStyle: AppFonts.poppins(
                   fontWeight: FontWeight.w700,
                   fontSize: 14,
                 ),
@@ -326,7 +326,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         SnackBar(
           content: Text(
             snackText,
-            style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+            style: AppFonts.poppins(fontWeight: FontWeight.w500),
           ),
           backgroundColor: const Color(0xFF15803D),
           duration: const Duration(seconds: 2),
@@ -501,7 +501,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                           children: [
                             Text(
                               'Too many failed attempts.',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 color: Colors.red[700],
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
@@ -509,7 +509,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                             ),
                             Text(
                               'Login blocked. Try again in ${_formatLockoutTime(_lockoutSecondsLeft)}',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 color: Colors.red[600],
                                 fontSize: 12,
                               ),
@@ -539,7 +539,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                         Expanded(
                           child: Text(
                             authViewModel.error,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: Colors.red[600],
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -553,7 +553,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   _isWhatsAppMode
                       ? '6-digit OTP will be delivered directly to your WhatsApp.'
                       : 'Secure access to your user control center.',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: AppColors.textSecondary,
                     fontSize: 12,
                     height: 1.5,
@@ -604,7 +604,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   style: TextButton.styleFrom(
                     foregroundColor: const Color(0xFF9E1C24),
                     disabledForegroundColor: const Color(0xFF1F2937),
-                    textStyle: GoogleFonts.inter(
+                    textStyle: AppFonts.poppins(
                       fontWeight: _resendSecondsLeft > 0
                           ? FontWeight.w500
                           : FontWeight.w700,
@@ -631,7 +631,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         onPressed: onPressed,
         style: TextButton.styleFrom(
           foregroundColor: crimson,
-          textStyle: GoogleFonts.inter(
+          textStyle: AppFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 14.5,
             letterSpacing: 0.2,

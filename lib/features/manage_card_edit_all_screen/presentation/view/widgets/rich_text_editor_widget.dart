@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data model for a single styled text span
@@ -462,7 +462,7 @@ class _RichTextEditorWidgetState extends State<RichTextEditorWidget> {
         // Label
         Text(
           'About / Biography',
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF4A4E5C),
@@ -537,7 +537,7 @@ class _RichTextEditorWidgetState extends State<RichTextEditorWidget> {
             focusNode: _focusNode,
             maxLines: 8,
             minLines: 5,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: const Color(0xFF1A1A1A),
               fontSize: 14,
               height: 1.6,
@@ -546,7 +546,7 @@ class _RichTextEditorWidgetState extends State<RichTextEditorWidget> {
               hintText: widget.hint ??
                   'Type here. Select text, then tap Bold/Italic…',
               hintStyle:
-                  GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
+                  AppFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(14),
             ),
@@ -560,7 +560,7 @@ class _RichTextEditorWidgetState extends State<RichTextEditorWidget> {
         const SizedBox(height: 6),
         Text(
           '✏️  Select a word or phrase, then tap a format button above.',
-          style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade500),
+          style: AppFonts.poppins(fontSize: 11, color: Colors.grey.shade500),
         ),
       ],
     );

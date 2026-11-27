@@ -7,7 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
@@ -591,7 +591,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: GoogleFonts.outfit(
+        style: AppFonts.poppins(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: 64,
@@ -728,7 +728,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                   const SizedBox(width: 8),
                   Text(
                     'Profile Photo',
-                    style: GoogleFonts.outfit(
+                    style: AppFonts.poppins(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF1E293B),
@@ -746,7 +746,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                   ),
                   child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF4285F4)),
                 ),
-                title: Text('Take a Photo', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                title: Text('Take a Photo', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.camera);
@@ -761,7 +761,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                   ),
                   child: const Icon(Icons.photo_library_rounded, color: Color(0xFF9B72CF)),
                 ),
-                title: Text('Choose from Gallery', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                title: Text('Choose from Gallery', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.gallery);
@@ -777,7 +777,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                     ),
                     child: const Icon(Icons.delete_outline_rounded, color: AppColors.deleteRed),
                   ),
-                  title: Text('Remove Photo', style: GoogleFonts.inter(color: AppColors.deleteRed, fontWeight: FontWeight.w600)),
+                  title: Text('Remove Photo', style: AppFonts.poppins(color: AppColors.deleteRed, fontWeight: FontWeight.w600)),
                   onTap: () {
                     Navigator.pop(ctx);
                     setState(() {
@@ -800,7 +800,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Create Group', style: GoogleFonts.outfit(fontWeight: FontWeight.bold)),
+        title: Text('Create Group', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
         content: Form(
           key: formKey,
           child: TextFormField(
@@ -1375,7 +1375,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                     ),
                     child: Text(
                       'Save',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                         color: Colors.white,
@@ -1577,7 +1577,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                           child: Text(
                             'No groups yet',
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(color: Colors.grey[600], fontSize: 13),
+                            style: AppFonts.poppins(color: Colors.grey[600], fontSize: 13),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -2218,7 +2218,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'Cancel',
-                            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: AppFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                         ],
                       ),
@@ -2251,7 +2251,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Save',
-                                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: AppFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                               ],
                             ),
@@ -2313,7 +2313,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   'Open in Device System Editor',
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: AppFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
               style: OutlinedButton.styleFrom(
@@ -2354,7 +2354,7 @@ class _ContactFormScreenState extends ConsumerState<ContactFormScreen> {
                   title,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: GoogleFonts.outfit(
+                  style: AppFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,

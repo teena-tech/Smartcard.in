@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
@@ -63,7 +63,7 @@ class _PulsingBadgeState extends State<PulsingBadge> with SingleTickerProviderSt
             ),
           ),
           const SizedBox(width: 6),
-          Text(text, style: GoogleFonts.inter(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+          Text(text, style: AppFonts.poppins(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -271,7 +271,7 @@ class PremiumCardWidget extends StatelessWidget {
                                   child: Text(
                                     displayName,
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: (cardHeight * 0.075).clamp(13.0, 22.0),
                                       fontWeight: FontWeight.bold,
                                       color: customTextColor,
@@ -288,7 +288,7 @@ class PremiumCardWidget extends StatelessWidget {
                                   child: Text(
                                     card.designation!,
                                     textAlign: TextAlign.center,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: (cardHeight * 0.055).clamp(11.0, 16.0),
                                       fontWeight: FontWeight.w600,
                                       color: customTextColor.withValues(alpha: 0.85),
@@ -328,7 +328,7 @@ class PremiumCardWidget extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             'Primary',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: const Color(0xFFFBBF24),
                               fontSize: 11,
                               fontWeight: FontWeight.bold,

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
 class ImageConfirmSheet extends StatefulWidget {
@@ -51,7 +51,7 @@ class _ImageConfirmSheetState extends State<ImageConfirmSheet> {
           const SizedBox(height: 24),
           Text(
             widget.title,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF1E293B),
@@ -61,7 +61,7 @@ class _ImageConfirmSheetState extends State<ImageConfirmSheet> {
           Text(
             'Are you sure you want to upload this photo?',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 14,
               color: const Color(0xFF64748B),
             ),
@@ -100,7 +100,7 @@ class _ImageConfirmSheetState extends State<ImageConfirmSheet> {
                   ),
                   child: Text(
                     'Cancel',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -131,7 +131,7 @@ class _ImageConfirmSheetState extends State<ImageConfirmSheet> {
                         )
                       : Text(
                           'OK',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -170,7 +170,7 @@ class _ImageConfirmSheetState extends State<ImageConfirmSheet> {
           _isUploading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: $e', style: GoogleFonts.inter(color: Colors.white)),
+          content: Text('Error: $e', style: AppFonts.poppins(color: Colors.white)),
           backgroundColor: Colors.red.shade600,
         ));
       }
@@ -268,7 +268,7 @@ class _HeartbeatSuccessOverlayState extends State<HeartbeatSuccessOverlay>
               ),
               child: Text(
                 widget.message,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

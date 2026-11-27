@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
@@ -34,7 +34,7 @@ class RecentActivityList extends ConsumerWidget {
           children: [
             Icon(Icons.history, size: 48, color: colors.muted.withValues(alpha: 0.15)),
             const SizedBox(height: 16),
-            Text('No recent activity to show', style: GoogleFonts.inter(color: colors.muted, fontSize: 14)),
+            Text('No recent activity to show', style: AppFonts.poppins(color: colors.muted, fontSize: 14)),
           ],
         ),
       );
@@ -53,7 +53,7 @@ class RecentActivityList extends ConsumerWidget {
             backgroundColor: AppColors.primaryRed.withValues(alpha: 0.15),
             child: Text(
               activity.name.isNotEmpty ? activity.name[0].toUpperCase() : '?',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: AppColors.primaryRed,
                 fontWeight: FontWeight.bold,
               ),
@@ -61,7 +61,7 @@ class RecentActivityList extends ConsumerWidget {
           ),
           title: Text(
             activity.name,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: colors.text,
@@ -69,7 +69,7 @@ class RecentActivityList extends ConsumerWidget {
           ),
           subtitle: Text(
             'Scanned on ${_formatDate(activity.createdAt)}',
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 12,
               color: colors.muted,
             ),

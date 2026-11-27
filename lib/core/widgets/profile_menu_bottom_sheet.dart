@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
@@ -104,7 +104,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
               ),
               child: Text(
                 '⚡ In Active Development',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primaryRed,
@@ -117,7 +117,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
             // Title
             Text(
               'Notification Center',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: colors.text,
@@ -130,7 +130,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
             // Professional Developer Description
             Text(
               'We are currently engineering a centralized notification system to bring you real-time alerts for card visits, new contact exchanges, and smart interactions.\n\nThis will be rolled out in an upcoming release!',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 13,
                 color: colors.muted,
                 height: 1.45,
@@ -156,7 +156,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
                 ),
                 child: Text(
                   'Got It, Stay Tuned!',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontWeight: FontWeight.bold,
                     fontSize: 14.5,
                     letterSpacing: 0.2,
@@ -425,7 +425,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
                                   const SizedBox(width: 10),
                                   Text(
                                     'Logout',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 17,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
@@ -552,7 +552,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
                                       alignment: Alignment.center,
                                       child: Text(
                                         userInitials,
-                                        style: GoogleFonts.outfit(
+                                        style: AppFonts.poppins(
                                           color: AppColors.primaryRed,
                                           fontSize: 17,
                                           fontWeight: FontWeight.w600,
@@ -565,7 +565,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
                                     alignment: Alignment.center,
                                     child: Text(
                                       userInitials,
-                                      style: GoogleFonts.outfit(
+                                      style: AppFonts.poppins(
                                         color: AppColors.primaryRed,
                                         fontSize: 17,
                                         fontWeight: FontWeight.w600,
@@ -594,7 +594,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
                               alignment: Alignment.centerLeft,
                               child: Text(
                                 displayName,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.normal,
@@ -618,7 +618,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   phoneOrEmail,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     color: Colors.white.withValues(alpha: 0.9),
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w400,
@@ -675,7 +675,7 @@ class _ProfileMenuBottomSheetState extends ConsumerState<ProfileMenuBottomSheet>
                           if (!isPremium) const SizedBox(width: 4),
                           Text(
                             isPremium ? 'Premium Member' : 'Free Member',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 10.5,
                               fontWeight: FontWeight.bold,
                               color: isPremium ? const Color(0xFFFFD700) : const Color(0xFFE0E0E0),
@@ -786,7 +786,7 @@ class _TypewriterHeartbeatStayConnectedState extends ConsumerState<_TypewriterHe
             child: Text(
               visibleText,
               textAlign: TextAlign.center,
-              style: GoogleFonts.caveat(
+              style: AppFonts.poppins(
                 fontSize: 16.0,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFFFFD700),
@@ -990,7 +990,7 @@ class _MenuActionCardState extends ConsumerState<_MenuActionCard>
               fit: BoxFit.scaleDown,
               child: AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 180),
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
                   color: isSelected ? activeRed : colors.text,
@@ -1013,7 +1013,7 @@ class _MenuActionCardState extends ConsumerState<_MenuActionCard>
               fit: BoxFit.scaleDown,
               child: AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 180),
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 11,
                   color: isSelected
                     ? activeRed.withValues(alpha: 0.85)
@@ -1058,7 +1058,7 @@ class _MenuActionCardState extends ConsumerState<_MenuActionCard>
               child: Center(
                 child: Text(
                   '${widget.badgeCount}',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 9.5,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

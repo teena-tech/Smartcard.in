@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/utils/international_phone_helper.dart';
 
 class CountryItem {
@@ -206,13 +206,13 @@ class _CountrySearchPopupState extends State<_CountrySearchPopup> {
                           Expanded(
                             child: TextField(
                               controller: _searchController,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 11.5,
                                 color: Colors.black87,
                               ),
                               decoration: InputDecoration(
                                 hintText: 'Search...',
-                                hintStyle: GoogleFonts.inter(
+                                hintStyle: AppFonts.poppins(
                                   fontSize: 11,
                                   color: Colors.grey.shade400,
                                 ),
@@ -255,7 +255,7 @@ class _CountrySearchPopupState extends State<_CountrySearchPopup> {
                             child: Center(
                               child: Text(
                                 'No country found',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 10.5,
                                   color: Colors.grey.shade400,
                                 ),
@@ -293,7 +293,7 @@ class _CountrySearchPopupState extends State<_CountrySearchPopup> {
                                           item.name,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 10.5,
                                             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                             color: isSelected ? const Color(0xFFDC2626) : Colors.black87,
@@ -303,7 +303,7 @@ class _CountrySearchPopupState extends State<_CountrySearchPopup> {
                                       const SizedBox(width: 4),
                                       Text(
                                         item.code,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 10.5,
                                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                           color: isSelected

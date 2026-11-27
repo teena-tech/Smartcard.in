@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 /// Scanner states for the Adobe Scan-style visual workflow
 enum CardScanState {
@@ -217,7 +217,7 @@ class _CardTrackerOverlayState extends State<CardTrackerOverlay>
                   child: Center(
                     child: Text(
                       '$_countdown',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: const Color(0xFF00E676),
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -498,7 +498,7 @@ class ScannerStatus extends StatelessWidget {
             Flexible(
               child: Text(
                 message,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -591,7 +591,7 @@ class ScannerInstruction extends StatelessWidget {
           child: Text(
             text,
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: Colors.white.withValues(alpha: 0.9),
               fontSize: 13,
               fontWeight: FontWeight.w500,

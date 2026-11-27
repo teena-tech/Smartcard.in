@@ -3,7 +3,7 @@ import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:io' show File;
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
@@ -316,7 +316,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
       if (sm == null) return;
       sm.hideCurrentSnackBar();
       sm.showSnackBar(SnackBar(
-        content: Text(msg, style: GoogleFonts.inter(color: Colors.white)),
+        content: Text(msg, style: AppFonts.poppins(color: Colors.white)),
         backgroundColor: error ? Colors.red.shade600 : Colors.green.shade600,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -357,7 +357,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                   ),
                   const SizedBox(width: 8),
                   Text('Profile Photo',
-                      style: GoogleFonts.outfit(
+                      style: AppFonts.poppins(
                           fontSize: 17, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
                 ],
               ),
@@ -373,7 +373,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                       color: Color(0xFF4285F4)),
                 ),
                 title: Text('Take Photo',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    style: AppFonts.poppins(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.camera);
@@ -390,7 +390,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                       color: Color(0xFF9B72CF)),
                 ),
                 title: Text('Choose from Gallery',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    style: AppFonts.poppins(fontWeight: FontWeight.w600)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(ImageSource.gallery);
@@ -406,7 +406,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                   child: Icon(Icons.delete_outline, color: Colors.red.shade600),
                 ),
                 title: Text('Remove Photo',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                         fontWeight: FontWeight.w500,
                         color: Colors.red.shade600)),
                 onTap: () async {
@@ -429,7 +429,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                       SnackBar(
                         content: Text(
                           'Profile photo removed successfully.',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                          style: AppFonts.poppins(fontWeight: FontWeight.bold),
                         ),
                         backgroundColor: Colors.green.shade700,
                         behavior: SnackBarBehavior.floating,
@@ -562,7 +562,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                                   const SizedBox(width: 4),
                                                   Text(
                                                     'Read-only',
-                                                    style: GoogleFonts.inter(
+                                                    style: AppFonts.poppins(
                                                       fontSize: 10,
                                                       color: Colors.grey[700],
                                                       fontWeight: FontWeight.w600,
@@ -603,7 +603,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                                     const SizedBox(width: 4),
                                                     Text(
                                                       'Verified',
-                                                      style: GoogleFonts.inter(
+                                                      style: AppFonts.poppins(
                                                         fontSize: 10.5,
                                                         color: const Color(0xFF2E7D32),
                                                         fontWeight: FontWeight.bold,
@@ -645,7 +645,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                   child: ElevatedButton.icon(
                                     onPressed: () => _showDeleteAccountDialog(context),
                                     icon: const Icon(Icons.delete_forever, size: 18),
-                                    label: Text('Delete Account', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                    label: Text('Delete Account', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.red.shade600,
                                       foregroundColor: Colors.white,
@@ -717,7 +717,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             Expanded(
               child: Text(
                 'Phone/SMS Service Unavailable',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B),
@@ -728,7 +728,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
         ),
         content: Text(
           'Phone/SMS profile updates are currently available only for Indian users. Please update your WhatsApp number instead.',
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 13.5,
             color: Colors.grey[700],
             height: 1.45,
@@ -742,7 +742,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             },
             child: Text(
               'Cancel',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[600],
               ),
@@ -756,7 +756,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 16, color: Colors.white),
             label: Text(
               'Update WhatsApp Number',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+              style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF25D366),
@@ -804,7 +804,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             Expanded(
               child: Text(
                 'Phone/SMS Service Unavailable',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF1E293B),
@@ -815,7 +815,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
         ),
         content: Text(
           'Phone/SMS profile updates are currently available only for Indian users. Please update your WhatsApp number instead.',
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 13.5,
             color: Colors.grey[700],
             height: 1.45,
@@ -829,7 +829,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             },
             child: Text(
               'Cancel',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[600],
               ),
@@ -863,7 +863,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             icon: const FaIcon(FontAwesomeIcons.whatsapp, size: 16, color: Colors.white),
             label: Text(
               'Update WhatsApp Number',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13),
+              style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF25D366),
@@ -997,7 +997,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                             children: [
                               Text(
                                 'Phone Number',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.grey[700],
@@ -1017,7 +1017,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                     SnackBar(
                                       content: Text(
                                         'Indian phone numbers are locked to +91.',
-                                        style: GoogleFonts.inter(fontSize: 12.5, color: Colors.white),
+                                        style: AppFonts.poppins(fontSize: 12.5, color: Colors.white),
                                       ),
                                       backgroundColor: const Color(0xFF1E293B),
                                       duration: const Duration(seconds: 3),
@@ -1045,7 +1045,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                       const SizedBox(width: 5),
                                       Text(
                                         '+91',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
                                           color: Theme.of(ctx).colorScheme.onSurface,
@@ -1074,14 +1074,14 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                       FilteringTextInputFormatter.digitsOnly,
                                       LengthLimitingTextInputFormatter(10),
                                     ],
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: const Color(0xFFDC2626),
                                     ),
                                     decoration: InputDecoration(
                                       hintText: 'Enter 10-digit mobile number',
-                                      hintStyle: GoogleFonts.inter(
+                                      hintStyle: AppFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                         color: const Color(0xFFDC2626).withValues(alpha: 0.6),
@@ -1124,7 +1124,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                           const SizedBox(height: 14),
                           Text(
                             'WhatsApp Number',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.grey[700],
@@ -1176,7 +1176,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                       const SizedBox(width: 5),
                                       Text(
                                         dialogWhatsappCountryCode,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
                                           color: Theme.of(ctx).colorScheme.onSurface,
@@ -1213,7 +1213,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             val.trim() == _whatsappCtrl.text.trim());
                                       });
                                     },
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: const Color(0xFFDC2626),
@@ -1235,7 +1235,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                         ),
                                       ),
                                       hintText: 'Enter WhatsApp number',
-                                      hintStyle: GoogleFonts.inter(
+                                      hintStyle: AppFonts.poppins(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                         color: const Color(0xFFDC2626).withValues(alpha: 0.6),
@@ -1282,7 +1282,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                 children: [
                                   Text(
                                     'Phone Number',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                       color: Colors.grey[700],
@@ -1302,7 +1302,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                         const SizedBox(width: 3),
                                         Text(
                                           'Read-only',
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w600,
                                             color: Colors.grey[700],
@@ -1346,7 +1346,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             const SizedBox(width: 8),
                                             Text(
                                               dialogCountryCode,
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w700,
                                                 color: Colors.grey[700],
@@ -1356,7 +1356,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             Expanded(
                                               child: Text(
                                                 ph.text.trim(),
-                                                style: GoogleFonts.inter(
+                                                style: AppFonts.poppins(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w600,
                                                   color: Colors.grey[700],
@@ -1373,7 +1373,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             Expanded(
                                               child: Text(
                                                 'No phone number added (Disabled)',
-                                                style: GoogleFonts.inter(
+                                                style: AppFonts.poppins(
                                                   fontSize: 13,
                                                   color: Colors.grey[500],
                                                   fontStyle: FontStyle.italic,
@@ -1408,7 +1408,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                       Expanded(
                                         child: Text(
                                           'Phone/SMS updates available for Indian users only. Tap to update WhatsApp.',
-                                          style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                                          style: AppFonts.poppins(fontSize: 11, color: Colors.grey[600]),
                                         ),
                                       ),
                                     ],
@@ -1445,7 +1445,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                         const SizedBox(width: 6),
                                         Text(
                                           'WhatsApp Number',
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 13,
                                             fontWeight: FontWeight.bold,
                                             color: const Color(0xFF1B5E20),
@@ -1468,7 +1468,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             const SizedBox(width: 4),
                                             Text(
                                               'Verified',
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 10.5,
                                                 fontWeight: FontWeight.bold,
                                                 color: const Color(0xFF2E7D32),
@@ -1492,7 +1492,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             const SizedBox(width: 4),
                                             Text(
                                               'Unverified',
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 10.5,
                                                 fontWeight: FontWeight.bold,
                                                 color: Colors.red.shade700,
@@ -1549,7 +1549,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             const SizedBox(width: 5),
                                             Text(
                                               dialogWhatsappCountryCode,
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w700,
                                                 color: const Color(0xFF2E7D32),
@@ -1586,14 +1586,14 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                                   val.trim() == _whatsappCtrl.text.trim());
                                             });
                                           },
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
                                             color: const Color(0xFF2E7D32),
                                           ),
                                           decoration: InputDecoration(
                                             hintText: 'Enter WhatsApp number',
-                                            hintStyle: GoogleFonts.inter(
+                                            hintStyle: AppFonts.poppins(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                               color: const Color(0xFF2E7D32).withValues(alpha: 0.6),
@@ -1646,7 +1646,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                           waCtrl.text.trim().isEmpty
                                               ? 'Please enter your WhatsApp number.'
                                               : 'Unverified: WhatsApp OTP verification required before saving.',
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 11,
                                             color: Colors.red.shade700,
                                             fontWeight: FontWeight.w500,
@@ -1662,7 +1662,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                       const SizedBox(width: 4),
                                       Text(
                                         'Verified WhatsApp number for notifications & OTP',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 11,
                                           color: const Color(0xFF2E7D32),
                                           fontWeight: FontWeight.w500,
@@ -1678,7 +1678,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
 
                         const SizedBox(height: 16),
                         Text('Gender',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.grey[700])),
@@ -1704,7 +1704,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                               items: ['Male', 'Female', 'Other']
                                   .map((v) => DropdownMenuItem(
                                       value: v,
-                                      child: Text(v, style: GoogleFonts.inter(fontSize: 14))))
+                                      child: Text(v, style: AppFonts.poppins(fontSize: 14))))
                                   .toList(),
                             ),
                           ),
@@ -1718,7 +1718,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                             child: Text(
                               'Enter the 6-digit verification code sent to your ${dialogIsWhatsApp ? "WhatsApp" : "phone"}',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: Colors.grey[700],
@@ -1854,7 +1854,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                             children: [
                               Text(
                                 "Didn't receive the code? ",
-                                style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                                style: AppFonts.poppins(fontSize: 12, color: Colors.grey[600]),
                               ),
                               TextButton(
                                 onPressed: saving
@@ -1889,7 +1889,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                       },
                                 child: Text(
                                   'Resend OTP',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     color: (isIndian && !dialogIsWhatsApp)
@@ -1911,7 +1911,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                             },
                             child: Text(
                               'Cancel',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 color: Colors.red[600],
                                 fontWeight: FontWeight.bold,
                               ),
@@ -1934,7 +1934,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                     ),
                                     icon: const Icon(Icons.save_outlined, size: 18, color: Colors.white),
                                     label: Text('Save Changes',
-                                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+                                        style: AppFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
                                     onPressed: () async {
                                       setS(() { saving = true; errMsg = null; });
 
@@ -2397,7 +2397,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Location / PO Location',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                   fontSize: 12,
                                   color: Colors.grey[700],
                                   fontWeight: FontWeight.w600)),
@@ -2421,7 +2421,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                             value: o['city']?.toString(),
                                             child: Text(
                                               o['city']?.toString() ?? '',
-                                              style: GoogleFonts.inter(fontSize: 14),
+                                              style: AppFonts.poppins(fontSize: 14),
                                             ),
                                           ))
                                       .toList(),
@@ -2438,10 +2438,10 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                             TextFormField(
                               controller: loc,
                               textCapitalization: TextCapitalization.words,
-                              style: GoogleFonts.inter(fontSize: 14),
+                              style: AppFonts.poppins(fontSize: 14),
                               decoration: InputDecoration(
                                 hintText: 'Enter Location / Town',
-                                hintStyle: GoogleFonts.inter(fontSize: 13, color: Colors.grey[400]),
+                                hintStyle: AppFonts.poppins(fontSize: 13, color: Colors.grey[400]),
                                 prefixIcon: const Icon(Icons.location_city_outlined, size: 20, color: Colors.grey),
                                 filled: true,
                                 fillColor: Colors.white,
@@ -2486,7 +2486,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                                     Icons.save_outlined,
                                     size: 18),
                                 label: Text('Save Address',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                         fontSize: 15,
                                         fontWeight:
                                             FontWeight.bold)),
@@ -2592,14 +2592,14 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
 
       if (userId.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('User session or ID not found.', style: GoogleFonts.inter(color: Colors.white)),
+          content: Text('User session or ID not found.', style: AppFonts.poppins(color: Colors.white)),
           backgroundColor: Colors.red.shade600,
         ));
         return;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Deleting account...', style: GoogleFonts.inter(color: Colors.white)),
+        content: Text('Deleting account...', style: AppFonts.poppins(color: Colors.white)),
         backgroundColor: Colors.blue.shade600,
         duration: const Duration(seconds: 2),
       ));
@@ -2621,7 +2621,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
           } catch (_) {}
 
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Account deleted successfully.', style: GoogleFonts.inter(color: Colors.white)),
+            content: Text('Account deleted successfully.', style: AppFonts.poppins(color: Colors.white)),
             backgroundColor: Colors.green.shade600,
           ));
         }
@@ -2629,7 +2629,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
         if (context.mounted) {
           final errStr = authVm.error.isNotEmpty ? authVm.error : 'Failed to delete account.';
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(errStr, style: GoogleFonts.inter(color: Colors.white)),
+            content: Text(errStr, style: AppFonts.poppins(color: Colors.white)),
             backgroundColor: Colors.red.shade600,
           ));
         }
@@ -2704,7 +2704,7 @@ class _Header extends ConsumerWidget {
                     child: Text(
                       'My Profile',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -2790,7 +2790,7 @@ class _Header extends ConsumerWidget {
                                       alignment: Alignment.center,
                                       child: Text(
                                         initials,
-                                        style: GoogleFonts.outfit(
+                                        style: AppFonts.poppins(
                                           color: AppColors.primaryRed,
                                           fontSize: 28,
                                           fontWeight: FontWeight.bold,
@@ -2803,7 +2803,7 @@ class _Header extends ConsumerWidget {
                                     alignment: Alignment.center,
                                     child: Text(
                                       initials,
-                                      style: GoogleFonts.outfit(
+                                      style: AppFonts.poppins(
                                         color: AppColors.primaryRed,
                                         fontSize: 28,
                                         fontWeight: FontWeight.bold,
@@ -2857,7 +2857,7 @@ class _Header extends ConsumerWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   fullName,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -2898,7 +2898,7 @@ class _Header extends ConsumerWidget {
                       const SizedBox(width: 4),
                       Text(
                         isPremium ? 'Premium Member' : 'Free User',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -2955,7 +2955,7 @@ class _DialogHeader extends ConsumerWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(title,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
@@ -3004,7 +3004,7 @@ class _DField extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                   fontSize: 12,
                   color: Colors.grey[700],
                   fontWeight: FontWeight.w600)),
@@ -3015,7 +3015,7 @@ class _DField extends ConsumerWidget {
             keyboardType: keyboardType,
             textCapitalization: textCapitalization,
             onChanged: onChanged,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
                 fontSize: 14,
                 color: const Color(0xFF1E293B)),
             decoration: InputDecoration(
@@ -3073,7 +3073,7 @@ class _ErrorBanner extends ConsumerWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(msg,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                     color: Colors.red.shade600,
                     fontSize: 13)),
           ),
@@ -3153,7 +3153,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> {
           const SizedBox(height: 24),
           Text(
             'Confirm Image Change',
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF1E293B),
@@ -3163,7 +3163,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> {
           Text(
             'Are you sure you want to upload this photo?',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 14,
               color: const Color(0xFF64748B),
             ),
@@ -3202,7 +3202,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> {
                   ),
                   child: Text(
                     'Cancel',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -3233,7 +3233,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> {
                         )
                       : Text(
                           'OK',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -3286,7 +3286,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> {
         final errorMsg = ref.read(profileViewModelProvider.notifier).errorMessage ??
             'Upload failed. Please try again.';
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(errorMsg, style: GoogleFonts.inter(color: Colors.white)),
+          content: Text(errorMsg, style: AppFonts.poppins(color: Colors.white)),
           backgroundColor: Colors.red.shade600,
         ));
       }
@@ -3296,7 +3296,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> {
           _isUploading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: $e', style: GoogleFonts.inter(color: Colors.white)),
+          content: Text('Error: $e', style: AppFonts.poppins(color: Colors.white)),
           backgroundColor: Colors.red.shade600,
         ));
       }
@@ -3394,7 +3394,7 @@ class _HeartbeatSuccessOverlayState extends ConsumerState<_HeartbeatSuccessOverl
               ),
               child: Text(
                 'Profile upload successfully!',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

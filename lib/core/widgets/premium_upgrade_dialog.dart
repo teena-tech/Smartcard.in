@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/subscription_screen/presentation/view/subscription_screen.dart';
 
 class PremiumUpgradeDialog extends StatelessWidget {
@@ -37,7 +37,7 @@ class PremiumUpgradeDialog extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Create More. Connect More.',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
@@ -48,7 +48,7 @@ class PremiumUpgradeDialog extends StatelessWidget {
             Text(
               'Free users can create only 1 Digital Card.\n\nUpgrade to Premium and create any number of cards, customize designs and showcase every business or profession with a dedicated card. Share the right card with the right audience.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey.shade600,
                 height: 1.5,
@@ -73,7 +73,7 @@ class PremiumUpgradeDialog extends StatelessWidget {
                 },
                 child: Text(
                   'UPGRADE NOW',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                  style: AppFonts.poppins(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -82,7 +82,7 @@ class PremiumUpgradeDialog extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Not Now',
-                style: GoogleFonts.inter(color: Colors.grey.shade500, fontWeight: FontWeight.w600),
+                style: AppFonts.poppins(color: Colors.grey.shade500, fontWeight: FontWeight.w600),
               ),
             ),
           ],

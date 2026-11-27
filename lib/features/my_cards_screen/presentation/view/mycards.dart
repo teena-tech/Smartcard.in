@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/contact_model.dart';
@@ -437,7 +437,7 @@ class _MyCardsScreenState extends ConsumerState<MyCardsScreen> {
               Expanded(
                 child: Text(
                   'Download successfully',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -532,7 +532,7 @@ class _MyCardsScreenState extends ConsumerState<MyCardsScreen> {
               Expanded(
                 child: Text(
                   'Download successfully',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -570,7 +570,7 @@ class _MyCardsScreenState extends ConsumerState<MyCardsScreen> {
       return _wrap(
         child: Center(
           child: Text('No cards available.',
-              style: GoogleFonts.inter(color: colors.muted)),
+              style: AppFonts.poppins(color: colors.muted)),
         ),
         colors: colors,
       );
@@ -1016,7 +1016,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                       ),
                       child: Text(
                         isContact ? 'Contact-QR' : 'Digital card',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFFDC2626),
@@ -1043,7 +1043,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                   const SizedBox(height: 6),
                   Text(
                     'CARD SUSPENDED',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -1052,7 +1052,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                   ),
                   Text(
                     'QR Unscannable',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: Colors.white54,
                       fontSize: 10,
                     ),
@@ -1211,7 +1211,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                       child: Text(
                         'company logo',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 10,
                           color: Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
@@ -1226,7 +1226,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                     child: Text(
                       'company logo',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 10,
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.w500,
@@ -1241,7 +1241,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 16.5,
             fontWeight: FontWeight.w700,
             color: const Color(0xFF1E293B),
@@ -1280,7 +1280,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                 const SizedBox(width: 6),
                 Text(
                   'Suspended',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: Colors.redAccent,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
@@ -1345,7 +1345,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                       contactLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF1E293B),
@@ -1370,7 +1370,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                           : 'https://thesmartcards.in',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF1E293B),
@@ -1449,7 +1449,7 @@ class _CardQrPageState extends ConsumerState<_CardQrPage> with TickerProviderSta
                       alignment: Alignment.center,
                       child: Text(
                         'SVG',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 8,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF1E293B),
@@ -1636,7 +1636,7 @@ class _ActionBtn extends ConsumerWidget {
           const SizedBox(height: 6),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 11.5,
               fontWeight: FontWeight.w700,
               color: disabled ? Colors.grey : const Color(0xFF1E293B),

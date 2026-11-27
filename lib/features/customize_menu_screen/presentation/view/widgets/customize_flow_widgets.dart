@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
@@ -94,7 +94,7 @@ class CardProfileTabsStrip extends ConsumerWidget {
               alignment: Alignment.center,
               child: Text(
                 card.tabLabel,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: isSelected ? Colors.white : colors.text,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   fontSize: 14,

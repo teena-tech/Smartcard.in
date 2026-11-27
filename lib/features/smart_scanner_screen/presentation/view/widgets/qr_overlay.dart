@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 class QrOverlay extends StatelessWidget {
   final bool isDetected;
@@ -74,7 +74,7 @@ class QrOverlay extends StatelessWidget {
           const SizedBox(height: 28),
           Text(
             isDetected ? 'QR Code Detected ✓' : 'Point at QR code',
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: isDetected ? const Color(0xFF00E676) : Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -84,7 +84,7 @@ class QrOverlay extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'Auto scanning',
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: Colors.white54,
               fontSize: 13,
             ),

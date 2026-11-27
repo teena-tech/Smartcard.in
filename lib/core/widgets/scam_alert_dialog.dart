@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/card_duplicate_check.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
@@ -217,7 +217,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                       Text(
                         'Contact Exist',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
+                        style: AppFonts.poppins(
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 1.2,
@@ -228,7 +228,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                       Text(
                         'EXISTING NUMBER FOUND',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.outfit(
+                        style: AppFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.8,
@@ -247,7 +247,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                           ? 'This card has already been scanned and appears to match an existing contact. Please verify the details before saving it again.'
                           : 'This phone number already exists with another contact, but this card contains different company details.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         height: 1.45,
@@ -282,7 +282,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                                 const SizedBox(width: 6),
                                 Text(
                                   isCaseA ? 'EXISTING SAVED CARD' : 'EXISTING RECORD',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.8,
@@ -330,7 +330,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                                   const SizedBox(width: 6),
                                   Text(
                                     'SCANNED CARD COMPANY',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: 0.8,
@@ -369,7 +369,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                           icon: const Icon(Icons.visibility_outlined, size: 18),
                           label: Text(
                             'View Existing Contact',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                             ),
@@ -404,7 +404,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                           ),
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -424,7 +424,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                           icon: const Icon(Icons.credit_card_rounded, size: 18),
                           label: Text(
                             'Save as Another Card',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                             ),
@@ -453,7 +453,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                           icon: const Icon(Icons.merge_type_rounded, size: 18),
                           label: Text(
                             'Merge Contact',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: isDark ? Colors.white : const Color(0xFF1F2937),
@@ -482,7 +482,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
                           },
                           child: Text(
                             'Cancel',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: secondaryTextColor,
@@ -514,7 +514,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
           width: 72,
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 13,
               fontWeight: FontWeight.w500,
               color: Colors.grey.shade600,
@@ -524,7 +524,7 @@ class _ScamAlertDialogState extends State<ScamAlertDialog>
         Expanded(
           child: Text(
             value,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 13,
               fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
               color: textColor,

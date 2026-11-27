@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
@@ -77,7 +77,7 @@ class RecentMessagesList extends ConsumerWidget {
           children: [
             Icon(Icons.inbox_outlined, size: 48, color: colors.muted.withValues(alpha: 0.15)),
             const SizedBox(height: 16),
-            Text('No recent messages', style: GoogleFonts.inter(color: colors.muted, fontSize: 14)),
+            Text('No recent messages', style: AppFonts.poppins(color: colors.muted, fontSize: 14)),
           ],
         ),
       );
@@ -112,7 +112,7 @@ class RecentMessagesList extends ConsumerWidget {
                 const SizedBox(width: 6),
                 Text(
                   '$unreadCount unread',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primaryRed,
@@ -187,7 +187,7 @@ class RecentMessagesList extends ConsumerWidget {
                                         children: [
                                           Icon(Icons.broken_image_outlined, size: 32, color: colors.muted),
                                           const SizedBox(height: 4),
-                                          Text('Image not available', style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+                                          Text('Image not available', style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
                                         ],
                                       ),
                                     ),
@@ -241,7 +241,7 @@ class RecentMessagesList extends ConsumerWidget {
                                           title,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: unread ? FontWeight.w700 : FontWeight.w500,
                                             color: colors.text,
@@ -253,7 +253,7 @@ class RecentMessagesList extends ConsumerWidget {
                                             body,
                                             maxLines: 2,
                                             overflow: TextOverflow.ellipsis,
-                                            style: GoogleFonts.inter(fontSize: 12, color: colors.muted),
+                                            style: AppFonts.poppins(fontSize: 12, color: colors.muted),
                                           ),
                                         ],
                                       ],

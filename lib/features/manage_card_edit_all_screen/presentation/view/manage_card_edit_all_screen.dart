@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/widgets/delete_confirm_dialog.dart';
 import 'package:smartcard_flutter/features/manage_card_edit_all_screen/presentation/view/widgets/rich_text_editor_widget.dart';
 
@@ -663,7 +663,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
             DropdownButtonFormField<String>(
               initialValue: _controllers['gender'],
               dropdownColor: colors.panel,
-              style: GoogleFonts.inter(color: colors.text, fontSize: 14),
+              style: AppFonts.poppins(color: colors.text, fontSize: 14),
               decoration: _getInputDecoration('', colors),
               items: const [
                 DropdownMenuItem(value: 'Male', child: Text('Male')),
@@ -728,7 +728,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
               DropdownButtonFormField<String>(
                 initialValue: _selectedPersonalOfficeIndex,
                 dropdownColor: colors.panel,
-                style: GoogleFonts.inter(color: colors.text, fontSize: 14),
+                style: AppFonts.poppins(color: colors.text, fontSize: 14),
                 decoration: _getInputDecoration('Office / City', colors),
                 items: _personalOffices.asMap().entries.map((e) {
                   return DropdownMenuItem(
@@ -799,7 +799,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
               DropdownButtonFormField<String>(
                 initialValue: _selectedCompanyOfficeIndex,
                 dropdownColor: colors.panel,
-                style: GoogleFonts.inter(color: colors.text, fontSize: 14),
+                style: AppFonts.poppins(color: colors.text, fontSize: 14),
                 decoration: _getInputDecoration('Office / City', colors),
                 items: _companyOffices.asMap().entries.map((e) {
                   return DropdownMenuItem(
@@ -1109,7 +1109,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
                         icon: Icon(Icons.visibility, color: viewModel.isSuspended ? Colors.grey : null),
                         label: Text(
                           'Preview',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: viewModel.isSuspended ? Colors.grey : null,
@@ -1134,7 +1134,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
                         onPressed: (viewModel.isSaving || viewModel.isSuspended) ? null : _saveAll,
                         child: Text(
                           viewModel.isSaving ? 'Saving...' : 'Save Details',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1158,7 +1158,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
                           icon: const Icon(Icons.delete_outline, color: Colors.red),
                           label: Text(
                             'Delete',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: Colors.red,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1204,7 +1204,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
                         ),
                         label: Text(
                           viewModel.isSuspended ? 'Unsuspend' : 'Suspend',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: viewModel.isSuspended ? Colors.green : Colors.orange,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1225,7 +1225,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Text(
         title,
-        style: GoogleFonts.inter(
+        style: AppFonts.poppins(
           color: colors.text,
           fontSize: 18,
           fontWeight: FontWeight.bold,
@@ -1239,7 +1239,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
       padding: const EdgeInsets.only(top: 12.0, bottom: 6.0),
       child: Text(
         text,
-        style: GoogleFonts.inter(
+        style: AppFonts.poppins(
           color: colors.muted,
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -1283,7 +1283,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
         controller: controller,
-        style: GoogleFonts.inter(color: colors.text, fontSize: 14),
+        style: AppFonts.poppins(color: colors.text, fontSize: 14),
         keyboardType: keyboardType,
         maxLines: maxLines,
         maxLength: maxLength,
@@ -1292,7 +1292,7 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
         onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.inter(color: colors.muted, fontSize: 14),
+          labelStyle: AppFonts.poppins(color: colors.muted, fontSize: 14),
           filled: true,
           fillColor: readOnly
               ? colors.section.withValues(alpha: 0.15)
@@ -1383,7 +1383,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> with Sin
           const SizedBox(height: 24),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: const Color(0xFF1E293B),
@@ -1393,7 +1393,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> with Sin
           Text(
             'Are you sure you want to upload this photo?',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 14,
               color: const Color(0xFF64748B),
             ),
@@ -1476,7 +1476,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> with Sin
                   ),
                   child: Text(
                     'Cancel',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF64748B),
@@ -1507,7 +1507,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> with Sin
                         )
                       : Text(
                           'OK',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -1549,7 +1549,7 @@ class _ImageConfirmSheetState extends ConsumerState<_ImageConfirmSheet> with Sin
           _isUploading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: $e', style: GoogleFonts.inter(color: Colors.white)),
+          content: Text('Error: $e', style: AppFonts.poppins(color: Colors.white)),
           backgroundColor: Colors.red.shade600,
         ));
       }
@@ -1648,7 +1648,7 @@ class _HeartbeatSuccessOverlayState extends ConsumerState<_HeartbeatSuccessOverl
               ),
               child: Text(
                 widget.message,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

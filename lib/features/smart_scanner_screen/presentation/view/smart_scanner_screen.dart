@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -334,20 +334,20 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
             const SizedBox(width: 12),
             Text(
               'Camera Access',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: AppFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
         content: Text(
           'To scan QR codes and business cards, please grant camera access.',
-          style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, height: 1.4),
+          style: AppFonts.poppins(color: Colors.white70, fontSize: 14, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
               'Cancel',
-              style: GoogleFonts.inter(color: Colors.white38),
+              style: AppFonts.poppins(color: Colors.white38),
             ),
           ),
           ElevatedButton(
@@ -361,7 +361,7 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
             ),
             child: Text(
               'Allow',
-              style: GoogleFonts.inter(color: Colors.black, fontWeight: FontWeight.bold),
+              style: AppFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -385,13 +385,13 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
             const SizedBox(width: 12),
             Text(
               'Enable in Settings',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: AppFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
         ),
         content: Text(
           'Camera access has been permanently denied. Please enable it in the system settings to scan cards.',
-          style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, height: 1.4),
+          style: AppFonts.poppins(color: Colors.white70, fontSize: 14, height: 1.4),
         ),
         actions: [
           TextButton(
@@ -400,7 +400,7 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
             },
             child: Text(
               'Cancel',
-              style: GoogleFonts.inter(color: Colors.white38),
+              style: AppFonts.poppins(color: Colors.white38),
             ),
           ),
           ElevatedButton(
@@ -414,7 +414,7 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
             ),
             child: Text(
               'Settings',
-              style: GoogleFonts.inter(color: Colors.black, fontWeight: FontWeight.bold),
+              style: AppFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -808,7 +808,7 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
                       .map(
                         (l) => Text(
                           l,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: Colors.white,
                             fontSize: 13,
                             fontWeight: l == result.statusMessage
@@ -908,7 +908,7 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
                     Text(
                       'Camera & Contacts permission required',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1003,7 +1003,7 @@ class _SmartScannerScreenState extends ConsumerState<SmartScannerScreen>
                       children: [
                         Text(
                           'Point at QR for instant scan',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: const Color(0xFFFF5252),
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
@@ -1172,7 +1172,7 @@ class CardProcessingOverlay extends ConsumerWidget {
                   Flexible(
                     child: Text(
                       message,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

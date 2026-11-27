@@ -3,7 +3,7 @@ import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/contact_model.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 import 'package:smartcard_flutter/features/full_card_view_screen/presentation/view/full_card_view_screen.dart';
@@ -169,7 +169,7 @@ class _QrLandingScreenState extends ConsumerState<QrLandingScreen> {
                   Center(
                     child: Text(
                       contact.companyName.isNotEmpty ? contact.companyName : 'SmartCard Business Inc.',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -182,7 +182,7 @@ class _QrLandingScreenState extends ConsumerState<QrLandingScreen> {
                   Center(
                     child: Text(
                       'Ready to connect & view professional profile',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white54,
                         fontSize: 14,
                       ),
@@ -199,7 +199,7 @@ class _QrLandingScreenState extends ConsumerState<QrLandingScreen> {
                     icon: const Icon(Icons.visibility_outlined),
                     label: Text(
                       'PREVIEW CARD DETAILS',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                         letterSpacing: 1.0,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/contact_model.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 import 'package:smartcard_flutter/core/services/contact_saver_service.dart';
@@ -155,7 +155,7 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                             ? null
                             : Text(
                                 nameInitials,
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
@@ -169,7 +169,7 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                   Center(
                     child: Text(
                       widget.contact.name,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -181,7 +181,7 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                     Center(
                       child: Text(
                         widget.contact.designation.toUpperCase(),
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: Colors.redAccent,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -206,7 +206,7 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                     Center(
                       child: Text(
                         widget.contact.companyName,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: Colors.white70,
                           fontSize: 14,
                         ),
@@ -231,7 +231,7 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                           : const Icon(Icons.person_add_alt_1_outlined),
                       label: Text(
                         _saving ? 'SAVING...' : 'SAVE CONTACT TO PHONE',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.8),
+                        style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.8),
                       ),
                     ),
                   ),
@@ -298,7 +298,7 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.inter(
+        style: AppFonts.poppins(
           color: Colors.white38,
           fontSize: 11,
           fontWeight: FontWeight.bold,
@@ -331,12 +331,12 @@ class _FullCardViewScreenState extends State<FullCardViewScreen> with SingleTick
                   children: [
                     Text(
                       label,
-                      style: GoogleFonts.inter(color: Colors.white38, fontSize: 11),
+                      style: AppFonts.poppins(color: Colors.white38, fontSize: 11),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       value,
-                      style: GoogleFonts.inter(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+                      style: AppFonts.poppins(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),

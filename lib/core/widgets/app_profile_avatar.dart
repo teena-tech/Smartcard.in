@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/avatar_helper.dart';
 import 'package:smartcard_flutter/core/utils/safe_base64.dart';
@@ -274,7 +274,7 @@ class AppProfileAvatar extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: GoogleFonts.outfit(
+        style: AppFonts.poppins(
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontSize: renderSize * 0.52,

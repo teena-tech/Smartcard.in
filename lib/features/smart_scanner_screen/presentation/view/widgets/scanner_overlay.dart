@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/smart_scanner_screen/data/models/scan_type.dart';
 import 'package:smartcard_flutter/features/smart_scanner_screen/data/models/scanner_state.dart';
 import 'package:smartcard_flutter/features/smart_scanner_screen/data/models/detected_card.dart';
@@ -67,7 +67,7 @@ class ScannerOverlay extends StatelessWidget {
                     ),
                     Text(
                       isCard ? 'Scan Business Card' : 'Scan QR Code',
-                      style: GoogleFonts.outfit(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -104,7 +104,7 @@ class ScannerOverlay extends StatelessWidget {
                     child: Text(
                       isCard ? state.userFeedbackMessage : 'Align QR code in frame',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,

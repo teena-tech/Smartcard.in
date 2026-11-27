@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
@@ -130,7 +130,7 @@ class CommonDrawer extends ConsumerWidget {
                               )
                             : Text(
                                 (user?.displayName.isNotEmpty == true) ? user!.displayName : 'User',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -142,7 +142,7 @@ class CommonDrawer extends ConsumerWidget {
                             (user?.phone?.isNotEmpty == true ? user!.phone : null) ?? 
                             (user?.email?.isNotEmpty == true ? user!.email : null) ?? 
                             'Update Profile',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 14,
                             ),
@@ -256,7 +256,7 @@ class CommonDrawer extends ConsumerWidget {
                     children: [
                       Text(
                         'QUICK THEME',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: colors.muted,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
@@ -342,7 +342,7 @@ class CommonDrawer extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 0,
-                          textStyle: GoogleFonts.inter(
+                          textStyle: AppFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                           ),
@@ -383,7 +383,7 @@ class _DrawerItem extends ConsumerWidget {
         leading: Icon(icon, color: isSelected ? AppColors.primaryRed : colors.text, size: 20),
         title: Text(
           title,
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             color: isSelected ? AppColors.primaryRed : colors.text,
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
@@ -434,7 +434,7 @@ class _ThemeButton extends ConsumerWidget {
           child: Center(
             child: Text(
               title,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: isSelected ? AppColors.primaryRed : colors.text,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,

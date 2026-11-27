@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/database/sqlite_database.dart';
 import 'package:smartcard_flutter/core/database/hive_scan_database.dart';
@@ -272,7 +272,7 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
             icon: const Icon(Icons.tune_rounded, size: 16, color: Colors.white70),
             label: Text(
               'Advanced',
-              style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+              style: AppFonts.poppins(color: Colors.white70, fontSize: 12),
             ),
           ),
         ],
@@ -339,7 +339,7 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
                             const SizedBox(width: 4),
                             Text(
                               'ML Kit OCR Extracted Details',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -368,7 +368,7 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
                 children: [
                   Text(
                     'Extracted Contact Details',
-                    style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: colors.text),
+                    style: AppFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: colors.text),
                   ),
                   const SizedBox(height: 12),
                   _buildFormField(label: 'Full Name', controller: _nameController, icon: Icons.person_outline, colors: colors, isDark: isDark),
@@ -388,7 +388,7 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Additional Phone ${index + 1}', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: colors.muted)),
+                              Text('Additional Phone ${index + 1}', style: AppFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: colors.muted)),
                               GestureDetector(
                                 onTap: () => _removeAdditionalPhoneField(index),
                                 child: const Icon(Icons.close, size: 16, color: Colors.redAccent),
@@ -399,7 +399,7 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
                           TextField(
                             controller: ctrl,
                             keyboardType: TextInputType.phone,
-                            style: GoogleFonts.inter(fontSize: 12, color: colors.text),
+                            style: AppFonts.poppins(fontSize: 12, color: colors.text),
                             decoration: InputDecoration(
                               prefixIcon: Icon(Icons.phone_outlined, size: 18, color: colors.muted),
                               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
@@ -434,7 +434,7 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
                         icon: const Icon(Icons.add_circle_outline, size: 16, color: AppColors.primaryRed),
                         label: Text(
                           '+ Add Another Phone Number',
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryRed),
+                          style: AppFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryRed),
                         ),
                       ),
                     ),
@@ -465,7 +465,7 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
                     : const Icon(Icons.check_circle_outline),
                 label: Text(
                   _isSaving ? 'Saving Contact...' : 'Save Contact',
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: AppFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -490,13 +490,13 @@ class _ContactPreviewScreenState extends ConsumerState<ContactPreviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: colors.muted)),
+          Text(label, style: AppFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: colors.muted)),
           const SizedBox(height: 4),
           TextField(
             controller: controller,
             keyboardType: keyboardType,
             maxLines: maxLines,
-            style: GoogleFonts.inter(fontSize: 12, color: colors.text),
+            style: AppFonts.poppins(fontSize: 12, color: colors.text),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, size: 18, color: colors.muted),
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),

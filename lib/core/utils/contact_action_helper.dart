@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/intent_launcher.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
@@ -601,7 +601,7 @@ class ContactActionHelper {
                         children: [
                           Text(
                             title,
-                            style: GoogleFonts.outfit(
+                            style: AppFonts.poppins(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                               color: isDark ? Colors.white : const Color(0xFF1F2937),
@@ -611,7 +611,7 @@ class ContactActionHelper {
                             const SizedBox(height: 2),
                             Text(
                               subtitle.trim(),
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 13,
                                 color: isDark ? Colors.grey[400] : Colors.grey[600],
                               ),
@@ -682,7 +682,7 @@ class ContactActionHelper {
                                     children: [
                                       Text(
                                         displayValue,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
                                           color: isDark ? Colors.white : const Color(0xFF111827),
@@ -692,7 +692,7 @@ class ContactActionHelper {
                                         const SizedBox(height: 2),
                                         Text(
                                           item.label,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
                                             color: isDark ? Colors.grey[400] : Colors.grey[500],

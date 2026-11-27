@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/workspace_notifier.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:smartcard_flutter/core/utils/app_haptics.dart';
 import 'package:smartcard_flutter/core/utils/intent_launcher.dart';
@@ -56,7 +56,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
             Expanded(
               child: Text(
                 'Organization Brand Guard',
-                style: GoogleFonts.outfit(
+                style: AppFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -71,7 +71,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
           children: [
             Text(
               'The following organization assets are locked as Read-Only by your Organization Admin to preserve brand consistency:',
-              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
+              style: AppFonts.poppins(fontSize: 12, color: const Color(0xFF94A3B8)),
             ),
             const SizedBox(height: 14),
             _buildLockRow(Icons.image_outlined, 'Organization Logo', 'Locked & Verified'),
@@ -92,7 +92,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                   Expanded(
                     child: Text(
                       'Employees cannot modify organization brand assets. Contact your Organization Administrator for changes.',
-                      style: GoogleFonts.inter(fontSize: 10.5, color: const Color(0xFFBAE6FD)),
+                      style: AppFonts.poppins(fontSize: 10.5, color: const Color(0xFFBAE6FD)),
                     ),
                   ),
                 ],
@@ -124,12 +124,12 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
           const SizedBox(width: 8),
           Text(
             '$label: ',
-            style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white70),
+            style: AppFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.w600, color: Colors.white70),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
+              style: AppFonts.poppins(fontSize: 11.5, fontWeight: FontWeight.bold, color: Colors.white),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -227,7 +227,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                           children: [
                             Text(
                               'Organization Brand Elements',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF7DD3FC),
@@ -239,7 +239,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                         ),
                         Text(
                           'Organization Name, Logo, & Theme Color enforced by Admin',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 9.5,
                             color: const Color(0xFF94A3B8),
                           ),
@@ -291,7 +291,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                       children: [
                         Text(
                           ws.companyName.toUpperCase(),
-                          style: GoogleFonts.outfit(
+                          style: AppFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.1,
@@ -302,7 +302,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                         ),
                         Text(
                           'OFFICIAL ORGANIZATION IDENTITY',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 8.5,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF7DD3FC),
@@ -327,7 +327,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                   const SizedBox(width: 3),
                   Text(
                     'BRAND LOCKED',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 8,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -351,7 +351,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.outfit(
+                    style: AppFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -360,7 +360,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                   const SizedBox(height: 2),
                   Text(
                     role,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFFBAE6FD),
@@ -375,7 +375,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                     ),
                     child: Text(
                       'ID: $memberId',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -421,7 +421,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                   const SizedBox(width: 4),
                   Text(
                     phone,
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.white70),
+                    style: AppFonts.poppins(fontSize: 10, color: Colors.white70),
                   ),
                   const SizedBox(width: 10),
                 ],
@@ -430,7 +430,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                   const SizedBox(width: 4),
                   Text(
                     email,
-                    style: GoogleFonts.inter(fontSize: 10, color: Colors.white70),
+                    style: AppFonts.poppins(fontSize: 10, color: Colors.white70),
                   ),
                 ],
               ],
@@ -441,7 +441,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                 const SizedBox(width: 3),
                 Text(
                   'Tap to Flip',
-                  style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF7DD3FC), fontWeight: FontWeight.bold),
+                  style: AppFonts.poppins(fontSize: 9, color: const Color(0xFF7DD3FC), fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -467,7 +467,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
           children: [
             Text(
               'CHANNELS & CONNECT',
-              style: GoogleFonts.outfit(
+              style: AppFonts.poppins(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.1,
@@ -480,7 +480,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
                 const SizedBox(width: 3),
                 Text(
                   'Flip Front',
-                  style: GoogleFonts.inter(fontSize: 9, color: Colors.white70),
+                  style: AppFonts.poppins(fontSize: 9, color: Colors.white70),
                 ),
               ],
             ),
@@ -489,7 +489,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
         const SizedBox(height: 12),
         Text(
           ws.corporateDisclaimer,
-          style: GoogleFonts.inter(fontSize: 10.5, color: Colors.white70, height: 1.3),
+          style: AppFonts.poppins(fontSize: 10.5, color: Colors.white70, height: 1.3),
         ),
         const SizedBox(height: 14),
 
@@ -529,7 +529,7 @@ class _DigitalCorporateCardWidgetState extends ConsumerState<DigitalCorporateCar
             const SizedBox(width: 4),
             Text(
               label,
-              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+              style: AppFonts.poppins(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ],
         ),

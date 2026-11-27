@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/constants/app_theme.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
@@ -145,7 +145,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       children: [
                         Text(
                           effectiveName,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: textColor,
@@ -158,7 +158,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           user?.email?.isNotEmpty == true
                               ? user!.email!
                               : (user?.phone ?? ''),
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 13,
                             color: subtitleColor,
                           ),
@@ -188,7 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                               child: Text(
                                 'UPGRADE TO PREMIUM',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: primaryRed,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
@@ -212,7 +212,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   'PREMIUM MEMBER',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     color: Colors.green.shade800,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w700,
@@ -300,7 +300,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       children: [
                         Text(
                           'Theme Mode',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: textColor,
@@ -309,7 +309,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         const SizedBox(height: 2),
                         Text(
                           isDark ? 'Dark theme enabled' : 'Light theme enabled',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12.5,
                             color: subtitleColor,
                           ),
@@ -415,7 +415,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: textColor,
@@ -424,7 +424,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 12.5,
                       color: subtitleColor,
                       height: 1.35,

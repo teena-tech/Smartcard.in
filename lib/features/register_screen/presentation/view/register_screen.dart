@@ -3,7 +3,7 @@ import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:smartcard_flutter/features/home_screen/presentation/view/home_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
@@ -264,7 +264,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           SnackBar(
             content: Text(
               useWhatsApp ? 'OTP sent via WhatsApp' : 'OTP sent via SMS',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w500),
+              style: AppFonts.poppins(fontWeight: FontWeight.w500),
             ),
             backgroundColor: const Color(0xFF15803D),
             duration: const Duration(seconds: 2),
@@ -386,7 +386,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       children: [
         Text(
           'REGISTRATION PROGRESS',
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 11.5,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.6,
@@ -427,7 +427,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 8),
         Text(
           'Step $_step of 4',
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             color: colors.muted,
             fontSize: 12,
             fontWeight: FontWeight.w500,
@@ -453,7 +453,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
         child: Text(
           'Back',
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 14.5,
             fontWeight: FontWeight.w700,
           ),
@@ -503,7 +503,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             const SizedBox(height: 14),
             Text(
               'Enter your mobile number to create your SmartCards account.',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: AppColors.textSecondary,
                 fontSize: 12,
                 height: 1.5,
@@ -600,7 +600,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             // Gender Dropdown
             Text(
               'GENDER',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: colors.text,
@@ -619,7 +619,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   value: _selectedGender,
                   hint: Text(
                     'Gender (optional)',
-                    style: GoogleFonts.inter(color: colors.muted),
+                    style: AppFonts.poppins(color: colors.muted),
                   ),
                   items: _genderOptions
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -670,7 +670,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             if (_availableOffices.length > 1) ...[
               Text(
                 'SELECT LOCATION',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: colors.text,
@@ -692,7 +692,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     hint: Text(
                       'Select your location',
-                      style: GoogleFonts.inter(color: colors.muted),
+                      style: AppFonts.poppins(color: colors.muted),
                     ),
                     items: _availableOffices
                         .map((office) => DropdownMenuItem(
@@ -722,7 +722,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             if (_availableOffices.length <= 1) ...[
               Text(
                 'CITY',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: colors.text,
@@ -741,7 +741,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     value: _selectedCity,
                     hint: Text(
                       'City',
-                      style: GoogleFonts.inter(color: colors.muted),
+                      style: AppFonts.poppins(color: colors.muted),
                     ),
                     items: _dummyCities
                         .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -834,7 +834,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                         Text(
                           'USER ACCESS',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: AppColors.primaryRedHover,
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -882,7 +882,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     padding: const EdgeInsets.only(bottom: 14.0),
                                     child: Text(
                                       _message,
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.poppins(
                                         color: const Color(0xFF15803D),
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w600,
@@ -894,7 +894,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     padding: const EdgeInsets.only(bottom: 14.0),
                                     child: Text(
                                       _error,
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.poppins(
                                         color: Colors.red[600],
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w600,
@@ -917,7 +917,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             onPressed: () => Navigator.pop(context),
                             style: TextButton.styleFrom(
                               foregroundColor: crimson,
-                              textStyle: GoogleFonts.inter(
+                              textStyle: AppFonts.poppins(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14.5,
                                 letterSpacing: 0.2,
@@ -938,7 +938,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               style: TextButton.styleFrom(
                                 foregroundColor: crimson,
                                 disabledForegroundColor: const Color(0xFF1F2937),
-                                textStyle: GoogleFonts.inter(
+                                textStyle: AppFonts.poppins(
                                   fontWeight: _resendSecondsLeft > 0
                                       ? FontWeight.w500
                                       : FontWeight.w700,

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/support_agent_screen/presentation/viewmodel/agent_viewmodel.dart';
@@ -110,7 +110,7 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
                     border: Border.all(color: const Color(0xFFE53935).withValues(alpha: 0.6), width: 1.2),
                   ),
                   child: Center(
-                    child: Text('Loading support details...', style: GoogleFonts.inter(color: colors.muted)),
+                    child: Text('Loading support details...', style: AppFonts.poppins(color: colors.muted)),
                   ),
                 )
               else if (hasAssignedAgent && assignedAgent != null) ...[
@@ -161,7 +161,7 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
                       children: [
                         const Icon(Icons.person_add_alt_1_outlined, size: 20),
                         const SizedBox(width: 8),
-                        Text('Change Agent', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold)),
+                        Text('Change Agent', style: AppFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -181,13 +181,13 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'No Agent Assigned',
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
+                        style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Please select an agent from your district below to assist you.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(fontSize: 14, color: colors.muted, height: 1.5),
+                        style: AppFonts.poppins(fontSize: 14, color: colors.muted, height: 1.5),
                       ),
                     ],
                   ),
@@ -195,7 +195,7 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
                 const SizedBox(height: 32),
                 Text(
                   'AVAILABLE AGENTS',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: colors.muted,
@@ -243,7 +243,7 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Assigned Agent', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: colors.text)),
+          Text('Assigned Agent', style: AppFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: colors.text)),
           const SizedBox(height: 16),
           // Profile image + info row, left aligned
           Row(
@@ -267,13 +267,13 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
                         errorBuilder: (c, e, s) => Container(
                           color: colors.panel,
                           alignment: Alignment.center,
-                          child: Text(initials, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
+                          child: Text(initials, style: AppFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
                         ),
                       )
                     : Container(
                         color: colors.panel,
                         alignment: Alignment.center,
-                        child: Text(initials, style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
+                        child: Text(initials, style: AppFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryRed)),
                       ),
               ),
               const SizedBox(width: 16),
@@ -281,18 +281,18 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text)),
+                    Text(name, style: AppFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: colors.text)),
                     if (phone != '-') ...[
                       const SizedBox(height: 2),
-                      Text(phone, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: colors.muted)),
+                      Text(phone, style: AppFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: colors.muted)),
                     ],
                     if (district != '-') ...[
                       const SizedBox(height: 2),
-                      Text(district, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: colors.muted)),
+                      Text(district, style: AppFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: colors.muted)),
                     ],
                     if (pincode != '-') ...[
                       const SizedBox(height: 2),
-                      Text(pincode, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: colors.muted)),
+                      Text(pincode, style: AppFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: colors.muted)),
                     ],
                   ],
                 ),
@@ -348,7 +348,7 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
             children: [
               Icon(icon, size: 18, color: Colors.white),
               const SizedBox(width: 10),
-              Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+              Text(label, style: AppFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
             ],
           ),
         ),
@@ -360,7 +360,7 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
     if (agents.isEmpty) {
       return Center(
         child: Text('No agents available right now.',
-            style: GoogleFonts.inter(color: colors.muted)),
+            style: AppFonts.poppins(color: colors.muted)),
       );
     }
 
@@ -397,14 +397,14 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(agentName, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: colors.text)),
-                  Text(agentCode, style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+                  Text(agentName, style: AppFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: colors.text)),
+                  Text(agentCode, style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
                 ],
               ),
               const SizedBox(height: 8),
-              Text('Phone: $agentPhone', style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
-              Text('Email: $agentEmail', style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
-              Text('District: $agentDistrict', style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+              Text('Phone: $agentPhone', style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
+              Text('Email: $agentEmail', style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
+              Text('District: $agentDistrict', style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -447,7 +447,7 @@ class _SupportAgentScreenState extends ConsumerState<SupportAgentScreen> {
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: Text('Request Agent', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: Text('Request Agent', style: AppFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

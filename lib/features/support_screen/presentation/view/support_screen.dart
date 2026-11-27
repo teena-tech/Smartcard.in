@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/support_agent_screen/presentation/view/support_agent_screen.dart';
@@ -117,9 +117,9 @@ class SupportScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: colors.text)),
+                  Text(title, style: AppFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold, color: colors.text)),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: colors.muted)),
+                  Text(subtitle, style: AppFonts.poppins(fontSize: 12, color: colors.muted)),
                 ],
               ),
             ),

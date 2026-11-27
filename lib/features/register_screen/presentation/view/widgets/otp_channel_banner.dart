@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 /// High-professional single-line OTP channel pill displaying only the SMS/WhatsApp
 /// icon, flag + hairline divider + phone number, and pencil "Change" action.
@@ -78,7 +78,7 @@ class OtpChannelBanner extends StatelessWidget {
                     parsed.number,
                     maxLines: 1,
                     softWrap: false,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF111827),
@@ -104,7 +104,7 @@ class OtpChannelBanner extends StatelessWidget {
                     'Change',
                     maxLines: 1,
                     softWrap: false,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: accentColor,
@@ -145,7 +145,7 @@ class OtpStatusNotice extends StatelessWidget {
           Expanded(
             child: Text(
               errorMessage,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: Colors.red[600],
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
@@ -177,7 +177,7 @@ class OtpStatusNotice extends StatelessWidget {
               Expanded(
                 child: Text(
                   statusMessage,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: const Color(0xFF374151),
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
@@ -190,7 +190,7 @@ class OtpStatusNotice extends StatelessWidget {
         ],
         Text(
           helperText,
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             color: const Color(0xFF6B7280),
             fontSize: 12,
             height: 1.4,
@@ -260,7 +260,7 @@ class OtpSwitchChannelLink extends StatelessWidget {
                   label,
                   maxLines: 1,
                   softWrap: false,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF4B5563),

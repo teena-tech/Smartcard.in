@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
@@ -203,7 +203,7 @@ class _StatisticsGridState extends ConsumerState<StatisticsGrid> with SingleTick
                   fit: BoxFit.scaleDown,
                   child: Text(
                     value,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: AppColors.primaryRed,
@@ -216,7 +216,7 @@ class _StatisticsGridState extends ConsumerState<StatisticsGrid> with SingleTick
           const SizedBox(height: 8),
           Text(
             title,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1E293B),

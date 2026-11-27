@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/core/utils/responsive.dart';
@@ -204,7 +204,7 @@ class AboutScreen extends ConsumerWidget {
                       children: [
                         Text(
                           content['title'] ?? '',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: colors.text,
@@ -213,7 +213,7 @@ class AboutScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         Text(
                           content['subtitle'] ?? '',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: colors.muted,
@@ -222,7 +222,7 @@ class AboutScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Text(
                           'Last Updated: ${content['updatedAt']}',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 14,
                             color: colors.muted,
                           ),
@@ -237,7 +237,7 @@ class AboutScreen extends ConsumerWidget {
                               children: [
                                 Text(
                                   sec['heading'] ?? '',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
                                     color: colors.text,
@@ -250,7 +250,7 @@ class AboutScreen extends ConsumerWidget {
                                       padding: const EdgeInsets.only(bottom: 8),
                                       child: Text(
                                         paraData as String,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 13,
                                           height: 1.6,
                                           color: colors.muted,
@@ -265,11 +265,11 @@ class AboutScreen extends ConsumerWidget {
                                       child: Row(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Text('- ', style: GoogleFonts.inter(fontSize: 13, color: colors.muted)),
+                                          Text('- ', style: AppFonts.poppins(fontSize: 13, color: colors.muted)),
                                           Expanded(
                                             child: Text(
                                               bulletData as String,
-                                              style: GoogleFonts.inter(
+                                              style: AppFonts.poppins(
                                                 fontSize: 13,
                                                 height: 1.6,
                                                 color: colors.muted,
@@ -296,7 +296,7 @@ class AboutScreen extends ConsumerWidget {
                       onPressed: () => Navigator.pop(context),
                       child: Text(
                         'Close',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: AppColors.primaryRed,
@@ -363,7 +363,7 @@ class AboutScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'About Antz Media',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: colors.text,
@@ -378,7 +378,7 @@ class AboutScreen extends ConsumerWidget {
                         children: [
                           Text(
                             sec['title'] ?? '',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: colors.text,
@@ -391,7 +391,7 @@ class AboutScreen extends ConsumerWidget {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: Text(
                                   para,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 13,
                                     height: 1.6,
                                     color: colors.muted,
@@ -406,11 +406,11 @@ class AboutScreen extends ConsumerWidget {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('- ', style: GoogleFonts.inter(fontSize: 13, color: colors.muted)),
+                                    Text('- ', style: AppFonts.poppins(fontSize: 13, color: colors.muted)),
                                     Expanded(
                                       child: Text(
                                         bullet,
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           fontSize: 13,
                                           height: 1.6,
                                           color: colors.muted,
@@ -436,7 +436,7 @@ class AboutScreen extends ConsumerWidget {
                         onTap: () => _showLegalDialog(context, _termsContent, colors),
                         child: Text(
                           'Terms & Conditions',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.normal,
                             color: AppColors.primaryRed,
@@ -454,7 +454,7 @@ class AboutScreen extends ConsumerWidget {
                         onTap: () => _showLegalDialog(context, _privacyContent, colors),
                         child: Text(
                           'Privacy Policy',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.normal,
                             color: AppColors.primaryRed,
@@ -469,7 +469,7 @@ class AboutScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             Text(
               '© 2026 SmartCard Inc. All rights reserved.',
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 12,
                 color: colors.muted,
               ),

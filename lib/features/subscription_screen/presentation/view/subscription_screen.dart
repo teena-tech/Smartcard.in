@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
 import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
@@ -223,7 +223,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
             const SizedBox(height: 20),
             Text(
               'Payment Successful!',
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
@@ -231,7 +231,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
             const SizedBox(height: 12),
             Text(
               'Your premium subscription has been activated!',
-              style: GoogleFonts.poppins(
+              style: AppFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey[600],
               ),
@@ -258,7 +258,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                 ),
                 child: Text(
                   'Great!',
-                  style: GoogleFonts.poppins(
+                  style: AppFonts.poppins(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -350,7 +350,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                     children: [
                       Text(
                         'Premium Subscription',
-                        style: GoogleFonts.poppins(
+                        style: AppFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1E233A),
@@ -359,7 +359,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '365 + 18% GST',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey.shade600,
                           fontWeight: FontWeight.w500,
@@ -375,7 +375,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                               padding: const EdgeInsets.only(bottom: 4.0),
                               child: Text(
                                 '₹ ${_formatAmount(vm.totalAmount)}',
-                                style: GoogleFonts.poppins(
+                                style: AppFonts.poppins(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.grey.shade500,
@@ -390,7 +390,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                             children: [
                               Text(
                                 vm.isPaymentRequired ? '₹ $displayAmount' : 'FREE',
-                                style: GoogleFonts.poppins(
+                                style: AppFonts.poppins(
                                   fontSize: 34,
                                   fontWeight: FontWeight.bold,
                                   color: vm.isPaymentRequired ? AppColors.primaryRed : Colors.green,
@@ -403,7 +403,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                               padding: const EdgeInsets.only(top: 8.0),
                               child: Text(
                                 vm.appliedCoupon!.message ?? 'Coupon Applied Successfully!',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.green,
@@ -433,7 +433,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                             const SizedBox(width: 12),
                             Text(
                               feature,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
                                 color: const Color(0xFF334155),
@@ -463,7 +463,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                   children: [
                                     Text(
                                       vm.appliedCouponCode.toUpperCase(),
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.green.shade800,
@@ -474,7 +474,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                         padding: const EdgeInsets.only(top: 2),
                                         child: Text(
                                           vm.appliedCoupon!.message!,
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 11,
                                             color: Colors.green.shade700,
                                           ),
@@ -513,7 +513,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                     controller: _couponController,
                                     decoration: InputDecoration(
                                       hintText: 'DISCOUNT COUPON CODE (OPTIONAL)',
-                                      hintStyle: GoogleFonts.inter(
+                                      hintStyle: AppFonts.poppins(
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.grey.shade500,
@@ -524,7 +524,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                       isDense: true,
                                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
                                     ),
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -585,7 +585,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                         )
                                       : Text(
                                           'APPLY',
-                                          style: GoogleFonts.inter(
+                                          style: AppFonts.poppins(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                             letterSpacing: 0.5,
@@ -601,7 +601,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                 padding: const EdgeInsets.only(top: 6, left: 4),
                                 child: Text(
                                   vm.errorMessage!,
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
                                     color: Colors.red.shade600,
@@ -645,7 +645,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                 )
                               : Text(
                                   vm.isPaymentRequired ? 'Pay Now' : 'Apply & Upgrade',
-                                  style: GoogleFonts.poppins(
+                                  style: AppFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -695,7 +695,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   Expanded(
                     child: Text(
                       successMessage,
-                      style: GoogleFonts.poppins(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
                       ),
@@ -725,7 +725,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   Expanded(
                     child: Text(
                       errorMessage,
-                      style: GoogleFonts.poppins(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
                       ),
@@ -803,7 +803,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                           children: [
                             Text(
                               displayName,
-                              style: GoogleFonts.poppins(
+                              style: AppFonts.poppins(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF1E233A),
@@ -811,7 +811,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                             ),
                             Text(
                               email,
-                              style: GoogleFonts.poppins(
+                              style: AppFonts.poppins(
                                 fontSize: 13,
                                 color: Colors.grey.shade600,
                               ),
@@ -827,7 +827,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                               ),
                               child: Text(
                                 vm.subscription?.isActive == true ? 'PREMIUM MEMBER' : 'FREE ACCOUNT',
-                                style: GoogleFonts.poppins(
+                                style: AppFonts.poppins(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: vm.subscription?.isActive == true ? Colors.green : Colors.orange,
@@ -885,24 +885,24 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Membership Type', style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
-                                Text('PREMIUM', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
+                                Text('Membership Type', style: AppFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
+                                Text('PREMIUM', style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green)),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Days Remaining', style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
-                                Text('${vm.subscription?.daysRemaining ?? 0} Days', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed)),
+                                Text('Days Remaining', style: AppFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
+                                Text('${vm.subscription?.daysRemaining ?? 0} Days', style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryRed)),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('End Date', style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
-                                Text(vm.subscription?.subscriptionEnd ?? '', style: GoogleFonts.poppins(fontWeight: FontWeight.w500, fontSize: 14)),
+                                Text('End Date', style: AppFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
+                                Text(vm.subscription?.subscriptionEnd ?? '', style: AppFonts.poppins(fontWeight: FontWeight.w500, fontSize: 14)),
                               ],
                             ),
                           ],
@@ -943,7 +943,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                     controller: _couponController,
                                     decoration: InputDecoration(
                                       hintText: 'HAVE A PROMO CODE? APPLY HERE',
-                                      hintStyle: GoogleFonts.inter(
+                                      hintStyle: AppFonts.poppins(
                                         fontSize: 10.5,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.grey.shade500,
@@ -954,7 +954,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                       isDense: true,
                                       contentPadding: const EdgeInsets.symmetric(vertical: 10),
                                     ),
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -1007,7 +1007,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                   ),
                                   child: Text(
                                     'APPLY',
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
@@ -1078,7 +1078,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                           children: [
                             Text(
                               'Free User Privileges',
-                              style: GoogleFonts.poppins(
+                              style: AppFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF1E233A),
@@ -1113,7 +1113,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                             const SizedBox(height: 16),
                             Text(
                               'Premium Features',
-                              style: GoogleFonts.poppins(
+                              style: AppFonts.poppins(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.primaryRed,
@@ -1122,7 +1122,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                             const SizedBox(height: 4),
                             Text(
                               'Everything in the Free plan, plus:',
-                              style: GoogleFonts.poppins(
+                              style: AppFonts.poppins(
                                 fontSize: 12,
                                 color: Colors.grey.shade600,
                               ),
@@ -1167,7 +1167,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                                 ),
                                 child: Text(
                                   planButtonText,
-                                  style: GoogleFonts.poppins(
+                                  style: AppFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -1230,7 +1230,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -1245,7 +1245,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                   children: [
                     Text(
                       price,
-                      style: GoogleFonts.poppins(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
@@ -1254,7 +1254,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                     const SizedBox(width: 4),
                     Text(
                       billingInfo,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white70,
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
@@ -1287,7 +1287,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                         Expanded(
                           child: Text(
                             feature['label'] as String,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 12,
                               color: included ? const Color(0xFF1E293B) : Colors.grey.shade500,
                               fontWeight: included ? FontWeight.w500 : FontWeight.normal,
@@ -1319,7 +1319,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                       ),
                       child: Text(
                         buttonLabel,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: Colors.grey.shade500,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
@@ -1339,7 +1339,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                       ),
                       child: Text(
                         buttonLabel,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -1381,7 +1381,7 @@ class _BenefitItem extends ConsumerWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.poppins(
+                style: AppFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
@@ -1389,7 +1389,7 @@ class _BenefitItem extends ConsumerWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: GoogleFonts.poppins(
+                style: AppFonts.poppins(
                   fontSize: 14,
                   color: Colors.grey[600],
                 ),

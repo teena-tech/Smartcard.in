@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -77,7 +77,7 @@ class QrResultScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     'QR Code Found',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -132,22 +132,22 @@ class QrResultScreen extends StatelessWidget {
                   children: [
                     Text(
                       'Type:',
-                      style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: AppFonts.poppins(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       qrResult.displayTitle,
-                      style: GoogleFonts.inter(color: const Color(0xFFFF5252), fontSize: 16, fontWeight: FontWeight.bold),
+                      style: AppFonts.poppins(color: const Color(0xFFFF5252), fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'Content:',
-                      style: GoogleFonts.inter(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: AppFonts.poppins(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 4),
                     SelectableText(
                       qrResult.rawContent,
-                      style: GoogleFonts.inter(color: Colors.white, fontSize: 14, height: 1.4),
+                      style: AppFonts.poppins(color: Colors.white, fontSize: 14, height: 1.4),
                     ),
                   ],
                 ),
@@ -171,7 +171,7 @@ class QrResultScreen extends StatelessWidget {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          textStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                          textStyle: AppFonts.poppins(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -191,7 +191,7 @@ class QrResultScreen extends StatelessWidget {
                         side: const BorderSide(color: Colors.white30),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        textStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                        textStyle: AppFonts.poppins(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -208,7 +208,7 @@ class QrResultScreen extends StatelessWidget {
                         side: const BorderSide(color: Colors.white30),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        textStyle: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                        textStyle: AppFonts.poppins(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),

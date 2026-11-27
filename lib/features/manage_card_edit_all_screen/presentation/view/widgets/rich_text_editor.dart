@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
 class RichTextEditor extends StatefulWidget {
@@ -70,7 +70,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
       children: [
         Text(
           widget.label,
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: colors?.text ?? Colors.black,
@@ -110,14 +110,14 @@ class _RichTextEditorState extends State<RichTextEditor> {
               readOnly: widget.readOnly,
               onChanged: widget.onChanged,
               onTap: widget.onTap,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 14,
                 color: colors?.text ?? Colors.black,
                 height: 1.6,
               ),
               decoration: InputDecoration(
                 hintText: widget.hint,
-                hintStyle: GoogleFonts.inter(
+                hintStyle: AppFonts.poppins(
                   fontSize: 14,
                   color: colors?.muted?.withValues(alpha: 0.15) ?? Colors.grey,
                 ),
@@ -134,7 +134,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
           const SizedBox(height: 8),
           Text(
             widget.errorText!,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 12,
               color: Colors.red.shade600,
             ),
@@ -213,7 +213,7 @@ class _RichTextEditorWithFormattingState
       children: [
         Text(
           widget.label,
-          style: GoogleFonts.inter(
+          style: AppFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: colors?.text ?? Colors.black,
@@ -255,7 +255,7 @@ class _RichTextEditorWithFormattingState
               Expanded(
                 child: Text(
                   '${_controller.text.length} characters',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 12,
                     color: colors?.muted ?? Colors.grey,
                   ),
@@ -294,7 +294,7 @@ class _RichTextEditorWithFormattingState
               setState(() {});
               widget.onChanged?.call(value);
             },
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 14,
               color: colors?.text ?? Colors.black,
               height: 1.6,
@@ -303,7 +303,7 @@ class _RichTextEditorWithFormattingState
             ),
             decoration: InputDecoration(
               hintText: widget.hint,
-              hintStyle: GoogleFonts.inter(
+              hintStyle: AppFonts.poppins(
                 fontSize: 14,
                 color: colors?.muted?.withValues(alpha: 0.15) ?? Colors.grey,
               ),
@@ -318,7 +318,7 @@ class _RichTextEditorWithFormattingState
           const SizedBox(height: 8),
           Text(
             widget.errorText!,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 12,
               color: Colors.red.shade600,
             ),

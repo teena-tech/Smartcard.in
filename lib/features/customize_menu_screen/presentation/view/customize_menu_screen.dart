@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:lottie/lottie.dart';
 
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
@@ -231,7 +231,7 @@ class _OptionCard extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: titleColor,
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
@@ -240,7 +240,7 @@ class _OptionCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: subtitleColor,
                       fontSize: 12,
                       height: 1.45,

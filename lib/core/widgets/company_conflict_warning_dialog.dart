@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
@@ -288,7 +288,7 @@ class _CompanyConflictWarningDialogState
                       Text(
                         'Contact Already Exists',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
@@ -303,7 +303,7 @@ class _CompanyConflictWarningDialogState
                       Text(
                         'An existing contact with this phone number was found.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                           height: 1.45,
@@ -336,7 +336,7 @@ class _CompanyConflictWarningDialogState
                             const SizedBox(width: 8),
                             Text(
                               phone.isNotEmpty ? phone : 'Same phone detected',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -397,7 +397,7 @@ class _CompanyConflictWarningDialogState
                       Text(
                         'Both company records can be kept independently.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                           color: Colors.white54,
@@ -419,7 +419,7 @@ class _CompanyConflictWarningDialogState
                               icon: const Icon(Icons.person_outline_rounded, size: 18),
                               label: Text(
                                 'View Contact',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -451,7 +451,7 @@ class _CompanyConflictWarningDialogState
                               ),
                               child: Text(
                                 'Add New Company',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.3,
@@ -477,7 +477,7 @@ class _CompanyConflictWarningDialogState
                               ),
                               child: Text(
                                 'Cancel',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -521,7 +521,7 @@ class _CompanyConflictWarningDialogState
               ),
               child: Text(
                 badge,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   color: badgeColor,
@@ -546,7 +546,7 @@ class _CompanyConflictWarningDialogState
                 children: [
                   Text(
                     company,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -556,7 +556,7 @@ class _CompanyConflictWarningDialogState
                     const SizedBox(height: 2),
                     Text(
                       'Contact: $contactName',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
                         color: Colors.white60,

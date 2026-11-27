@@ -3,7 +3,7 @@ import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/responsive.dart';
 import 'package:smartcard_flutter/core/utils/permission_helper.dart';
@@ -675,7 +675,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: isSelected ? AppColors.primaryRed : const Color(0xFF4A4A4A),
@@ -697,7 +697,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '$count',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
                         color: isSelected ? AppColors.primaryRed : const Color(0xFF222222),
@@ -846,10 +846,10 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
               child: TextField(
                 controller: _searchController,
                 focusNode: _searchFocus,
-                style: GoogleFonts.inter(fontSize: 14),
+                style: AppFonts.poppins(fontSize: 14),
                 decoration: InputDecoration(
                   hintText: hint,
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: AppFonts.poppins(
                     fontSize: 13.5,
                     color: Colors.grey[500],
                   ),
@@ -926,7 +926,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                     const SizedBox(width: 5),
                     Text(
                       'Add',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
@@ -1018,7 +1018,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                                   ),
                                   child: Text(
                                     item.letter,
-                                    style: GoogleFonts.outfit(
+                                    style: AppFonts.poppins(
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.primary,
@@ -1084,7 +1084,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
               alignment: Alignment.center,
               child: Text(
                 _activeLetterBubble!,
-                style: GoogleFonts.outfit(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 34,
                   fontWeight: FontWeight.bold,
@@ -1350,7 +1350,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
                               ),
                               child: Text(
                                 item.letter,
-                                style: GoogleFonts.outfit(
+                                style: AppFonts.poppins(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.primary,
@@ -1417,7 +1417,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
               alignment: Alignment.center,
               child: Text(
                 _activeLetterBubble!,
-                style: GoogleFonts.outfit(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 34,
                   fontWeight: FontWeight.bold,
@@ -1445,7 +1445,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
           ],
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected ? Colors.white : null,

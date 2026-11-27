@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
 enum EmptyStateType {
@@ -90,7 +90,7 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               displayTitle,
               textAlign: TextAlign.center,
-              style: GoogleFonts.outfit(
+              style: AppFonts.poppins(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -99,7 +99,7 @@ class EmptyStateWidget extends StatelessWidget {
             Text(
               displayDescription,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey[600],
                 height: 1.4,
@@ -119,7 +119,7 @@ class EmptyStateWidget extends StatelessWidget {
                 ),
                 child: Text(
                   btnLabel,
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  style: AppFonts.poppins(fontWeight: FontWeight.w600),
                 ),
               ),
             ],

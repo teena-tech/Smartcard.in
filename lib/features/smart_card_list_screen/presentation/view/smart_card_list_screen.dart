@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
 import 'package:smartcard_flutter/features/smart_card_list_screen/presentation/viewmodel/card_viewmodel.dart';
 import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
@@ -127,7 +127,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                       children: [
                         Text(
                           'Organization Card Preview',
-                          style: GoogleFonts.outfit(
+                          style: AppFonts.poppins(
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -135,7 +135,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                         ),
                         Text(
                           'Non-Editable Visual Identity & Theme',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF7DD3FC),
@@ -172,7 +172,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                         Expanded(
                           child: Text(
                             'Card styling, theme colors, and layout are centrally locked by ${card.companyName.isNotEmpty ? card.companyName : ws.organizationName} to maintain brand guidelines. Visual modifications are read-only.',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 11,
                               color: const Color(0xFFBAE6FD),
                               height: 1.35,
@@ -206,7 +206,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                       icon: const Icon(Icons.open_in_new, size: 16),
-                      label: Text('Open Live URL', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      label: Text('Open Live URL', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
                       onPressed: () async {
                         final uri = Uri.parse(card.qrData);
                         if (await canLaunchUrl(uri)) {
@@ -225,7 +225,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                       onPressed: () => Navigator.pop(ctx),
-                      child: Text('Done', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                      child: Text('Done', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -269,7 +269,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                         const SizedBox(height: 16),
                         Text(
                           'No Smart Cards Yet',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: Colors.black,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -278,7 +278,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                         const SizedBox(height: 8),
                         Text(
                           'Tap "CREATE NEW CARD" below to get started.',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             color: Colors.grey,
                             fontSize: 14,
                           ),
@@ -310,7 +310,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                               icon: const AnimatedHeartbeatIcon(),
                               label: Text(
                                 'CREATE NEW CARD',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
@@ -370,7 +370,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                                                       const SizedBox(width: 4),
                                                       Text(
                                                         card.isOrganization ? 'Details' : 'Details',
-                                                        style: GoogleFonts.inter(
+                                                        style: AppFonts.poppins(
                                                           color: Colors.white,
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 12,
@@ -435,7 +435,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                                                       const SizedBox(width: 4),
                                                       Text(
                                                         'Customize',
-                                                        style: GoogleFonts.inter(
+                                                        style: AppFonts.poppins(
                                                           color: Colors.white,
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 12,
@@ -490,7 +490,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                                                       const SizedBox(width: 4),
                                                       Text(
                                                         'Preview',
-                                                        style: GoogleFonts.inter(
+                                                        style: AppFonts.poppins(
                                                           color: Colors.white,
                                                           fontWeight: FontWeight.bold,
                                                           fontSize: 12,
@@ -519,16 +519,16 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                                   icon: const Icon(Icons.play_circle_fill, color: Colors.green),
                                   label: Text(
                                     'UNSUSPEND CARD',
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                                    style: AppFonts.poppins(fontWeight: FontWeight.bold),
                                   ),
                                   onPressed: () {
                                     showDialog(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
-                                        title: Text('Unsuspend Card', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+                                        title: Text('Unsuspend Card', style: AppFonts.poppins(fontWeight: FontWeight.bold)),
                                         content: Text(
                                           'Are you sure you want to unsuspend this card? It will become active again.',
-                                          style: GoogleFonts.inter(),
+                                          style: AppFonts.poppins(),
                                         ),
                                         actions: [
                                           TextButton(
@@ -569,7 +569,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                                       const SizedBox(width: 8),
                                       Text(
                                         'Upgrade to Premium to Edit',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.poppins(
                                           color: Colors.amber,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 13,
@@ -603,7 +603,7 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
                   icon: const AnimatedHeartbeatIcon(),
                   label: Text(
                     'CREATE NEW CARD',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,

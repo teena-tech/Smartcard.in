@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -311,7 +311,7 @@ class VideoPlatformBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             info.displayName,
-            style: GoogleFonts.inter(
+            style: AppFonts.poppins(
               color: info.brandColor,
               fontSize: compact ? 10.5 : 11.5,
               fontWeight: FontWeight.w600,
@@ -372,18 +372,18 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
             const SizedBox(width: 8),
             Text(
               'Remove Video?',
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16),
+              style: AppFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
         ),
         content: Text(
           'Are you sure you want to remove "${video.title.isNotEmpty ? video.title : 'this video'}" from your card?',
-          style: GoogleFonts.inter(fontSize: 13, color: Colors.grey.shade700),
+          style: AppFonts.poppins(fontSize: 13, color: Colors.grey.shade700),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: Colors.grey.shade700)),
+            child: Text('Cancel', style: AppFonts.poppins(color: Colors.grey.shade700)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -404,7 +404,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                 );
               }
             },
-            child: Text('Remove', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            child: Text('Remove', style: AppFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -451,7 +451,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
               const SizedBox(height: 10),
               Text(
                 'Add Video',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: AppColors.primaryRed,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -460,7 +460,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
               const SizedBox(height: 3),
               Text(
                 'Reel / Short',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.grey.shade600,
                   fontSize: 10,
                 ),
@@ -520,7 +520,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                   const SizedBox(width: 8),
                   Text(
                     'MY VIDEOS',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: widget.isOrganization ? const Color(0xFF0369A1) : widget.colors.muted,
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -541,7 +541,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                     ),
                     child: Text(
                       '$totalCount',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: AppColors.primaryRed,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -574,7 +574,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                             const SizedBox(width: 4),
                             Text(
                               'Add Video',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 color: AppColors.primaryRed,
                                 fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
@@ -599,7 +599,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                           const SizedBox(width: 4),
                           Text(
                             'Locked',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: const Color(0xFF0369A1),
                               fontSize: 10.5,
                               fontWeight: FontWeight.w600,
@@ -647,7 +647,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                   const SizedBox(height: 12),
                   Text(
                     'No Videos Added Yet',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF1F2937),
@@ -657,7 +657,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                   Text(
                     'Showcase your YouTube Shorts, Instagram Reels, TikTok, or tutorials in a vertical video list.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 12,
                       color: Colors.grey.shade600,
                       height: 1.4,
@@ -679,7 +679,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                       icon: const Icon(Icons.add, size: 16),
                       label: Text(
                         'Add First Video',
-                        style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w600),
+                        style: AppFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -730,7 +730,7 @@ class _MyVideosSectionWidgetState extends State<MyVideosSectionWidget> {
                   const SizedBox(width: 4),
                   Text(
                     'Swipe horizontally to explore reels',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       fontSize: 11,
                       color: Colors.grey.shade500,
                       fontWeight: FontWeight.w500,
@@ -1039,7 +1039,7 @@ class _VerticalReelCarouselCardState extends State<VerticalReelCarouselCard> {
                 children: [
                   Text(
                     displayTitle,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.poppins(
                       color: Colors.white,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
@@ -1055,7 +1055,7 @@ class _VerticalReelCarouselCardState extends State<VerticalReelCarouselCard> {
                       const SizedBox(width: 3),
                       Text(
                         'Tap to watch',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: Colors.white70,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
@@ -1110,7 +1110,7 @@ class _VerticalReelCarouselCardState extends State<VerticalReelCarouselCard> {
                       children: [
                         const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16),
                         const SizedBox(width: 8),
-                        Text('Watch in App', style: GoogleFonts.inter(color: Colors.white, fontSize: 12)),
+                        Text('Watch in App', style: AppFonts.poppins(color: Colors.white, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -1121,7 +1121,7 @@ class _VerticalReelCarouselCardState extends State<VerticalReelCarouselCard> {
                         children: [
                           const Icon(Icons.edit_outlined, color: Colors.white, size: 16),
                           const SizedBox(width: 8),
-                          Text('Edit Title & Link', style: GoogleFonts.inter(color: Colors.white, fontSize: 12)),
+                          Text('Edit Title & Link', style: AppFonts.poppins(color: Colors.white, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -1131,7 +1131,7 @@ class _VerticalReelCarouselCardState extends State<VerticalReelCarouselCard> {
                         children: [
                           const Icon(Icons.delete_outline, color: Colors.redAccent, size: 16),
                           const SizedBox(width: 8),
-                          Text('Remove Video', style: GoogleFonts.inter(color: Colors.redAccent, fontSize: 12)),
+                          Text('Remove Video', style: AppFonts.poppins(color: Colors.redAccent, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -1142,7 +1142,7 @@ class _VerticalReelCarouselCardState extends State<VerticalReelCarouselCard> {
                       children: [
                         const Icon(Icons.open_in_new, color: Colors.white70, size: 15),
                         const SizedBox(width: 8),
-                        Text('Open Externally', style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
+                        Text('Open Externally', style: AppFonts.poppins(color: Colors.white70, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -1201,7 +1201,7 @@ class _VerticalReelCarouselCardState extends State<VerticalReelCarouselCard> {
             Text(
               info.displayName,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: Colors.white,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
@@ -1330,7 +1330,7 @@ class VideoCardTile extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             isVertical ? '9:16 REEL' : '16:9 HD',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -1391,7 +1391,7 @@ class VideoCardTile extends StatelessWidget {
                             const SizedBox(width: 4),
                             Text(
                               isVertical ? 'Tap to watch in-app Reel' : 'Tap to watch in app',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 color: Colors.white,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -1402,7 +1402,7 @@ class VideoCardTile extends StatelessWidget {
                         if (host.isNotEmpty)
                           Text(
                             host,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               color: Colors.white70,
                               fontSize: 10.5,
                             ),
@@ -1428,7 +1428,7 @@ class VideoCardTile extends StatelessWidget {
                     children: [
                       Text(
                         displayTitle,
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF1F2937),
@@ -1441,7 +1441,7 @@ class VideoCardTile extends StatelessWidget {
                         children: [
                           Text(
                             info.displayName,
-                            style: GoogleFonts.inter(
+                            style: AppFonts.poppins(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: info.brandColor,
@@ -1450,13 +1450,13 @@ class VideoCardTile extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             '•',
-                            style: GoogleFonts.inter(fontSize: 10, color: Colors.grey.shade400),
+                            style: AppFonts.poppins(fontSize: 10, color: Colors.grey.shade400),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               video.url,
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 11,
                                 color: Colors.grey.shade500,
                               ),
@@ -1637,7 +1637,7 @@ class VideoCardTile extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   info.displayName,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: Colors.white,
                     fontSize: isVertical ? 14 : 13,
                     fontWeight: FontWeight.w700,
@@ -1653,7 +1653,7 @@ class VideoCardTile extends StatelessWidget {
                     ),
                     child: Text(
                       'VERTICAL REEL',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white70,
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
@@ -1839,7 +1839,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
                       children: [
                         Text(
                           isEditing ? 'Edit Video Details' : 'Add Video to Card',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF111827),
@@ -1847,7 +1847,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
                         ),
                         Text(
                           'YouTube, Vimeo, Reels, TikTok & more',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 11.5,
                             color: Colors.grey.shade500,
                           ),
@@ -1867,7 +1867,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
               // Video URL Input
               Text(
                 'Video URL *',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
@@ -1878,10 +1878,10 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
                 controller: _urlController,
                 keyboardType: TextInputType.url,
                 autofocus: !isEditing,
-                style: GoogleFonts.inter(fontSize: 13.5),
+                style: AppFonts.poppins(fontSize: 13.5),
                 decoration: InputDecoration(
                   hintText: 'https://youtube.com/watch?v=... or reel link',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 12.5),
+                  hintStyle: AppFonts.poppins(color: Colors.grey.shade400, fontSize: 12.5),
                   filled: true,
                   fillColor: Colors.grey.shade50,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -1917,7 +1917,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
                     const SizedBox(width: 4),
                     Text(
                       'Detected ${_detectedInfo!.displayName}',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 11,
                         color: const Color(0xFF059669),
                         fontWeight: FontWeight.w500,
@@ -1932,7 +1932,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
               // Video Title Input
               Text(
                 'Video Title / Name',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade800,
@@ -1942,10 +1942,10 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
               TextFormField(
                 controller: _titleController,
                 textCapitalization: TextCapitalization.words,
-                style: GoogleFonts.inter(fontSize: 13.5),
+                style: AppFonts.poppins(fontSize: 13.5),
                 decoration: InputDecoration(
                   hintText: 'e.g. Flutter Tutorial, My Portfolio, Company Intro',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 12.5),
+                  hintStyle: AppFonts.poppins(color: Colors.grey.shade400, fontSize: 12.5),
                   filled: true,
                   fillColor: Colors.grey.shade50,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -1981,7 +1981,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
                       Expanded(
                         child: Text(
                           _validationError!,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 11.5,
                             color: const Color(0xFFDC2626),
                           ),
@@ -2002,7 +2002,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
                     onPressed: _isSaving ? null : () => Navigator.pop(context),
                     child: Text(
                       'Cancel',
-                      style: GoogleFonts.inter(color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                      style: AppFonts.poppins(color: Colors.grey.shade700, fontWeight: FontWeight.w500),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -2022,7 +2022,7 @@ class _AddEditVideoDialogState extends State<AddEditVideoDialog> {
                           )
                         : Text(
                             isEditing ? 'Save Changes' : 'Add Video',
-                            style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+                            style: AppFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
                           ),
                   ),
                 ],
@@ -2308,7 +2308,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                       ),
                       child: Text(
                         '9:16 REEL',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -2321,7 +2321,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                   Expanded(
                     child: Text(
                       title,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -2358,7 +2358,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                       Center(
                         child: Text(
                           'Video player could not be loaded.',
-                          style: GoogleFonts.inter(color: Colors.white70, fontSize: 12),
+                          style: AppFonts.poppins(color: Colors.white70, fontSize: 12),
                         ),
                       ),
 
@@ -2382,7 +2382,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                               const SizedBox(height: 14),
                               Text(
                                 'Loading ${_info.displayName}...',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -2391,7 +2391,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                               const SizedBox(height: 4),
                               Text(
                                 'Playing inside SmartCards app',
-                                style: GoogleFonts.inter(
+                                style: AppFonts.poppins(
                                   color: Colors.white54,
                                   fontSize: 11,
                                 ),
@@ -2418,7 +2418,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                       const SizedBox(width: 5),
                       Text(
                         'In-App Player',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           color: Colors.white70,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -2446,7 +2446,7 @@ class _VideoPlayerModalState extends State<VideoPlayerModal> {
                         icon: const Icon(Icons.open_in_new, size: 13),
                         label: Text(
                           'Open in App',
-                          style: GoogleFonts.inter(fontSize: 11),
+                          style: AppFonts.poppins(fontSize: 11),
                         ),
                       ),
                     ],

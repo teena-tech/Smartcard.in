@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 /// Custom toggle switch matching the WhatsApp icon thumb design from the sketch
 class WhatsAppToggleSwitch extends StatelessWidget {
@@ -179,7 +179,7 @@ class _HeartbeatTextNoticeState extends State<HeartbeatTextNotice>
                 padding: const EdgeInsets.symmetric(vertical: 3.0),
                 child: Text(
                   widget.text,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     color: const Color(0xFFDC2626),
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,

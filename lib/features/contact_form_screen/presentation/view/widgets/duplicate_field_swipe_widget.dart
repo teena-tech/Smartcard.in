@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 
 /// Interactive field comparison widget with swipe / tap toggle support
@@ -74,7 +74,7 @@ class _DuplicateFieldSwipeWidgetState extends State<DuplicateFieldSwipeWidget> {
                   widget.label.toUpperCase(),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  style: GoogleFonts.outfit(
+                  style: AppFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.8,
@@ -97,7 +97,7 @@ class _DuplicateFieldSwipeWidgetState extends State<DuplicateFieldSwipeWidget> {
                     ),
                     child: Text(
                       widget.useNew ? 'NEW SCANNED' : 'EXISTING',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         color: widget.useNew ? const Color(0xFF16A34A) : primaryRed,
@@ -142,7 +142,7 @@ class _DuplicateFieldSwipeWidgetState extends State<DuplicateFieldSwipeWidget> {
                       children: [
                         Text(
                           'Existing',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             color: !widget.useNew ? primaryRed : Colors.grey,
@@ -153,7 +153,7 @@ class _DuplicateFieldSwipeWidgetState extends State<DuplicateFieldSwipeWidget> {
                           existingClean.isNotEmpty ? existingClean : '(Not set)',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12.5,
                             fontStyle: existingClean.isEmpty ? FontStyle.italic : FontStyle.normal,
                             fontWeight: !widget.useNew ? FontWeight.w700 : FontWeight.w500,
@@ -195,7 +195,7 @@ class _DuplicateFieldSwipeWidgetState extends State<DuplicateFieldSwipeWidget> {
                       children: [
                         Text(
                           'New Scanned',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                             color: widget.useNew ? const Color(0xFF16A34A) : Colors.grey,
@@ -206,7 +206,7 @@ class _DuplicateFieldSwipeWidgetState extends State<DuplicateFieldSwipeWidget> {
                           newClean.isNotEmpty ? newClean : '(Not set)',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
+                          style: AppFonts.poppins(
                             fontSize: 12.5,
                             fontStyle: newClean.isEmpty ? FontStyle.italic : FontStyle.normal,
                             fontWeight: widget.useNew ? FontWeight.w700 : FontWeight.w500,
@@ -276,7 +276,7 @@ class _DuplicateFieldSwipeWidgetState extends State<DuplicateFieldSwipeWidget> {
                             const SizedBox(width: 4),
                             Text(
                               widget.useNew ? 'Swipe left for Existing' : 'Swipe right to use New',
-                              style: GoogleFonts.inter(
+                              style: AppFonts.poppins(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: isDark ? Colors.white70 : Colors.grey[700],

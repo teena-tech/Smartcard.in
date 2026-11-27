@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 class EditorToolbar extends StatelessWidget {
   final VoidCallback? onThemeTap;
@@ -65,7 +65,7 @@ class EditorToolbar extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 color: textColor,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,

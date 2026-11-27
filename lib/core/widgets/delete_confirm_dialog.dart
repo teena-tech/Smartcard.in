@@ -1,6 +1,6 @@
 import 'package:smartcard_flutter/main.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:lottie/lottie.dart';
 
 /// Reusable animated delete confirmation dialog.
@@ -120,7 +120,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
             const SizedBox(height: 8),
             Text(
               widget.title,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFF1E233A),
@@ -130,7 +130,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
             const SizedBox(height: 8),
             Text(
               widget.message,
-              style: GoogleFonts.inter(
+              style: AppFonts.poppins(
                 fontSize: 14,
                 color: Colors.grey.shade600,
               ),
@@ -140,7 +140,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
               const SizedBox(height: 16),
               Text(
                 'Type "${widget.confirmInputText}" below to confirm deletion:',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey.shade700,
@@ -153,7 +153,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
                 onChanged: _onChanged,
                 autofocus: true,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
@@ -161,7 +161,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
                 ),
                 decoration: InputDecoration(
                   hintText: 'Type "${widget.confirmInputText}"',
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: AppFonts.poppins(
                     fontSize: 13,
                     fontWeight: FontWeight.normal,
                     letterSpacing: 0,
@@ -196,7 +196,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
                     onPressed: () => Navigator.pop(context, false),
                     child: Text(
                       widget.cancelText,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         color: Colors.grey.shade700,
                         fontWeight: FontWeight.w600,
                       ),
@@ -218,7 +218,7 @@ class _DeleteConfirmDialogState extends State<_DeleteConfirmDialog> {
                     onPressed: _isValid ? () => Navigator.pop(context, true) : null,
                     child: Text(
                       widget.confirmText,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontWeight: FontWeight.bold,
                         color: _isValid ? Colors.white : Colors.grey.shade500,
                       ),

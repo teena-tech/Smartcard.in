@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
 
@@ -238,7 +238,7 @@ class ProfileHeroRectDialog extends StatelessWidget {
                             alignment: Alignment.center,
                             child: Text(
                               initials.isNotEmpty ? initials : 'U',
-                              style: GoogleFonts.outfit(
+                              style: AppFonts.poppins(
                                 color: AppColors.primaryRed,
                                 fontSize: 44,
                                 fontWeight: FontWeight.bold,
@@ -269,7 +269,7 @@ class ProfileHeroRectDialog extends StatelessWidget {
                                 Expanded(
                                   child: Text(
                                     fullName,
-                                    style: GoogleFonts.inter(
+                                    style: AppFonts.poppins(
                                       color: Colors.white,
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
@@ -336,7 +336,7 @@ class ProfileHeroRectDialog extends StatelessWidget {
                                 const SizedBox(width: 6),
                                 Text(
                                   'Profile Photo',
-                                  style: GoogleFonts.inter(
+                                  style: AppFonts.poppins(
                                     color: Colors.white.withValues(alpha: 0.85),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,

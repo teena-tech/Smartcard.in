@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:smartcard_flutter/core/di/app_di.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/core/constants/app_colors.dart';
 import 'package:smartcard_flutter/features/login_screen/presentation/viewmodel/auth_viewmodel.dart';
 import 'package:smartcard_flutter/features/customize_theme_screen/presentation/viewmodel/theme_viewmodel.dart';
@@ -352,7 +352,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
                   'Hello, ${(profile?.displayName.isNotEmpty == true ? profile!.displayName : (ref.watch(authViewModelProvider).currentUser?.displayName.isNotEmpty == true ? ref.watch(authViewModelProvider).currentUser!.displayName : 'Teena Davis'))}',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
                     letterSpacing: -0.3,
@@ -425,12 +425,12 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                         const SizedBox(height: 16),
                         Text(
                           'No Cards Available',
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: colors.text),
+                          style: AppFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: colors.text),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Create your first digital smart card to start networking.',
-                          style: GoogleFonts.inter(fontSize: 12, color: colors.muted),
+                          style: AppFonts.poppins(fontSize: 12, color: colors.muted),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
@@ -506,7 +506,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
                   'Statistics',
-                  style: GoogleFonts.inter(
+                  style: AppFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: colors.text,
@@ -532,7 +532,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   children: [
                     Text(
                       'Recent Messages',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: colors.text,
@@ -544,7 +544,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                       },
                       child: Text(
                         'View All',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryRed,
@@ -565,7 +565,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                           Expanded(
                             child: Text(
                               'Could not load messages: ${messageViewModel.error}. Pull to refresh.',
-                              style: GoogleFonts.inter(fontSize: 13, color: Colors.orange[700]),
+                              style: AppFonts.poppins(fontSize: 13, color: Colors.orange[700]),
                             ),
                           ),
                         ],
@@ -583,7 +583,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   children: [
                     Text(
                       'Recent Scans',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: colors.text,
@@ -595,7 +595,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                       },
                       child: Text(
                         'View All',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryRed,
@@ -736,7 +736,7 @@ class _ExpandableFABAction extends ConsumerWidget {
               ),
               child: Text(
                 label,
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.black87),
+                style: AppFonts.poppins(fontWeight: FontWeight.bold, color: Colors.black87),
               ),
             ),
             const SizedBox(width: 16),
@@ -888,7 +888,7 @@ class _QuickActionCardState extends State<_QuickActionCard>
                     Text(
                       widget.label,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primaryRed,

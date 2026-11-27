@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 import 'package:smartcard_flutter/features/qr_scanner_screen/presentation/view/qr_scanner_screen.dart';
 import 'package:smartcard_flutter/features/business_card_scanner_screen/presentation/view/business_card_scanner_screen.dart';
 import 'package:smartcard_flutter/core/widgets/master_app_bar.dart';
@@ -31,7 +31,7 @@ class ScannerHomeScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'What would you like to scan?',
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
@@ -161,7 +161,7 @@ class _ScanOptionCardState extends State<_ScanOptionCard> {
 
               Text(
                 widget.title,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -174,7 +174,7 @@ class _ScanOptionCardState extends State<_ScanOptionCard> {
               Text(
                 widget.description,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: AppFonts.poppins(
                   color: Colors.white60,
                   fontSize: 14,
                 ),
