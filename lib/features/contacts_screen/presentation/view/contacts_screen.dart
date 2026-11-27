@@ -729,7 +729,7 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
             : contactViewModel.allContacts.where((c) => c.isFavorite).length);
 
     return SizedBox(
-      height: 38,
+      height: 32,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -737,6 +737,11 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
         children: [
           _buildFilterChip(
             label: 'Favorites ($favoritesCount)',
+            leadingIcon: const Icon(
+              Icons.star_rounded,
+              size: 15,
+              color: AppColors.favoriteGold,
+            ),
             isSelected: isFavoritesSelected,
             onTap: () {
               if (isFavoritesSelected) {
@@ -1426,24 +1431,38 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> with WidgetsBin
 
   Widget _buildFilterChip({
     required String label,
+    Widget? leadingIcon,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
     return FilterChip(
-      label: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          color: isSelected ? Colors.white : null,
-        ),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (leadingIcon != null) ...[
+            leadingIcon,
+            const SizedBox(width: 4),
+          ],
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? Colors.white : null,
+            ),
+          ),
+        ],
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       selected: isSelected,
       onSelected: (_) => onTap(),
       selectedColor: AppColors.primary,
       showCheckmark: false,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         side: BorderSide(
           color: isSelected ? AppColors.primary : Colors.grey.withValues(alpha: 0.2),
         ),

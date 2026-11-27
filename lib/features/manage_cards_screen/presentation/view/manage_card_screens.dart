@@ -684,43 +684,64 @@ class _ManageCardsScreenState extends ConsumerState<ManageCardsScreen> {
                                   Column(
                                     children: [
                                       Stack(
+                                        clipBehavior: Clip.none,
                                         alignment: Alignment.bottomRight,
                                         children: [
-                                          Container(
-                                            width: 76,
-                                            height: 76,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFE2E8F0),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            clipBehavior: Clip.antiAlias,
-                                            child: Center(
-                                              child: logoUrl.isNotEmpty
-                                                  ? Image.network(
-                                                      logoUrl,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder: (context, error, stackTrace) => Text(
-                                                        details.companyName.isNotEmpty
-                                                            ? details.companyName.substring(0, 1).toUpperCase()
-                                                            : (details.firstName.isNotEmpty ? details.firstName.substring(0, 1).toUpperCase() : 'K'),
-                                                        style: GoogleFonts.inter(
-                                                          fontSize: 26,
-                                                          fontWeight: FontWeight.w500,
-                                                          color: const Color(0xFF1E293B),
-                                                        ),
-                                                      ),
-                                                    )
-                                                  : Text(
-                                                      details.companyName.isNotEmpty
-                                                          ? details.companyName.substring(0, 1).toUpperCase()
-                                                          : (details.firstName.isNotEmpty ? details.firstName.substring(0, 1).toUpperCase() : 'K'),
-                                                      style: GoogleFonts.inter(
-                                                        fontSize: 26,
-                                                        fontWeight: FontWeight.w500,
-                                                        color: const Color(0xFF1E293B),
-                                                      ),
+                                          Builder(
+                                            builder: (context) {
+                                              final fallbackLetter = details.companyName.isNotEmpty
+                                                  ? details.companyName.substring(0, 1).toUpperCase()
+                                                  : (details.firstName.isNotEmpty
+                                                      ? details.firstName.substring(0, 1).toUpperCase()
+                                                      : 'K');
+                                              final Widget placeholder = Container(
+                                                width: 76,
+                                                height: 76,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.transparent,
+                                                  borderRadius: BorderRadius.circular(14),
+                                                  border: Border.all(
+                                                    color: Colors.grey.shade300,
+                                                  ),
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    fallbackLetter,
+                                                    style: GoogleFonts.inter(
+                                                      fontSize: 26,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: const Color(0xFF1E293B),
                                                     ),
-                                            ),
+                                                  ),
+                                                ),
+                                              );
+
+                                              return Padding(
+                                                padding: EdgeInsets.only(
+                                                  right: isOrganization ? 0 : 10,
+                                                  bottom: isOrganization ? 0 : 6,
+                                                ),
+                                                child: logoUrl.isNotEmpty
+                                                    ? ConstrainedBox(
+                                                        constraints: const BoxConstraints(
+                                                          minWidth: 72,
+                                                          minHeight: 56,
+                                                          maxWidth: 210,
+                                                          maxHeight: 112,
+                                                        ),
+                                                        child: Container(
+                                                          color: Colors.transparent,
+                                                          child: Image.network(
+                                                            logoUrl,
+                                                            fit: BoxFit.contain,
+                                                            errorBuilder: (context, error, stackTrace) =>
+                                                                placeholder,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    : placeholder,
+                                              );
+                                            },
                                           ),
                                           if (!isOrganization)
                                             Positioned(

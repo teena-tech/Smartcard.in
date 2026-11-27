@@ -264,7 +264,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
       padding: MediaQuery.of(context).viewInsets,
       child: Center(
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.80,
           ),
@@ -328,7 +328,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             // Form Content
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
                 child: Form(
                   key: _formKey,
                   child: _buildFormFields(colors, viewModel),
@@ -449,11 +449,15 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                           hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 13.5),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                          contentPadding: const EdgeInsets.only(left: 0, right: 10, top: 15, bottom: 15),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
                           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
                           focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryRed, width: 1.6)),
-                          prefixIcon: const Icon(Icons.email_outlined, size: 18, color: AppColors.primaryRed),
+                          prefixIconConstraints: const BoxConstraints(minWidth: 32, maxWidth: 34, minHeight: 24),
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.only(left: 10, right: 4),
+                            child: Icon(Icons.email_outlined, size: 17, color: AppColors.primaryRed),
+                          ),
                         ),
                       ),
                     ),
@@ -491,7 +495,12 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                     ),
                   ),
                   if (phones.length > 1)
-                    IconButton(icon: const Icon(Icons.remove_circle, color: Colors.redAccent), onPressed: () => setState(() => phones.removeAt(idx))),
+                    IconButton(
+                      constraints: const BoxConstraints(minWidth: 30, minHeight: 36),
+                      padding: const EdgeInsets.only(left: 4),
+                      icon: const Icon(Icons.remove_circle, color: Colors.redAccent, size: 20),
+                      onPressed: () => setState(() => phones.removeAt(idx)),
+                    ),
                 ],
               );
             }),
@@ -503,7 +512,7 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                 onPressed: () => setState(() => phones.add(TextEditingController())),
               ),
             ),
-            const SizedBox(height: 12),
+            _buildDottedDivider(),
 
             // WhatsApp Numbers with Country Code (+91 India default, no 10-digit lock)
             ...whatsapps.asMap().entries.map((e) {
@@ -523,7 +532,12 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                     ),
                   ),
                   if (whatsapps.length > 1)
-                    IconButton(icon: const Icon(Icons.remove_circle, color: Colors.redAccent), onPressed: () => setState(() => whatsapps.removeAt(idx))),
+                    IconButton(
+                      constraints: const BoxConstraints(minWidth: 30, minHeight: 36),
+                      padding: const EdgeInsets.only(left: 4),
+                      icon: const Icon(Icons.remove_circle, color: Colors.redAccent, size: 20),
+                      onPressed: () => setState(() => whatsapps.removeAt(idx)),
+                    ),
                 ],
               );
             }),
@@ -540,7 +554,6 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
 
 
       case 'section-social':
-        final webs = _controllers['websites'] as List;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -548,30 +561,6 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             _buildTextFormField(_controllers['instaLink'], 'Instagram URL', colors, keyboardType: TextInputType.url),
             _buildTextFormField(_controllers['linkedin'], 'LinkedIn URL', colors, keyboardType: TextInputType.url),
             _buildTextFormField(_controllers['xLink'], 'X (Twitter) URL', colors, keyboardType: TextInputType.url),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildInputLabel('Websites', colors),
-                IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.green),
-                  onPressed: () => setState(() => webs.add({'name': TextEditingController(), 'url': TextEditingController()})),
-                ),
-              ],
-            ),
-            ...webs.asMap().entries.map((e) {
-              final url = e.value['url'] as TextEditingController;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Row(
-                  children: [
-                    Expanded(child: _buildTextFormField(url, 'Website URL', colors, keyboardType: TextInputType.url)),
-                    if (webs.length > 1)
-                      IconButton(icon: const Icon(Icons.remove_circle, color: Colors.redAccent), onPressed: () => setState(() => webs.removeAt(e.key))),
-                  ],
-                ),
-              );
-            }),
           ],
         );
 
@@ -945,13 +934,6 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
       details.instaLink = _controllers['instaLink'].text.trim();
       details.linkedin = _controllers['linkedin'].text.trim();
       details.xLink = _controllers['xLink'].text.trim();
-      details.website = (_controllers['websites'] as List)
-          .map((w) => {
-                'name': (w['name'] as TextEditingController).text.trim(),
-                'url': (w['url'] as TextEditingController).text.trim(),
-              })
-          .where((w) => w['url']!.isNotEmpty)
-          .toList();
     } else if (widget.sectionId == 'section-about') {
       details.aboutCompany = _controllers['about'].text.trim();
     } else if (widget.sectionId == 'section-youtube') {
@@ -1076,6 +1058,33 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
     );
   }
 
+  Widget _buildDottedDivider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const dotSize = 3.5;
+          const gap = 5.0;
+          final count = (constraints.maxWidth / (dotSize + gap)).floor().clamp(1, 100);
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(
+              count,
+              (_) => Container(
+                width: dotSize,
+                height: dotSize,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildPhoneFieldWithCountryCode({
     required TextEditingController controller,
     required String hint,
@@ -1104,8 +1113,8 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             },
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 7),
               decoration: BoxDecoration(
                 color: isWhatsApp ? const Color(0xFFE8F5E9) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -1117,43 +1126,43 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(flag, style: const TextStyle(fontSize: 16)),
-                  const SizedBox(width: 4),
+                  Text(flag, style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 3),
                   Text(
                     countryCode,
                     style: GoogleFonts.inter(
-                      fontSize: 13,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                       color: isWhatsApp ? const Color(0xFF2E7D32) : const Color(0xFF1A1A1A),
                     ),
                   ),
-                  const SizedBox(width: 2),
+                  const SizedBox(width: 1),
                   Icon(
                     Icons.keyboard_arrow_down_rounded,
-                    size: 16,
+                    size: 14,
                     color: isWhatsApp ? const Color(0xFF2E7D32) : Colors.grey.shade700,
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
-          // Phone / WhatsApp Number Input Field without restrictive 10-digit limitation
+          const SizedBox(width: 6),
+          // Phone / WhatsApp Number Input Field with tight icon spacing and full number visibility
           Expanded(
             child: TextFormField(
               controller: controller,
               keyboardType: TextInputType.phone,
               style: GoogleFonts.inter(
                 color: isWhatsApp ? const Color(0xFF2E7D32) : const Color(0xFF1A1A1A),
-                fontSize: 15,
+                fontSize: 14.5,
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 13.5),
+                hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 13),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                contentPadding: const EdgeInsets.only(left: 0, right: 8, top: 14, bottom: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey.shade300),
@@ -1169,12 +1178,13 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                     width: 1.6,
                   ),
                 ),
-                prefixIcon: isWhatsApp
-                    ? const Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: FaIcon(FontAwesomeIcons.whatsapp, size: 18, color: Color(0xFF25D366)),
-                      )
-                    : const Icon(Icons.phone_rounded, size: 18, color: AppColors.primaryRed),
+                prefixIconConstraints: const BoxConstraints(minWidth: 28, maxWidth: 32, minHeight: 24),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 9, right: 4),
+                  child: isWhatsApp
+                      ? const FaIcon(FontAwesomeIcons.whatsapp, size: 17, color: Color(0xFF25D366))
+                      : const Icon(Icons.phone_rounded, size: 17, color: AppColors.primaryRed),
+                ),
               ),
             ),
           ),
