@@ -512,7 +512,10 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
                 onPressed: () => setState(() => phones.add(TextEditingController())),
               ),
             ),
-            _buildDottedDivider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: Divider(height: 1, thickness: 1, color: Colors.grey.shade300),
+            ),
 
             // WhatsApp Numbers with Country Code (+91 India default, no 10-digit lock)
             ...whatsapps.asMap().entries.map((e) {
@@ -554,6 +557,10 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
 
 
       case 'section-social':
+        final webs = _controllers['websites'] as List;
+        if (webs.isEmpty) {
+          webs.add({'name': TextEditingController(), 'url': TextEditingController()});
+        }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -561,6 +568,21 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
             _buildTextFormField(_controllers['instaLink'], 'Instagram URL', colors, keyboardType: TextInputType.url),
             _buildTextFormField(_controllers['linkedin'], 'LinkedIn URL', colors, keyboardType: TextInputType.url),
             _buildTextFormField(_controllers['xLink'], 'X (Twitter) URL', colors, keyboardType: TextInputType.url),
+            ...webs.asMap().entries.map((e) {
+              final url = e.value['url'] as TextEditingController;
+              final label = e.key == 0 ? 'Website URL' : 'Website URL ${e.key + 1}';
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: _buildTextFormField(url, label, colors, keyboardType: TextInputType.url)),
+                  if (webs.length > 1)
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle, color: Colors.redAccent),
+                      onPressed: () => setState(() => webs.removeAt(e.key)),
+                    ),
+                ],
+              );
+            }),
           ],
         );
 
@@ -934,6 +956,13 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
       details.instaLink = _controllers['instaLink'].text.trim();
       details.linkedin = _controllers['linkedin'].text.trim();
       details.xLink = _controllers['xLink'].text.trim();
+      details.website = (_controllers['websites'] as List)
+          .map((w) => {
+                'name': (w['name'] as TextEditingController).text.trim(),
+                'url': (w['url'] as TextEditingController).text.trim(),
+              })
+          .where((w) => w['url']!.isNotEmpty)
+          .toList();
     } else if (widget.sectionId == 'section-about') {
       details.aboutCompany = _controllers['about'].text.trim();
     } else if (widget.sectionId == 'section-youtube') {
@@ -1054,33 +1083,6 @@ class _SectionEditSheetState extends ConsumerState<SectionEditSheet> {
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-
-  Widget _buildDottedDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          const dotSize = 3.5;
-          const gap = 5.0;
-          final count = (constraints.maxWidth / (dotSize + gap)).floor().clamp(1, 100);
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(
-              count,
-              (_) => Container(
-                width: dotSize,
-                height: dotSize,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade400,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          );
-        },
       ),
     );
   }
