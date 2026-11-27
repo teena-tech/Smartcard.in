@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:smartcard_flutter/core/utils/contact_parser.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
-import 'package:smartcard_flutter/views/screens/contact_preview_screen.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contact_preview_screen/presentation/view/contact_preview_screen.dart';
 
 class _MockHttpOverrides extends HttpOverrides {
 }
@@ -98,11 +99,12 @@ END:VCARD
     });
 
     test('4. ContactViewModel notifies listeners when addScannedContact saves an edited scanned contact', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final container = ProviderContainer();
       bool notified = false;
-      vm.addListener(() {
+      container.listen(contactViewModelProvider, (_, __) {
         notified = true;
       });
+      final vm = container.read(contactViewModelProvider.notifier);
 
       final scanned = ScannedContactModel(
         id: 'edit_test_1',

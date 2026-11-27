@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcard_flutter/core/utils/contact_parser.dart';
-import 'package:smartcard_flutter/models/card_model.dart';
-import 'package:smartcard_flutter/bloc/scan_bloc.dart';
+import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
+import 'package:smartcard_flutter/features/smart_scanner_screen/presentation/viewmodel/scan_notifier.dart';
 
 void main() {
   group('SmartCards Scanner Unit Tests', () {

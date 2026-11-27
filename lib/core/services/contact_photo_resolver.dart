@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import '../../models/app_contact.dart';
-import '../../models/scanned_contact_model.dart';
-import '../../models/card_model.dart';
-import 'contact_photo_service.dart';
-import '../utils/upload_url_resolver.dart';
-import '../utils/safe_base64.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
+import 'package:smartcard_flutter/core/services/contact_photo_service.dart';
+import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
+import 'package:smartcard_flutter/core/utils/safe_base64.dart';
 
 /// Single Profile Image Source of Truth & Fallback Resolution Strategy
 /// Strategy Order:

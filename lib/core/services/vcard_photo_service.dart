@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 
-import '../network/api_config.dart';
-import '../utils/upload_url_resolver.dart';
+import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
 
 /// Downloads, normalizes, and caches profile photos for vCard 3.0 QR codes
 /// and downloadable/shareable `.vcf` files so Android Google Contacts and
@@ -65,14 +65,14 @@ class VCardPhotoService {
         final base = ApiConfig.baseUrl.replaceFirst(RegExp(r'/+$'), '');
         return '$base/$cleaned';
       } catch (_) {
-        return '${ApiConfig.publicWebBaseUrl}/$cleaned';
+        return 'https://thesmartcards.in/$cleaned';
       }
     }
 
     try {
       return UploadUrlResolver.resolve(cleaned, type: 'profile');
     } catch (_) {
-      return '${ApiConfig.publicWebBaseUrl}/$cleaned';
+      return 'https://thesmartcards.in/$cleaned';
     }
   }
 
@@ -118,7 +118,7 @@ class VCardPhotoService {
       }
       return (bytes != null && bytes.isNotEmpty) ? bytes : null;
     } catch (e) {
-      debugPrint('[VCardPhotoService] Failed to fetch photo bytes: $e');
+      debugPrint('⚠️ [VCardPhotoService] Failed to fetch photo bytes: $e');
       return null;
     }
   }
@@ -167,7 +167,7 @@ class VCardPhotoService {
         }
       }
     } catch (e) {
-      debugPrint('[VCardPhotoService] encodeJpegForVcf fallback: $e');
+      debugPrint('⚠️ [VCardPhotoService] encodeJpegForVcf fallback: $e');
     }
     if (rawBytes.length >= 2 &&
         rawBytes[0] == 0xFF &&
@@ -218,7 +218,7 @@ class VCardPhotoService {
         }
       }
     } catch (e) {
-      debugPrint('[VCardPhotoService] encodeCompactJpegForQr error: $e');
+      debugPrint('⚠️ [VCardPhotoService] encodeCompactJpegForQr error: $e');
     }
     return null;
   }
@@ -286,3 +286,4 @@ class VCardPhotoService {
     return buffer.toString();
   }
 }
+

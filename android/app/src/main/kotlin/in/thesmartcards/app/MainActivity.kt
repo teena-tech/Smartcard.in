@@ -1,4 +1,4 @@
-package in.thesmartcards.app
+package `in`.thesmartcards.app
 
 import android.content.ContentUris
 import android.content.ContentValues

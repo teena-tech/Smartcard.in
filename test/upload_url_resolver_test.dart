@@ -1,7 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
 void main() {
   setUpAll(() {

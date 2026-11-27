@@ -1,15 +1,15 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
-import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
-import '../../models/scanned_contact_model.dart';
-import '../utils/business_card_validator.dart';
-import '../utils/contact_parser.dart';
-import 'edge_detection_service.dart';
-import 'qr_extraction_service.dart';
-import 'scanner_api_service.dart';
-import '../../features/scanner/services/image_processing_service.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/utils/business_card_validator.dart';
+import 'package:smartcard_flutter/core/utils/contact_parser.dart';
+import 'package:smartcard_flutter/core/services/edge_detection_service.dart';
+import 'package:smartcard_flutter/core/services/qr_extraction_service.dart';
+import 'package:smartcard_flutter/features/smart_scanner_screen/data/datasources/image_processing_service.dart';
 
 class ScanProcessingResult {
   final ScannedContactModel contact;
@@ -25,13 +25,35 @@ class ScanProcessingResult {
 
 class ScanProcessingService {
   final TextRecognizer _textRecognizer = TextRecognizer();
-  final BarcodeScanner _barcodeScanner = BarcodeScanner(
-    formats: [BarcodeFormat.qrCode, BarcodeFormat.dataMatrix],
+  final MobileScannerController _barcodeScanner = MobileScannerController(
+    autoStart: false,
+    formats: const [BarcodeFormat.qrCode, BarcodeFormat.dataMatrix],
   );
 
   Future<void> dispose() async {
     await _textRecognizer.close();
-    await _barcodeScanner.close();
+    if (_barcodeScanner.value.isRunning) {
+      await _barcodeScanner.dispose();
+    }
+  }
+
+  Rect? _barcodeBoundingBox(Barcode barcode) {
+    if (barcode.corners.isNotEmpty) {
+      double minX = barcode.corners.first.dx;
+      double minY = barcode.corners.first.dy;
+      double maxX = minX;
+      double maxY = minY;
+      for (final p in barcode.corners.skip(1)) {
+        minX = math.min(minX, p.dx);
+        minY = math.min(minY, p.dy);
+        maxX = math.max(maxX, p.dx);
+        maxY = math.max(maxY, p.dy);
+      }
+      if (maxX > minX && maxY > minY) {
+        return Rect.fromLTRB(minX, minY, maxX, maxY);
+      }
+    }
+    return null;
   }
 
   Future<ScanProcessingResult> processImage({
@@ -43,11 +65,13 @@ class ScanProcessingService {
     double? frameWidth,
     double? frameHeight,
   }) async {
-    final inputImage = InputImage.fromFilePath(imagePath);
-
-    List<dynamic> barcodes = [];
+    List<Barcode> barcodes = const [];
     try {
-      barcodes = await _barcodeScanner.processImage(inputImage);
+      final capture = await _barcodeScanner.analyzeImage(
+        imagePath,
+        formats: const [BarcodeFormat.qrCode, BarcodeFormat.dataMatrix],
+      );
+      barcodes = capture?.barcodes ?? const [];
     } catch (e) {
       debugPrint('⚠️ Barcode scanning plugin unavailable/error: $e');
     }
@@ -60,7 +84,7 @@ class ScanProcessingService {
           imagePath,
           manualAdjust: manualEdgeAdjust,
           fromGallery: fromGallery,
-          textBoundingBox: barcodes.first.boundingBox,
+          textBoundingBox: _barcodeBoundingBox(barcodes.first),
           frameWidth: frameWidth,
           frameHeight: frameHeight,
           screenWidth: screenWidth,
@@ -74,6 +98,7 @@ class ScanProcessingService {
       }
     }
 
+    final inputImage = InputImage.fromFilePath(imagePath);
     final recognizedText = await _textRecognizer.processImage(inputImage);
     final rawText = recognizedText.text.trim();
 
@@ -112,33 +137,7 @@ class ScanProcessingService {
     }
 
     if (BusinessCardValidator.validateText(rawText) || rawText.length >= 6) {
-      var contact = ContactParser.parse(rawText).copyWith(imagePath: cropped);
-      if (contact.name.isEmpty || contact.phone.isEmpty) {
-        try {
-          final aiParsed = await ScannerApiService.instance.parseVisitingCardWithAi(rawText);
-          if (aiParsed != null) {
-            final aiName = (aiParsed['name'] as String?)?.trim() ?? '';
-            final aiPhone = (aiParsed['phone'] as String?)?.trim() ?? '';
-            final aiEmail = (aiParsed['email'] as String?)?.trim() ?? '';
-            final aiCompany = (aiParsed['company'] as String?)?.trim() ?? '';
-            final aiDesignation = (aiParsed['designation'] as String?)?.trim() ?? '';
-            final aiWebsite = (aiParsed['website'] as String?)?.trim() ?? '';
-            final aiAddress = (aiParsed['address'] as String?)?.trim() ?? '';
-
-            contact = contact.copyWith(
-              name: contact.name.isEmpty && aiName.isNotEmpty ? aiName : null,
-              phone: contact.phone.isEmpty && aiPhone.isNotEmpty ? aiPhone : null,
-              email: contact.email.isEmpty && aiEmail.isNotEmpty ? aiEmail : null,
-              company: contact.company.isEmpty && aiCompany.isNotEmpty ? aiCompany : null,
-              designation: contact.designation.isEmpty && aiDesignation.isNotEmpty ? aiDesignation : null,
-              website: contact.website.isEmpty && aiWebsite.isNotEmpty ? aiWebsite : null,
-              address: contact.address.isEmpty && aiAddress.isNotEmpty ? aiAddress : null,
-            );
-          }
-        } catch (e) {
-          debugPrint('AI Visiting Card fallback error: $e');
-        }
-      }
+      final contact = ContactParser.parse(rawText).copyWith(imagePath: cropped);
       return ScanProcessingResult(contact: contact, imagePath: cropped);
     }
 

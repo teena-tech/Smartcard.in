@@ -6,10 +6,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/scanned_contact_model.dart';
-import '../database/hive_scan_database.dart';
-import '../database/sqlite_database.dart';
-import '../utils/auth_session_resolver.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/database/hive_scan_database.dart';
+import 'package:smartcard_flutter/core/database/sqlite_database.dart';
+import 'package:smartcard_flutter/core/utils/auth_session_resolver.dart';
 
 /// Service managing cloud backup & restore for Scanned Contacts in Firebase Firestore & Storage.
 /// Ensures all scanned cards (with photos) survive app uninstallation and device switches.

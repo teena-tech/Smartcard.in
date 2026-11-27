@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
 void main() {
   group('ScannedContactModel & Phone Match Unit Tests', () {
@@ -91,25 +91,25 @@ void main() {
       expect(rawDeviceId, '12345');
     });
 
-    test('4. Dynamic Card URL Format: Resolves working https://thesmartcards.com/c/{uni_id} domain links', () {
+    test('4. Dynamic Card URL Format: Resolves working https://thesmartcards.in/c/{uni_id} domain links', () {
       String resolveCardUrl(String? rawUrl) {
-        if (rawUrl == null || rawUrl.trim().isEmpty) return 'https://thesmartcards.com';
+        if (rawUrl == null || rawUrl.trim().isEmpty) return 'https://thesmartcards.in';
         final trimmed = rawUrl.trim();
         if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
         if (trimmed.startsWith('?sc=') || trimmed.startsWith('sc=')) {
           final q = trimmed.startsWith('?') ? trimmed : '?$trimmed';
-          return 'https://thesmartcards.com$q';
+          return 'https://thesmartcards.in$q';
         }
         if (trimmed.startsWith('/c/') || trimmed.startsWith('/')) {
-          return 'https://thesmartcards.com$trimmed';
+          return 'https://thesmartcards.in$trimmed';
         }
-        return 'https://thesmartcards.com/c/$trimmed';
+        return 'https://thesmartcards.in/c/$trimmed';
       }
 
-      expect(resolveCardUrl('/c/labeeb'), 'https://thesmartcards.com/c/labeeb');
-      expect(resolveCardUrl('labeeb'), 'https://thesmartcards.com/c/labeeb');
-      expect(resolveCardUrl('https://thesmartcards.com?sc=abc'), 'https://thesmartcards.com?sc=abc');
-      expect(resolveCardUrl('/profile/15'), 'https://thesmartcards.com/profile/15');
+      expect(resolveCardUrl('/c/labeeb'), 'https://thesmartcards.in/c/labeeb');
+      expect(resolveCardUrl('labeeb'), 'https://thesmartcards.in/c/labeeb');
+      expect(resolveCardUrl('https://thesmartcards.in?sc=abc'), 'https://thesmartcards.in?sc=abc');
+      expect(resolveCardUrl('/profile/15'), 'https://thesmartcards.in/profile/15');
     });
 
     test('5. Batch Chunking Logic: Splits 3000+ phone numbers into 200-item chunks', () {

@@ -93,3 +93,11 @@
 -keep class dev.feelfreelinux.in_app_update.** { *; }
 -dontwarn dev.feelfreelinux.in_app_update.**
 
+# ── Rive & WebView ────────────────────────────────────────────────────────────
+-keep class app.rive.** { *; }
+-dontwarn app.rive.**
+-keep class io.flutter.plugins.webviewflutter.** { *; }
+-dontwarn io.flutter.plugins.webviewflutter.**
+-keep class com.google.android.material.** { *; }
+-dontwarn com.google.android.material.**
+

@@ -3,12 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:provider/provider.dart';
-import 'api_config.dart';
-import '../../viewmodels/message_viewmodel.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
 
 class DioClient {
   static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static void Function()? onSessionExpired;
   static final DioClient _instance = DioClient._internal();
   factory DioClient() => _instance;
 
@@ -158,10 +157,7 @@ class DioClient {
               
               // Stop background message polling
               try {
-                final context = navigatorKey.currentContext;
-                if (context != null) {
-                  Provider.of<MessageViewModel>(context, listen: false).stopPolling();
-                }
+                onSessionExpired?.call();
               } catch (_) {}
               
               // Redirect to Login page and clear all stacks

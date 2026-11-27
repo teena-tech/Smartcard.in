@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import '../../features/scanner/services/document_scanner_service.dart';
-import '../../features/scanner/services/image_processing_service.dart';
+import 'package:smartcard_flutter/features/smart_scanner_screen/data/datasources/document_scanner_service.dart';
+import 'package:smartcard_flutter/features/smart_scanner_screen/data/datasources/image_processing_service.dart';
 
 /// Auto + optional manual business-card edge detection and perspective crop.
 class EdgeDetectionService {

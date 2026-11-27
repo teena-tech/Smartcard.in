@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:permission_handler/permission_handler.dart';
-import '../utils/phone_normalizer.dart';
 
 /// Resolves the best available device-contact photo without using list thumbnails
 /// as the source for full-screen viewing.
@@ -22,8 +21,9 @@ class ContactPhotoService {
 
   static String? _phoneKey(String? phone) {
     if (phone == null) return null;
-    final tail = PhoneNormalizer.last10(phone);
-    if (tail.isEmpty) return null;
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) return null;
+    final tail = digits.length >= 10 ? digits.substring(digits.length - 10) : digits;
     return 'phone_$tail';
   }
 

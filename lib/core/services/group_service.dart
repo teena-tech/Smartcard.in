@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
-import 'group_storage.dart';
+import 'package:smartcard_flutter/core/services/group_storage.dart';
 
 class GroupService {
   final GroupStorage _storage = GroupStorage();

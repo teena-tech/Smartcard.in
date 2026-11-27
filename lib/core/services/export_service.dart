@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../models/scanned_contact_model.dart';
-import 'contact_photo_resolver.dart';
-import 'vcard_photo_service.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/services/contact_photo_resolver.dart';
+import 'package:smartcard_flutter/core/services/vcard_photo_service.dart';
 
 class ExportService {
   /// Exports contacts as a CSV and opens system share dialog

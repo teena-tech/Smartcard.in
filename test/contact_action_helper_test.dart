@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartcard_flutter/core/utils/contact_action_helper.dart';
 import 'package:smartcard_flutter/core/utils/intent_launcher.dart';
-import 'package:smartcard_flutter/models/app_contact.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
 void main() {
   group('WhatsApp Sanitization and Country Code Tests', () {

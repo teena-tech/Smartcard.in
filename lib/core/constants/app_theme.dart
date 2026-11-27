@@ -1,7 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'app_colors.dart';
+import 'package:smartcard_flutter/core/constants/app_colors.dart';
+import 'package:smartcard_flutter/core/constants/app_fonts.dart';
 
 class AppTheme {
   static ThemeData getTheme(AppThemeMode mode) {
@@ -13,6 +12,7 @@ class AppTheme {
       brightness: isDark ? Brightness.dark : Brightness.light,
       primaryColor: AppColors.primaryRed,
       scaffoldBackgroundColor: Colors.transparent, // We'll handle gradient background in a wrapper
+      fontFamily: AppFonts.fontFamily,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primaryRed,
         primary: AppColors.primaryRed,
@@ -20,7 +20,7 @@ class AppTheme {
         error: colors.danger,
         brightness: isDark ? Brightness.dark : Brightness.light,
       ),
-      textTheme: GoogleFonts.interTextTheme().apply(
+      textTheme: AppFonts.textTheme().apply(
         bodyColor: colors.text,
         displayColor: colors.text,
       ),
@@ -30,7 +30,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: AppFonts.poppins(
           color: Colors.white,
           fontSize: 18,
           fontWeight: FontWeight.bold,
@@ -72,8 +72,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colors.danger, width: 2.0),
         ),
-        hintStyle: GoogleFonts.inter(color: colors.muted, fontSize: 14),
-        labelStyle: GoogleFonts.inter(color: colors.muted, fontSize: 14),
+        hintStyle: AppFonts.poppins(color: colors.muted, fontSize: 14),
+        labelStyle: AppFonts.poppins(color: colors.muted, fontSize: 14),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {

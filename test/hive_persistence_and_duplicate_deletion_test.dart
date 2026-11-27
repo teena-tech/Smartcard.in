@@ -2,8 +2,8 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:smartcard_flutter/core/database/hive_scan_database.dart';
 import 'package:smartcard_flutter/core/database/sqlite_database.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -233,13 +233,13 @@ void main() {
       HiveScanDatabase.saveScannedRecord(scanRecord);
 
       // Instantiating ContactViewModel immediately restores Hive scans in constructor (0ms)
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
       expect(vm.allContacts.any((c) => c.id == 'scan_instant_load'), isTrue);
       expect(vm.scannedContacts.any((c) => c.id == 'scan_instant_load'), isTrue);
     });
 
     test('Test 8: 3 profiles with same phone number: deleting 1 deletes ONLY that profile, preserving the others in all tabs', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
 
       const samePhone = '9444433333';
 
@@ -313,7 +313,7 @@ void main() {
     });
 
     test('Test 9: 2 profiles with same name and same phone: deleting 1 deletes ONLY that profile, preserving the other in all tabs', () async {
-      final vm = ContactViewModel(autoLoad: false);
+      final vm = ContactViewModel();
       const duplicatePhone = '9555544444';
       const duplicateName = 'Rahul Kumar';
 

@@ -5,11 +5,11 @@ import 'package:flutter_contacts/flutter_contacts.dart' as fc;
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:permission_handler/permission_handler.dart';
-import '../../models/app_contact.dart';
-import '../../models/scanned_contact_model.dart';
-import '../database/sqlite_database.dart';
-import 'contact_photo_resolver.dart';
-import 'contact_photo_service.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/core/database/sqlite_database.dart';
+import 'package:smartcard_flutter/core/services/contact_photo_resolver.dart';
+import 'package:smartcard_flutter/core/services/contact_photo_service.dart';
 
 class ContactSaverService {
   static const MethodChannel _nativeContactsChannel =

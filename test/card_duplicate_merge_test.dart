@@ -4,9 +4,9 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:smartcard_flutter/core/database/sqlite_database.dart';
 import 'package:smartcard_flutter/core/utils/phone_normalizer.dart';
 import 'package:smartcard_flutter/core/utils/company_normalizer.dart';
-import 'package:smartcard_flutter/models/card_duplicate_check.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/card_duplicate_check.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -63,7 +63,7 @@ void main() {
       address: '123 Medical Center Way, Suite 400',
       socialLinks: const ['https://linkedin.com/in/johndoe'],
       createdAt: DateTime(2025, 1, 1),
-      cardUrl: 'https://thesmartcards.com/c/johndoe123',
+      cardUrl: 'https://thesmartcards.in/c/johndoe123',
     );
 
     setUp(() async {

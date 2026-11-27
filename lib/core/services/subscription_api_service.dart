@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../network/dio_client.dart';
-import '../network/api_config.dart';
+import 'package:smartcard_flutter/core/services/dio_client.dart';
+import 'package:smartcard_flutter/core/services/api_config.dart';
 
 class SubscriptionApiService {
   SubscriptionApiService._();
@@ -79,7 +79,7 @@ class SubscriptionApiService {
         },
       );
     } catch (_) {
-      // Best-effort â€” don't throw for failure reporting
+      // Best-effort — don't throw for failure reporting
     }
   }
 }

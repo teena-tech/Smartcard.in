@@ -3,12 +3,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:smartcard_flutter/core/database/sqlite_database.dart';
-import 'package:smartcard_flutter/models/card_duplicate_check.dart';
-import 'package:smartcard_flutter/models/scanned_contact_model.dart';
-import 'package:smartcard_flutter/models/app_contact.dart';
-import 'package:smartcard_flutter/viewmodels/contact_viewmodel.dart';
-import 'package:smartcard_flutter/views/widgets/duplicate_field_swipe_widget.dart';
-import 'package:smartcard_flutter/views/widgets/duplicate_scan_popup_dialog.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/card_duplicate_check.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/app_contact.dart';
+import 'package:smartcard_flutter/features/contacts_screen/presentation/viewmodel/contact_viewmodel.dart';
+import 'package:smartcard_flutter/features/contact_form_screen/presentation/view/widgets/duplicate_field_swipe_widget.dart';
+import 'package:smartcard_flutter/core/widgets/duplicate_scan_popup_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -132,7 +132,7 @@ void main() {
     );
 
     setUp(() async {
-      contactVm = ContactViewModel(autoLoad: false);
+      contactVm = ContactViewModel();
       await SqliteDatabase.init();
       contactVm.allContacts.clear();
       await SqliteDatabase.saveContact(existingCard);

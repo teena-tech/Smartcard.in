@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'dio_client.dart';
+import 'package:smartcard_flutter/core/services/dio_client.dart';
 
 class ThemeService {
   final Dio _dio = DioClient().dio;

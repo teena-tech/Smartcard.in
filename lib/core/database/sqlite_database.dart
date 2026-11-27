@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
-import '../../models/scanned_contact_model.dart';
+import 'package:smartcard_flutter/features/contacts_screen/data/models/scanned_contact_model.dart';
 
 class SqliteDatabase {
   static const String _dbName = 'smartcards_app.db';
@@ -49,11 +49,6 @@ class SqliteDatabase {
 
     try {
       if (_db != null && _db!.isOpen) return;
-
-      if (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS) {
-        sqfliteFfiInit();
-        databaseFactory = databaseFactoryFfi;
-      }
 
       final dbPath = await getDatabasesPath();
       final path = join(dbPath, _dbName);

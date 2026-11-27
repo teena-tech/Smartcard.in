@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import '../../../core/utils/upload_url_resolver.dart';
+import 'package:smartcard_flutter/core/utils/upload_url_resolver.dart';
 
 String _toText(dynamic value) => (value?.toString() ?? '').trim();
 
@@ -97,12 +97,6 @@ String resolveBackgroundImageUrl(dynamic item) {
       item['url'],
       item['image_url'],
       item['imageUrl'],
-      item['bg_image_url'],
-      item['bgimage'],
-      item['bg_image'],
-      item['image'],
-      item['filename'],
-      item['file_name'],
       item['path'],
       item['file_url'],
       item['fileUrl'],
@@ -110,7 +104,6 @@ String resolveBackgroundImageUrl(dynamic item) {
     if (candidate != null) {
       return UploadUrlResolver.resolve(candidate, type: 'card-bg', fallback: '');
     }
-    return '';
   }
   return UploadUrlResolver.resolve(_toText(item), type: 'card-bg', fallback: '');
 }

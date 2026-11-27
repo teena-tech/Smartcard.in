@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:smartcard_flutter/models/card_model.dart';
+import 'package:smartcard_flutter/features/smart_card_list_screen/data/models/card_model.dart';
 
 void main() {
   group('CardModel Unit Tests', () {
