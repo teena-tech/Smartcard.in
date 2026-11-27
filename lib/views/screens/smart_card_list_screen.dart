@@ -56,21 +56,23 @@ class _SmartCardListScreenState extends ConsumerState<SmartCardListScreen> {
     }
 
     final sub = subscriptionViewModel.subscription;
-    bool isPremium = false;
-    if (sub != null) {
-      final mem = sub.membership.toUpperCase();
-      if (sub.isActive || mem == 'PREMIUM' || mem == 'PAID' || mem != 'FREE') {
-        isPremium = true;
-      }
-    } else if (authUser != null && userId.isNotEmpty) {
-      // Logged in user fallback
-      isPremium = true;
+    if (sub == null && subscriptionViewModel.errorMessage != null && subscriptionViewModel.errorMessage!.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(subscriptionViewModel.errorMessage!),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
+
+    final mem = (sub?.membership ?? '').trim().toUpperCase();
+    final bool isPremium = sub != null && (sub.isActive || mem == 'PREMIUM' || mem == 'PAID');
 
     if (!isPremium && cards.isNotEmpty) {
       PremiumUpgradeDialog.show(context);
     } else {
-      cardViewModel.handleAddMoreCard(context, masterProfile: authUser);
+      await cardViewModel.handleAddMoreCard(context, masterProfile: authUser);
     }
   }
 

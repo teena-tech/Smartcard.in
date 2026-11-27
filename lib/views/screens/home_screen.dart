@@ -57,20 +57,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     }
 
     final sub = subVm.subscription;
-    bool isPremium = false;
-    if (sub != null) {
-      final mem = sub.membership.toUpperCase();
-      if (sub.isActive || mem == 'PREMIUM' || mem == 'PAID' || mem != 'FREE') {
-        isPremium = true;
-      }
-    } else if (authUser != null && userId.isNotEmpty) {
-      isPremium = true;
+    if (sub == null && subVm.errorMessage != null && subVm.errorMessage!.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(subVm.errorMessage!),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
+
+    final mem = (sub?.membership ?? '').trim().toUpperCase();
+    final bool isPremium = sub != null && (sub.isActive || mem == 'PREMIUM' || mem == 'PAID');
 
     if (!isPremium && cardVm.cards.isNotEmpty) {
       PremiumUpgradeDialog.show(context);
     } else {
-      cardVm.handleAddMoreCard(context, masterProfile: authUser);
+      await cardVm.handleAddMoreCard(context, masterProfile: authUser);
     }
   }
 

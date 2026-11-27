@@ -9,9 +9,9 @@ import '../repositories/card_repository.dart';
 import '../repositories/user_repository.dart';
 import '../repositories/theme_repository.dart';
 import '../repositories/auth_repository.dart';
-import '../core/network/api_config.dart';
 import '../core/utils/upload_url_resolver.dart';
 import '../core/state/app_loading_service.dart';
+import '../views/widgets/premium_upgrade_dialog.dart';
 
 class CardViewModel extends ChangeNotifier {
   final CardRepository _cardRepository;
@@ -365,7 +365,9 @@ class CardViewModel extends ChangeNotifier {
 
     try {
       final activeUserIdStr = userId.isNotEmpty ? userId : (masterProfile?.id ?? '');
-      final activeUserId = int.tryParse(activeUserIdStr) ?? 0;
+      if (activeUserIdStr.isEmpty) {
+        throw Exception('User session not found. Please log in again.');
+      }
 
       final defaultFirstName = (masterProfile?.firstName != null && masterProfile!.firstName!.trim().isNotEmpty)
           ? masterProfile.firstName!.trim()
@@ -379,79 +381,45 @@ class CardViewModel extends ChangeNotifier {
       final defaultCompany = _selectedCardDetails?.companyName ?? '';
       final defaultDesignation = _selectedCardDetails?.designation ?? '';
       final defaultLogo = _selectedCardDetails?.companyLogoName ?? '';
-      final defaultWebsites = _selectedCardDetails?.website != null 
+      final defaultWebsites = _selectedCardDetails?.website != null
           ? List<Map<String, String>>.from(_selectedCardDetails!.website.map((w) => Map<String, String>.from(w)))
           : <Map<String, String>>[];
 
-      // 1. Instantly create local CardModel pre-filled with existing profile name and image
-      final newCardNo = _cards.length + 1;
-      final newCard = CardModel(
-        userId: activeUserId,
-        cardId: DateTime.now().millisecondsSinceEpoch % 1000000,
-        workProfileId: DateTime.now().millisecondsSinceEpoch % 1000000,
-        accountUserId: activeUserId,
-        cardNo: newCardNo,
-        name: '$defaultFirstName $defaultLastName'.trim().isNotEmpty 
-            ? '$defaultFirstName $defaultLastName'.trim() 
-            : 'Card $newCardNo',
-        companyName: defaultCompany,
-        phone: masterProfile?.phone ?? _selectedCardDetails?.phone ?? '',
-        email: masterProfile?.email ?? _selectedCardDetails?.email ?? '',
-        designation: defaultDesignation,
-        companyLogo: defaultLogo.isNotEmpty ? defaultLogo : null,
-        qrCode: ApiConfig.cardShortUrl('$newCardNo'),
-        tabLabel: 'Card $newCardNo',
-        captionName: 'Card $newCardNo',
-        isPrimary: false,
-        isTemporary: false,
-        backgroundImage: null,
-        profileImageName: defaultProfileImg,
-      );
+      final newCardPayload = {
+        'first_name': defaultFirstName,
+        'last_name': defaultLastName,
+        'phone': masterProfile?.phone ?? _selectedCardDetails?.phone ?? '',
+        'email': masterProfile?.email ?? _selectedCardDetails?.email ?? '',
+        'designation': defaultDesignation,
+        'company_name': defaultCompany,
+        'company_address': _selectedCardDetails?.companyAddress ?? '',
+        'company_pincode': _selectedCardDetails?.companyPincode ?? '',
+        'company_city_id': _selectedCardDetails?.companyCityId ?? '',
+        'company_state_id': _selectedCardDetails?.companyStateId ?? '',
+        'company_city': _selectedCardDetails?.companyCity ?? '',
+        'company_state': _selectedCardDetails?.companyState ?? '',
+        'company_district': _selectedCardDetails?.companyDistrict ?? '',
+        'company_email': _selectedCardDetails?.companyEmails ?? [],
+        'company_phone': masterProfile?.phone != null && masterProfile!.phone!.isNotEmpty ? [masterProfile.phone!] : [],
+        'whatsapp_number': _selectedCardDetails?.whatsappNumbers ?? [],
+        'facebook_link': _selectedCardDetails?.fbLink ?? '',
+        'instagram_link': _selectedCardDetails?.instaLink ?? '',
+        'linkedin_link': _selectedCardDetails?.linkedin ?? '',
+        'twitter_link': _selectedCardDetails?.xLink ?? '',
+        'website': defaultWebsites,
+        'description': _selectedCardDetails?.aboutCompany ?? '',
+        'youtube_links': _selectedCardDetails?.youtubeLinks ?? [],
+        'profile_image': defaultProfileImg,
+        'company_logo': defaultLogo,
+      };
 
-      _cards.add(newCard);
-      _currentIndex = _cards.length - 1;
-      notifyListeners();
-
-      // 2. Persist to backend API in background
-      if (activeUserIdStr.isNotEmpty) {
-        final newCardPayload = {
-          'first_name': defaultFirstName,
-          'last_name': defaultLastName,
-          'phone': masterProfile?.phone ?? _selectedCardDetails?.phone ?? '',
-          'email': masterProfile?.email ?? _selectedCardDetails?.email ?? '',
-          'designation': defaultDesignation,
-          'company_name': defaultCompany,
-          'company_address': _selectedCardDetails?.companyAddress ?? '',
-          'company_pincode': _selectedCardDetails?.companyPincode ?? '',
-          'company_city_id': _selectedCardDetails?.companyCityId ?? '',
-          'company_state_id': _selectedCardDetails?.companyStateId ?? '',
-          'company_city': _selectedCardDetails?.companyCity ?? '',
-          'company_state': _selectedCardDetails?.companyState ?? '',
-          'company_district': _selectedCardDetails?.companyDistrict ?? '',
-          'company_email': _selectedCardDetails?.companyEmails ?? [],
-          'company_phone': masterProfile?.phone != null && masterProfile!.phone!.isNotEmpty ? [masterProfile.phone!] : [],
-          'whatsapp_number': _selectedCardDetails?.whatsappNumbers ?? [],
-          'facebook_link': _selectedCardDetails?.fbLink ?? '',
-          'instagram_link': _selectedCardDetails?.instaLink ?? '',
-          'linkedin_link': _selectedCardDetails?.linkedin ?? '',
-          'twitter_link': _selectedCardDetails?.xLink ?? '',
-          'website': defaultWebsites,
-          'description': _selectedCardDetails?.aboutCompany ?? '',
-          'youtube_links': _selectedCardDetails?.youtubeLinks ?? [],
-          'profile_image': defaultProfileImg,
-          'company_logo': defaultLogo,
-        };
-
-        try {
-          await _userRepository.createUserAdditionalCard(activeUserIdStr, newCardPayload);
-          _successMessage = 'New card created successfully!';
-          await fetchCards(activeUserIdStr);
-          if (_cards.isNotEmpty) {
-            _currentIndex = _cards.length - 1;
-          }
-        } catch (apiErr) {
-          debugPrint('Backend sync note: $apiErr');
-        }
+      // Persist to backend FIRST before mutating local _cards list.
+      await _userRepository.createUserAdditionalCard(activeUserIdStr, newCardPayload);
+      _successMessage = 'New card created successfully!';
+      await fetchCards(activeUserIdStr);
+      if (_cards.isNotEmpty) {
+        _currentIndex = _cards.length - 1;
+        await _loadDetailedProfile(_cards[_currentIndex]);
       }
 
       if (context.mounted) {
@@ -465,14 +433,20 @@ class CardViewModel extends ChangeNotifier {
         );
       }
     } catch (e) {
-      _errorMessage = 'Failed to create card: $e';
+      final errMsg = e.toString().replaceFirst('Exception: ', '').trim();
+      _errorMessage = errMsg;
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create card: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (errMsg.toLowerCase().contains('only premium users')) {
+          PremiumUpgradeDialog.show(context);
+        } else {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to create card: $errMsg'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } finally {
       _isBusy = false;
