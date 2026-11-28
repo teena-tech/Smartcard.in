@@ -316,18 +316,33 @@ class CardProfileDetails {
     final work = json['work'] as Map<String, dynamic>? ?? {};
     
     // Process list fields
+    String extractEntryText(dynamic entry) {
+      if (entry == null) return '';
+      if (entry is Map) {
+        return (entry['url'] ?? entry['link'] ?? entry['embed_url'] ?? '').toString().trim();
+      }
+      final raw = entry.toString().trim();
+      if (raw.toLowerCase() == 'null' || raw == '[object Object]') return '';
+      return raw;
+    }
+
     List<String> parseList(dynamic val) {
       if (val is List) {
-        return val.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+        return val.map(extractEntryText).where((e) => e.isNotEmpty).toList();
       }
       if (val is String && val.trim().isNotEmpty) {
         try {
           final decoded = jsonDecode(val);
           if (decoded is List) {
-            return decoded.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+            return decoded.map(extractEntryText).where((e) => e.isNotEmpty).toList();
+          }
+          if (decoded is Map) {
+            final extracted = extractEntryText(decoded);
+            return extracted.isNotEmpty ? [extracted] : [];
           }
         } catch (_) {}
-        return [val.trim()];
+        final clean = extractEntryText(val);
+        return clean.isNotEmpty ? [clean] : [];
       }
       return [];
     }

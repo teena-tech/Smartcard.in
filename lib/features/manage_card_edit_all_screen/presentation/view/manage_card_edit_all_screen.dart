@@ -425,7 +425,8 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
 
     // Save About & YouTube
     details.aboutCompany = _controllers['about'].text.trim();
-    details.youtubeLinks = [_controllers['youtube'].text.trim()];
+    final previewYoutube = _controllers['youtube'].text.trim();
+    details.youtubeLinks = previewYoutube.isNotEmpty ? [previewYoutube] : [];
 
     showDialog(
       context: context,
@@ -565,7 +566,8 @@ class _ManageCardEditAllScreenState extends ConsumerState<ManageCardEditAllScree
 
     // Save About & YouTube
     details.aboutCompany = _controllers['about'].text.trim();
-    details.youtubeLinks = [_controllers['youtube'].text.trim()];
+    final previewYoutube = _controllers['youtube'].text.trim();
+    details.youtubeLinks = previewYoutube.isNotEmpty ? [previewYoutube] : [];
 
     final success = await viewModel.handleFormSubmit();
     if (success && context.mounted) {

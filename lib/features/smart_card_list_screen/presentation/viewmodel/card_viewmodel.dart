@@ -309,13 +309,24 @@ class CardViewModel extends Notifier<CardState> {
               }
             }
             if (videosList is List && videosList.isNotEmpty) {
-              details.videos = videosList.map((e) {
-                if (e is Map<String, dynamic>) return VideoItem.fromJson(e);
-                if (e is Map) return VideoItem.fromJson(Map<String, dynamic>.from(e));
-                return VideoItem.fromUrl(e.toString());
-              }).toList();
+              details.videos = videosList
+                  .map((e) {
+                    if (e is Map<String, dynamic>) return VideoItem.fromJson(e);
+                    if (e is Map) return VideoItem.fromJson(Map<String, dynamic>.from(e));
+                    return VideoItem.fromUrl(e.toString());
+                  })
+                  .where((v) => v.url.trim().isNotEmpty && v.url.trim().toLowerCase() != 'null')
+                  .toList();
             } else if (youtubeList is List) {
-              final urls = youtubeList.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+              final urls = youtubeList
+                  .map((e) {
+                    if (e is Map) {
+                      return (e['url'] ?? e['link'] ?? e['embed_url'] ?? '').toString().trim();
+                    }
+                    return e.toString().trim();
+                  })
+                  .where((e) => e.isNotEmpty && e.toLowerCase() != 'null' && e != '[object Object]')
+                  .toList();
               final existingMap = {for (var v in details.videos) v.url: v};
               details.videos = urls.map((u) => existingMap[u] ?? VideoItem.fromUrl(u)).toList();
             }
@@ -835,10 +846,18 @@ class CardViewModel extends Notifier<CardState> {
           profileUpdateData,
           workProfileId: currentCard!.workProfileId,
         );
+        final cleanLinks = _selectedCardDetails!.youtubeLinks
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty && e.toLowerCase() != 'null' && e != '[object Object]')
+            .toList();
+        final cleanVideos = _selectedCardDetails!.videos
+            .where((v) => v.url.trim().isNotEmpty && v.url.trim().toLowerCase() != 'null')
+            .map((v) => v.toJson())
+            .toList();
         await _userRepository.updateYoutubeLinks(
           userId,
-          _selectedCardDetails!.youtubeLinks,
-          videos: _selectedCardDetails!.videos.map((v) => v.toJson()).toList(),
+          cleanLinks,
+          videos: cleanVideos,
           workProfileId: currentCard!.workProfileId,
         );
         await _cacheVideosLocally(
